@@ -30,6 +30,7 @@ MCPE_ODIN_RELEASE_BENCHMARKS=1 ./tests/benchmarks/raknet-network-compare.sh
 ./tests/differential/raknet-messages.sh
 ./tests/differential/raknet-cross-runtime.sh
 ./tools/api-audit/check.sh
+./tools/release-raknet
 ./tools/odinw build dragonfly
 ./tools/odinw run dragonfly
 ```
@@ -52,6 +53,12 @@ Go 1.26.5, Odin `dev-2026-07-nightly:819fdc7`. Network and RSS rows report
 the median of each measured run's p95 latency and peak RSS. Results vary by
 host; release gates require at least 90% Go throughput, at most 110% Go p95
 latency, and at most 115% Go peak RSS.
+
+`./tools/release-raknet [output-directory]` requires a clean Git tree and
+creates a deterministic Linux x86-64 source/binary archive, detached SHA-256,
+and provenance manifest. The manifest records exact source, upstream, Odin
+archive, Odin binary, embedded-asset, native-dependency, and packaged-file
+hashes.
 
 RakNet examples:
 

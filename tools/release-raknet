@@ -1,0 +1,186 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export LC_ALL=C
+umask 022
+
+ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+OUTPUT_DIR=${1:-"$ROOT_DIR/dist"}
+CANONICAL_REPOSITORY=https://github.com/RestartFU/mcpe-odin.git
+
+lock_value() {
+    local file=$1
+    local section=$2
+    local key=$3
+    awk -v section="[$section]" -v key="$key" '
+        $0 == section { found=1; next }
+        found && /^\[/ { exit }
+        found && $0 ~ "^" key " = " {
+            sub("^" key " = \"", "")
+            sub("\".*$", "")
+            print
+            exit
+        }
+    ' "$file"
+}
+
+for command in git tar gzip sha256sum strip awk; do
+    if ! command -v "$command" >/dev/null; then
+        printf 'required command not found: %s\n' "$command" >&2
+        exit 1
+    fi
+done
+
+if [[ -n $(git -C "$ROOT_DIR" status --porcelain --untracked-files=normal) ]]; then
+    printf 'release requires a clean Git tree\n' >&2
+    exit 1
+fi
+
+SOURCE_COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
+SOURCE_SHORT=${SOURCE_COMMIT:0:12}
+SOURCE_DATE_EPOCH=$(git -C "$ROOT_DIR" show -s --format=%ct "$SOURCE_COMMIT")
+BUNDLE_NAME="mcpe-odin-raknet-$SOURCE_SHORT-linux-x86_64"
+
+ODIN_TAG=$(lock_value "$ROOT_DIR/third_party.lock.toml" odin tag)
+ODIN_REPORTED=$(lock_value \
+    "$ROOT_DIR/third_party.lock.toml" odin reported_version)
+ODIN_ARCHIVE_SHA=$(lock_value \
+    "$ROOT_DIR/third_party.lock.toml" odin linux_amd64_sha256)
+ODIN_BINARY="$ROOT_DIR/.tools/odin-$ODIN_TAG/odin"
+ACTUAL_ODIN_VERSION=$("$ROOT_DIR/tools/odinw" version | awk '{print $NF}')
+if [[ "$ACTUAL_ODIN_VERSION" != "$ODIN_REPORTED" ]]; then
+    printf 'Odin version mismatch: locked=%s actual=%s\n' \
+        "$ODIN_REPORTED" "$ACTUAL_ODIN_VERSION" >&2
+    exit 1
+fi
+ODIN_BINARY_SHA=$(sha256sum "$ODIN_BINARY" | awk '{print $1}')
+
+RAKNET_REPOSITORY=$(lock_value \
+    "$ROOT_DIR/upstream.lock.toml" go_raknet repository)
+RAKNET_COMMIT=$(lock_value \
+    "$ROOT_DIR/upstream.lock.toml" go_raknet commit)
+
+WORK_DIR=$(mktemp -d /tmp/mcpe-odin-raknet-release.XXXXXX)
+cleanup() {
+    rm -rf -- "$WORK_DIR"
+}
+trap cleanup EXIT
+
+STAGE_DIR="$WORK_DIR/$BUNDLE_NAME"
+mkdir -p "$STAGE_DIR/bin"
+SOURCE_PATHS=(
+    LICENSE
+    README.md
+    THIRD_PARTY_NOTICES.md
+    api-map.toml
+    compatibility.md
+    upstream.lock.toml
+    third_party.lock.toml
+    packages/runtime
+    packages/raknet
+    examples/raknet-echo-client
+    examples/raknet-echo-server
+    examples/raknet-ping
+    cmd/raknet-cross
+    cmd/raknet-fixtures
+    tests
+    tools/api-audit
+    tools/odinw
+    tools/release-raknet
+)
+git -C "$ROOT_DIR" archive "$SOURCE_COMMIT" -- "${SOURCE_PATHS[@]}" |
+    tar -x -C "$STAGE_DIR"
+
+build_binary() {
+    local source=$1
+    local name=$2
+    SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" \
+        "$ROOT_DIR/tools/odinw" odin build "$ROOT_DIR/$source" \
+            -o:speed \
+            -out:"$STAGE_DIR/bin/$name"
+    strip --strip-all "$STAGE_DIR/bin/$name"
+}
+
+build_binary examples/raknet-echo-client raknet-echo-client
+build_binary examples/raknet-echo-server raknet-echo-server
+build_binary examples/raknet-ping raknet-ping
+
+CLIENT_SHA=$(sha256sum "$STAGE_DIR/bin/raknet-echo-client" | awk '{print $1}')
+SERVER_SHA=$(sha256sum "$STAGE_DIR/bin/raknet-echo-server" | awk '{print $1}')
+PING_SHA=$(sha256sum "$STAGE_DIR/bin/raknet-ping" | awk '{print $1}')
+MANIFEST="$STAGE_DIR/release-manifest.toml"
+{
+    printf 'format = 1\n'
+    printf 'gate = "raknet"\n'
+    printf 'source_repository = "%s"\n' "$CANONICAL_REPOSITORY"
+    printf 'source_commit = "%s"\n' "$SOURCE_COMMIT"
+    printf 'source_date_epoch = %s\n' "$SOURCE_DATE_EPOCH"
+    printf 'target = "linux-x86_64-glibc"\n'
+    printf '\n[upstream.go_raknet]\n'
+    printf 'repository = "%s"\n' "$RAKNET_REPOSITORY"
+    printf 'commit = "%s"\n' "$RAKNET_COMMIT"
+    printf '\n[compiler.odin]\n'
+    printf 'tag = "%s"\n' "$ODIN_TAG"
+    printf 'reported_version = "%s"\n' "$ODIN_REPORTED"
+    printf 'archive_sha256 = "%s"\n' "$ODIN_ARCHIVE_SHA"
+    printf 'binary_sha256 = "%s"\n' "$ODIN_BINARY_SHA"
+    printf '\n[embedded_assets]\n'
+    printf 'count = 0\n'
+    printf '\n[native_dependencies]\n'
+    printf 'count = 0\n'
+    printf '\n[[binary]]\n'
+    printf 'path = "bin/raknet-echo-client"\n'
+    printf 'sha256 = "%s"\n' "$CLIENT_SHA"
+    printf '\n[[binary]]\n'
+    printf 'path = "bin/raknet-echo-server"\n'
+    printf 'sha256 = "%s"\n' "$SERVER_SHA"
+    printf '\n[[binary]]\n'
+    printf 'path = "bin/raknet-ping"\n'
+    printf 'sha256 = "%s"\n' "$PING_SHA"
+} >"$MANIFEST"
+
+while IFS= read -r -d '' file; do
+    relative=${file#"$STAGE_DIR/"}
+    file_sha=$(sha256sum "$file" | awk '{print $1}')
+    {
+        printf '\n[[file]]\n'
+        printf 'path = "%s"\n' "$relative"
+        printf 'sha256 = "%s"\n' "$file_sha"
+    } >>"$MANIFEST"
+done < <(
+    find "$STAGE_DIR" \
+        -type f \
+        ! -name release-manifest.toml \
+        ! -name FILES.sha256 \
+        -print0 |
+        sort -z
+)
+
+(
+    cd "$STAGE_DIR"
+    find . -type f ! -name FILES.sha256 -print0 |
+        sort -z |
+        xargs -0 sha256sum >FILES.sha256
+)
+
+mkdir -p "$OUTPUT_DIR"
+OUTPUT_DIR=$(cd "$OUTPUT_DIR" && pwd)
+ARCHIVE="$OUTPUT_DIR/$BUNDLE_NAME.tar.gz"
+tar \
+    --sort=name \
+    --mtime="@$SOURCE_DATE_EPOCH" \
+    --owner=0 \
+    --group=0 \
+    --numeric-owner \
+    --format=posix \
+    --pax-option=delete=atime,delete=ctime \
+    -C "$WORK_DIR" \
+    -cf - \
+    "$BUNDLE_NAME" |
+    gzip -n >"$ARCHIVE"
+cp "$MANIFEST" "$OUTPUT_DIR/$BUNDLE_NAME.manifest.toml"
+(
+    cd "$OUTPUT_DIR"
+    sha256sum "$BUNDLE_NAME.tar.gz" >"$BUNDLE_NAME.tar.gz.sha256"
+)
+
+printf '%s\n' "$ARCHIVE"

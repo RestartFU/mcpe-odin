@@ -1,9 +1,9 @@
 .tools/odin-*/
 bin/
 build/
+dist/
 .cache/
 tests/.oracle/
 tests/.tmp/
 *.prof
 *.trace
-

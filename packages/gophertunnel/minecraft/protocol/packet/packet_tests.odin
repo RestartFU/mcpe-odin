@@ -143,3 +143,87 @@ modeled_packets_reject_trailing_bytes :: proc(t: ^testing.T) {
         mcpe_runtime.destroy_error(decode_err)
     }
 }
+
+@(test)
+game_state_packets_round_trip :: proc(t: ^testing.T) {
+    packets := [?]Packet{
+        Set_Spawn_Position{
+            spawn_type = Spawn_Type_World,
+            position = {-12, 64, 3456},
+            dimension = 2,
+            spawn_position = {-100, 70, 200},
+        },
+        Respawn{
+            position = {1.25, -2.5, 9.75},
+            state = Respawn_State_Client_Ready_To_Spawn,
+            entity_runtime_id = 0x1234_5678,
+        },
+        Player_Hot_Bar{
+            selected_hot_bar_slot = 7,
+            window_id = 3,
+            select_hot_bar_slot = true,
+        },
+        Set_Commands_Enabled{enabled = true},
+        Set_Player_Game_Type{game_type = Game_Type_Spectator},
+        Simple_Event{event_type = Simple_Event_Commands_Disabled},
+        Spawn_Experience_Orb{
+            position = {-1.5, 64.25, 100.75},
+            experience_amount = 2477,
+        },
+        Show_Credits{
+            player_runtime_id = 0x1020_3040,
+            status_type = Show_Credits_Status_End,
+        },
+        Transfer{
+            address = "example.org",
+            port = 19132,
+            reload_world = true,
+        },
+        Stop_Sound{
+            sound_name = "music.game",
+            stop_music_legacy = true,
+        },
+        Set_Last_Hurt_By{entity_type = -17},
+        Set_Default_Game_Type{game_type = Game_Type_Creative},
+    }
+    ids := [?]u32{
+        IDSetSpawnPosition,
+        IDRespawn,
+        IDPlayerHotBar,
+        IDSetCommandsEnabled,
+        IDSetPlayerGameType,
+        IDSimpleEvent,
+        IDSpawnExperienceOrb,
+        IDShowCredits,
+        IDTransfer,
+        IDStopSound,
+        IDSetLastHurtBy,
+        IDSetDefaultGameType,
+    }
+    for original, index in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, header, decode_err := decode_packet(data)
+        testing.expect(t, decode_err == nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+            delete(data)
+            continue
+        }
+        testing.expect_value(t, header.packet_id, ids[index])
+        reencoded, reencode_err := encode_packet(decoded)
+        testing.expect(t, reencode_err == nil)
+        if reencode_err == nil {
+            testing.expect(t, slice.equal(data, reencoded))
+            delete(reencoded)
+        } else {
+            mcpe_runtime.destroy_error(reencode_err)
+        }
+        destroy_packet(&decoded)
+        delete(data)
+    }
+}

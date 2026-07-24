@@ -74,6 +74,37 @@ Request_Network_Settings :: struct {
     client_protocol: i32,
 }
 
+modeled_packet_id :: proc(id: u32) -> bool {
+    switch id {
+    case IDPlayStatus,
+         IDServerToClientHandshake,
+         IDClientToServerHandshake,
+         IDDisconnect,
+         IDSetTime,
+         IDSetHealth,
+         IDSetSpawnPosition,
+         IDRespawn,
+         IDPlayerHotBar,
+         IDSetCommandsEnabled,
+         IDSetDifficulty,
+         IDSetPlayerGameType,
+         IDSimpleEvent,
+         IDSpawnExperienceOrb,
+         IDRequestChunkRadius,
+         IDChunkRadiusUpdated,
+         IDShowCredits,
+         IDTransfer,
+         IDStopSound,
+         IDSetLastHurtBy,
+         IDSetDefaultGameType,
+         IDNetworkStackLatency,
+         IDNetworkSettings,
+         IDRequestNetworkSettings:
+        return true
+    }
+    return false
+}
+
 write_payload :: proc(
     output: ^protocol.Writer,
     value: Packet,
@@ -95,13 +126,50 @@ write_payload :: proc(
         protocol.write_varint32(output, packet.time)
     case Set_Health:
         protocol.write_varint32(output, packet.health)
+    case Set_Spawn_Position:
+        protocol.write_varint32(output, packet.spawn_type)
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_varint32(output, packet.dimension)
+        protocol.write_block_pos(output, packet.spawn_position)
+    case Respawn:
+        protocol.write_vec3(output, packet.position)
+        protocol.write_u8(output, packet.state)
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+    case Player_Hot_Bar:
+        protocol.write_varuint32(output, packet.selected_hot_bar_slot)
+        protocol.write_u8(output, packet.window_id)
+        protocol.write_bool(output, packet.select_hot_bar_slot)
+    case Set_Commands_Enabled:
+        protocol.write_bool(output, packet.enabled)
     case Set_Difficulty:
         protocol.write_varuint32(output, packet.difficulty)
+    case Set_Player_Game_Type:
+        protocol.write_varint32(output, packet.game_type)
+    case Simple_Event:
+        protocol.write_u16(output, packet.event_type)
+    case Spawn_Experience_Orb:
+        protocol.write_vec3(output, packet.position)
+        protocol.write_varint32(output, packet.experience_amount)
     case Request_Chunk_Radius:
         protocol.write_varint32(output, packet.chunk_radius)
         protocol.write_u8(output, packet.max_chunk_radius)
     case Chunk_Radius_Updated:
         protocol.write_varint32(output, packet.chunk_radius)
+    case Show_Credits:
+        protocol.write_varuint64(output, packet.player_runtime_id)
+        protocol.write_varint32(output, packet.status_type)
+    case Transfer:
+        protocol.write_string(output, packet.address)
+        protocol.write_u16(output, packet.port)
+        protocol.write_bool(output, packet.reload_world)
+    case Stop_Sound:
+        protocol.write_string(output, packet.sound_name)
+        protocol.write_bool(output, packet.stop_all)
+        protocol.write_bool(output, packet.stop_music_legacy)
+    case Set_Last_Hurt_By:
+        protocol.write_varint32(output, packet.entity_type)
+    case Set_Default_Game_Type:
+        protocol.write_varint32(output, packet.game_type)
     case Network_Stack_Latency:
         protocol.write_i64(output, packet.timestamp)
         protocol.write_bool(output, packet.needs_response)
@@ -206,9 +274,48 @@ decode_packet :: proc(
         packet := Set_Health{}
         packet.health = protocol.read_varint32(&input) or_return
         value = packet
+    case IDSetSpawnPosition:
+        packet := Set_Spawn_Position{}
+        packet.spawn_type = protocol.read_varint32(&input) or_return
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.dimension = protocol.read_varint32(&input) or_return
+        packet.spawn_position = protocol.read_block_pos(&input) or_return
+        value = packet
+    case IDRespawn:
+        packet := Respawn{}
+        packet.position = protocol.read_vec3(&input) or_return
+        packet.state = protocol.read_u8(&input) or_return
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        value = packet
+    case IDPlayerHotBar:
+        packet := Player_Hot_Bar{}
+        packet.selected_hot_bar_slot =
+            protocol.read_varuint32(&input) or_return
+        packet.window_id = protocol.read_u8(&input) or_return
+        packet.select_hot_bar_slot = protocol.read_bool(&input) or_return
+        value = packet
+    case IDSetCommandsEnabled:
+        packet := Set_Commands_Enabled{}
+        packet.enabled = protocol.read_bool(&input) or_return
+        value = packet
     case IDSetDifficulty:
         packet := Set_Difficulty{}
         packet.difficulty = protocol.read_varuint32(&input) or_return
+        value = packet
+    case IDSetPlayerGameType:
+        packet := Set_Player_Game_Type{}
+        packet.game_type = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDSimpleEvent:
+        packet := Simple_Event{}
+        packet.event_type = protocol.read_u16(&input) or_return
+        value = packet
+    case IDSpawnExperienceOrb:
+        packet := Spawn_Experience_Orb{}
+        packet.position = protocol.read_vec3(&input) or_return
+        packet.experience_amount =
+            protocol.read_varint32(&input) or_return
         value = packet
     case IDRequestChunkRadius:
         packet := Request_Chunk_Radius{}
@@ -218,6 +325,24 @@ decode_packet :: proc(
     case IDChunkRadiusUpdated:
         packet := Chunk_Radius_Updated{}
         packet.chunk_radius = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDShowCredits:
+        packet := Show_Credits{}
+        packet.player_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.status_type = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDTransfer:
+        value = read_transfer(&input) or_return
+    case IDStopSound:
+        value = read_stop_sound(&input) or_return
+    case IDSetLastHurtBy:
+        packet := Set_Last_Hurt_By{}
+        packet.entity_type = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDSetDefaultGameType:
+        packet := Set_Default_Game_Type{}
+        packet.game_type = protocol.read_varint32(&input) or_return
         value = packet
     case IDNetworkStackLatency:
         packet := Network_Stack_Latency{}
@@ -244,18 +369,7 @@ decode_packet :: proc(
             payload = clone_payload(&input) or_return,
         }
     }
-    if header.packet_id == IDPlayStatus ||
-       header.packet_id == IDServerToClientHandshake ||
-       header.packet_id == IDClientToServerHandshake ||
-       header.packet_id == IDDisconnect ||
-       header.packet_id == IDSetTime ||
-       header.packet_id == IDSetHealth ||
-       header.packet_id == IDSetDifficulty ||
-       header.packet_id == IDRequestChunkRadius ||
-       header.packet_id == IDChunkRadiusUpdated ||
-       header.packet_id == IDNetworkStackLatency ||
-       header.packet_id == IDNetworkSettings ||
-       header.packet_id == IDRequestNetworkSettings {
+    if modeled_packet_id(header.packet_id) {
         if protocol.remaining(&input) != 0 {
             destroy_packet(&value, allocator)
             value = nil

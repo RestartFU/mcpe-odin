@@ -244,6 +244,104 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_set_spawn_position",
+		&packet.SetSpawnPosition{
+			SpawnType:     packet.SpawnTypeWorld,
+			Position:      protocol.BlockPos{-12, 64, 3456},
+			Dimension:     2,
+			SpawnPosition: protocol.BlockPos{-100, 70, 200},
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_respawn",
+		&packet.Respawn{
+			Position:        mgl32.Vec3{1.25, -2.5, 9.75},
+			State:           packet.RespawnStateClientReadyToSpawn,
+			EntityRuntimeID: 0x1234_5678,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_player_hot_bar",
+		&packet.PlayerHotBar{
+			SelectedHotBarSlot: 7,
+			WindowID:           3,
+			SelectHotBarSlot:   true,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_set_commands_enabled",
+		&packet.SetCommandsEnabled{Enabled: true},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_set_player_game_type",
+		&packet.SetPlayerGameType{GameType: packet.GameTypeSpectator},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_simple_event",
+		&packet.SimpleEvent{EventType: packet.SimpleEventCommandsDisabled},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_spawn_experience_orb",
+		&packet.SpawnExperienceOrb{
+			Position:         mgl32.Vec3{-1.5, 64.25, 100.75},
+			ExperienceAmount: 2477,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_show_credits",
+		&packet.ShowCredits{
+			PlayerRuntimeID: 0x1020_3040,
+			StatusType:      packet.ShowCreditsStatusEnd,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_transfer",
+		&packet.Transfer{
+			Address:     "example.org",
+			Port:        19132,
+			ReloadWorld: true,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_stop_sound",
+		&packet.StopSound{
+			SoundName:       "music.game",
+			StopMusicLegacy: true,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_set_last_hurt_by",
+		&packet.SetLastHurtBy{EntityType: -17},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_set_default_game_type",
+		&packet.SetDefaultGameType{GameType: packet.GameTypeCreative},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

@@ -79,6 +79,66 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Request_Network_Settings"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetSpawnPosition"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Spawn_Position"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Respawn"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Respawn"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlayerHotBar"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Player_Hot_Bar"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetCommandsEnabled"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Commands_Enabled"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetPlayerGameType"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Player_Game_Type"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SimpleEvent"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Simple_Event"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SpawnExperienceOrb"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Spawn_Experience_Orb"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ShowCredits"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Show_Credits"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Transfer"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Transfer"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.StopSound"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Stop_Sound"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetLastHurtBy"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Last_Hurt_By"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetDefaultGameType"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Default_Game_Type"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

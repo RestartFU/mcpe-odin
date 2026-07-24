@@ -57,9 +57,21 @@ Packet :: union {
     Disconnect,
     Set_Time,
     Set_Health,
+    Set_Spawn_Position,
+    Respawn,
+    Player_Hot_Bar,
+    Set_Commands_Enabled,
     Set_Difficulty,
+    Set_Player_Game_Type,
+    Simple_Event,
+    Spawn_Experience_Orb,
     Request_Chunk_Radius,
     Chunk_Radius_Updated,
+    Show_Credits,
+    Transfer,
+    Stop_Sound,
+    Set_Last_Hurt_By,
+    Set_Default_Game_Type,
     Network_Stack_Latency,
     Network_Settings,
     Request_Network_Settings,
@@ -85,9 +97,21 @@ packet_id :: proc(value: Packet) -> (
     case Disconnect:                  id = IDDisconnect
     case Set_Time:                    id = IDSetTime
     case Set_Health:                  id = IDSetHealth
+    case Set_Spawn_Position:          id = IDSetSpawnPosition
+    case Respawn:                     id = IDRespawn
+    case Player_Hot_Bar:              id = IDPlayerHotBar
+    case Set_Commands_Enabled:        id = IDSetCommandsEnabled
     case Set_Difficulty:              id = IDSetDifficulty
+    case Set_Player_Game_Type:        id = IDSetPlayerGameType
+    case Simple_Event:                id = IDSimpleEvent
+    case Spawn_Experience_Orb:        id = IDSpawnExperienceOrb
     case Request_Chunk_Radius:        id = IDRequestChunkRadius
     case Chunk_Radius_Updated:        id = IDChunkRadiusUpdated
+    case Show_Credits:                id = IDShowCredits
+    case Transfer:                    id = IDTransfer
+    case Stop_Sound:                  id = IDStopSound
+    case Set_Last_Hurt_By:            id = IDSetLastHurtBy
+    case Set_Default_Game_Type:       id = IDSetDefaultGameType
     case Network_Stack_Latency:       id = IDNetworkStackLatency
     case Network_Settings:            id = IDNetworkSettings
     case Request_Network_Settings:    id = IDRequestNetworkSettings
@@ -122,6 +146,10 @@ destroy_packet :: proc(
     case Disconnect:
         delete(packet.message, allocator)
         delete(packet.filtered_message, allocator)
+    case Transfer:
+        delete(packet.address, allocator)
+    case Stop_Sound:
+        delete(packet.sound_name, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

@@ -311,6 +311,86 @@ main :: proc() {
             needs_response = true,
         },
     )
+    emit_packet(
+        "packet_set_spawn_position",
+        packet.Set_Spawn_Position{
+            spawn_type = packet.Spawn_Type_World,
+            position = {-12, 64, 3456},
+            dimension = 2,
+            spawn_position = {-100, 70, 200},
+        },
+    )
+    emit_packet(
+        "packet_respawn",
+        packet.Respawn{
+            position = {1.25, -2.5, 9.75},
+            state = packet.Respawn_State_Client_Ready_To_Spawn,
+            entity_runtime_id = 0x1234_5678,
+        },
+    )
+    emit_packet(
+        "packet_player_hot_bar",
+        packet.Player_Hot_Bar{
+            selected_hot_bar_slot = 7,
+            window_id = 3,
+            select_hot_bar_slot = true,
+        },
+    )
+    emit_packet(
+        "packet_set_commands_enabled",
+        packet.Set_Commands_Enabled{enabled = true},
+    )
+    emit_packet(
+        "packet_set_player_game_type",
+        packet.Set_Player_Game_Type{
+            game_type = packet.Game_Type_Spectator,
+        },
+    )
+    emit_packet(
+        "packet_simple_event",
+        packet.Simple_Event{
+            event_type = packet.Simple_Event_Commands_Disabled,
+        },
+    )
+    emit_packet(
+        "packet_spawn_experience_orb",
+        packet.Spawn_Experience_Orb{
+            position = {-1.5, 64.25, 100.75},
+            experience_amount = 2477,
+        },
+    )
+    emit_packet(
+        "packet_show_credits",
+        packet.Show_Credits{
+            player_runtime_id = 0x1020_3040,
+            status_type = packet.Show_Credits_Status_End,
+        },
+    )
+    emit_packet(
+        "packet_transfer",
+        packet.Transfer{
+            address = "example.org",
+            port = 19132,
+            reload_world = true,
+        },
+    )
+    emit_packet(
+        "packet_stop_sound",
+        packet.Stop_Sound{
+            sound_name = "music.game",
+            stop_music_legacy = true,
+        },
+    )
+    emit_packet(
+        "packet_set_last_hurt_by",
+        packet.Set_Last_Hurt_By{entity_type = -17},
+    )
+    emit_packet(
+        "packet_set_default_game_type",
+        packet.Set_Default_Game_Type{
+            game_type = packet.Game_Type_Creative,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

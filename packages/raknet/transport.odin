@@ -45,10 +45,14 @@ Packet_Transport_VTable :: struct {
 // Connected transports may return a zero remote endpoint from read. Dialer
 // substitutes the connected_remote supplied by Upstream_Dial_Proc.
 //
+// close must interrupt an in-progress read, matching net.Conn and
+// net.PacketConn.
+//
 // set_deadline receives absolute runtime.system_now_ns deadlines. Handshake
-// reads use deadlines no more than 100 ms away so packet retransmission and
-// cancellation remain responsive. Zero clears the deadline after a successful
-// RakNet handshake. RakNet closes an accepted transport exactly once.
+// reads use deadlines no more than 100 ms away so packet retransmission,
+// cancellation and listener maintenance remain responsive. Zero clears the
+// deadline after a successful RakNet handshake. RakNet closes an accepted
+// transport exactly once.
 //
 // Write errors with kind Closed are terminal. All other write errors are
 // logged and treated as recoverable, matching pinned go-raknet's writeTo

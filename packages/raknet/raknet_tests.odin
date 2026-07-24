@@ -55,7 +55,7 @@ test_upstream_dial :: proc "odin" (
     state.transport.socket = native_socket
     vtable := &TEST_PACKET_TRANSPORT_VTABLE
     if state.incomplete {
-        vtable = &TEST_INCOMPLETE_PACKET_TRANSPORT_VTABLE
+        vtable = &TEST_PACKET_TRANSPORT_NO_DEADLINE_VTABLE
     }
     transport = {
         user_data = &state.transport,
@@ -69,11 +69,17 @@ TEST_UPSTREAM_DIALER_VTABLE := Upstream_Dialer_VTable{
     dial = test_upstream_dial,
 }
 
+Test_Upstream_Listen_State :: struct {
+    called:    bool,
+    transport: Test_Packet_Transport_State,
+}
+
 test_upstream_listen :: proc "odin" (
     user_data: rawptr,
     endpoint: net.Endpoint,
-) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error) {
-    (^bool)(user_data)^ = true
+) -> (transport: Packet_Transport, err: mcpe_runtime.Error) {
+    state := (^Test_Upstream_Listen_State)(user_data)
+    state.called = true
     native_socket, socket_err := net.make_bound_udp_socket(
         endpoint.address,
         endpoint.port,
@@ -82,7 +88,12 @@ test_upstream_listen :: proc "odin" (
         err = network_error("raknet.test_upstream_listen")
         return
     }
-    return native_socket, nil
+    state.transport.socket = native_socket
+    transport = {
+        user_data = &state.transport,
+        vtable = &TEST_PACKET_TRANSPORT_VTABLE,
+    }
+    return
 }
 
 TEST_UPSTREAM_LISTENER_VTABLE := Upstream_Packet_Listener_VTable{
@@ -120,7 +131,11 @@ test_packet_transport_read :: proc "odin" (
     receive_err: net.UDP_Recv_Error
     count, remote, receive_err = net.recv_udp(state.socket, buffer)
     if receive_err != nil {
-        err = network_error("raknet.test_transport.read")
+        kind := mcpe_runtime.Error_Kind.Network
+        if receive_err == .Timeout || receive_err == .Would_Block {
+            kind = .Timeout
+        }
+        err = network_error("raknet.test_transport.read", kind)
     }
     return
 }
@@ -173,6 +188,17 @@ test_packet_transport_set_deadline :: proc "odin" (
     if remaining_ns > 0 && remaining_ns <= i64(150 * time.Millisecond) {
         state.saw_poll_deadline = true
     }
+    timeout := time.Duration(0)
+    if deadline_ns > 0 {
+        timeout = max(time.Millisecond, time.Duration(remaining_ns))
+    }
+    if option_err := net.set_option(
+        state.socket,
+        .Receive_Timeout,
+        timeout,
+    ); option_err != nil {
+        return network_error("raknet.test_transport.deadline")
+    }
     return nil
 }
 
@@ -184,7 +210,7 @@ TEST_PACKET_TRANSPORT_VTABLE := Packet_Transport_VTable{
     set_deadline = test_packet_transport_set_deadline,
 }
 
-TEST_INCOMPLETE_PACKET_TRANSPORT_VTABLE := Packet_Transport_VTable{
+TEST_PACKET_TRANSPORT_NO_DEADLINE_VTABLE := Packet_Transport_VTable{
     read = test_packet_transport_read,
     write = test_packet_transport_write,
     close = test_packet_transport_close,
@@ -195,7 +221,7 @@ TEST_INCOMPLETE_PACKET_TRANSPORT_VTABLE := Packet_Transport_VTable{
 packet_transport_deadline_is_dial_only :: proc(t: ^testing.T) {
     err := packet_transport_validate(
         {
-            vtable = &TEST_INCOMPLETE_PACKET_TRANSPORT_VTABLE,
+            vtable = &TEST_PACKET_TRANSPORT_NO_DEADLINE_VTABLE,
         },
         "raknet.test.transport",
     )
@@ -697,22 +723,21 @@ custom_upstream_dialer_pings :: proc(t: ^testing.T) {
 
 @(test)
 custom_upstream_packet_listener_binds :: proc(t: ^testing.T) {
-    called := false
+    state: Test_Upstream_Listen_State
     listener, listen_err := listen_config(
         {
             upstream_packet_listener = {
-                user_data = &called,
+                user_data = &state,
                 vtable = &TEST_UPSTREAM_LISTENER_VTABLE,
             },
         },
         "127.0.0.1:0",
     )
     testing.expect(t, listen_err == nil)
-    testing.expect(t, called)
+    testing.expect(t, state.called)
     if listen_err != nil {
         return
     }
-    defer destroy_listener(listener)
 
     address := net.endpoint_to_string(listener_address(listener))
     response, ping_err := ping_timeout(address, time.Second)
@@ -720,6 +745,94 @@ custom_upstream_packet_listener_binds :: proc(t: ^testing.T) {
     if ping_err == nil {
         delete(response)
     }
+
+    client, dial_err := dial_timeout(address, 3 * time.Second)
+    testing.expect(t, dial_err == nil)
+    if dial_err != nil {
+        destroy_listener(listener)
+        return
+    }
+    server, accept_err := accept(listener)
+    testing.expect(t, accept_err == nil)
+    if accept_err != nil {
+        conn_destroy(client)
+        destroy_listener(listener)
+        return
+    }
+    payload := []u8{1, 2, 3, 4}
+    _, write_err := write(client, payload)
+    testing.expect(t, write_err == nil)
+    received: [4]u8
+    count, read_err := read(server, received[:])
+    testing.expect(t, read_err == nil)
+    testing.expect_value(t, count, len(payload))
+    testing.expect(t, slice.equal(received[:count], payload))
+    conn_destroy(server)
+    conn_destroy(client)
+
+    destroy_listener(listener)
+    testing.expect(t, state.transport.read_calls > 0)
+    testing.expect(t, state.transport.write_calls > 0)
+    testing.expect(t, state.transport.deadline_calls > 0)
+    testing.expect(t, state.transport.saw_poll_deadline)
+    testing.expect_value(t, state.transport.close_calls, 1)
+}
+
+@(test)
+custom_listener_refreshes_idle_deadline :: proc(t: ^testing.T) {
+    state: Test_Upstream_Listen_State
+    listener, listen_err := listen_config(
+        {
+            upstream_packet_listener = {
+                user_data = &state,
+                vtable = &TEST_UPSTREAM_LISTENER_VTABLE,
+            },
+        },
+        "127.0.0.1:0",
+    )
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    time.sleep(250 * time.Millisecond)
+    destroy_listener(listener)
+    testing.expect(t, state.transport.deadline_calls >= 3)
+    testing.expect(t, state.transport.saw_poll_deadline)
+    testing.expect_value(t, state.transport.close_calls, 1)
+}
+
+@(test)
+closed_listener_transport_is_closed_once :: proc(t: ^testing.T) {
+    state := Test_Upstream_Listen_State{
+        transport = {
+            read_closed = true,
+        },
+    }
+    listener, listen_err := listen_config(
+        {
+            upstream_packet_listener = {
+                user_data = &state,
+                vtable = &TEST_UPSTREAM_LISTENER_VTABLE,
+            },
+        },
+        "127.0.0.1:0",
+    )
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    _, accept_err := accept(listener)
+    testing.expect(t, accept_err != nil)
+    if accept_err != nil {
+        testing.expect_value(
+            t,
+            accept_err.kind,
+            mcpe_runtime.Error_Kind.Closed,
+        )
+        mcpe_runtime.destroy_error(accept_err)
+    }
+    destroy_listener(listener)
+    testing.expect_value(t, state.transport.close_calls, 1)
 }
 
 @(test)

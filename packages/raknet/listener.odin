@@ -16,10 +16,13 @@ Pong_Data_Proc :: proc "odin" (
     remote: net.Endpoint,
 ) -> []u8
 
+// Upstream_Listen_Proc is the Odin equivalent of
+// UpstreamPacketListener.ListenPacket. On success it transfers ownership of
+// the packet transport to the Listener.
 Upstream_Listen_Proc :: proc "odin" (
     user_data: rawptr,
     endpoint: net.Endpoint,
-) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error)
+) -> (transport: Packet_Transport, err: mcpe_runtime.Error)
 
 Upstream_Packet_Listener_VTable :: struct {
     listen: Upstream_Listen_Proc,
@@ -49,11 +52,13 @@ Listener :: struct {
     allocator:   mem.Allocator,
     config:      Listen_Config,
     socket:      net.UDP_Socket,
+    transport:   Packet_Transport,
     endpoint:    net.Endpoint,
     id:          i64,
     cookie_salt: u64,
     previous_salt: u64,
     closed:      bool,
+    incoming_closed: bool,
     mutex:       sync.Mutex,
     incoming:    channel.Chan(^Conn),
     connections: map[net.Endpoint]^Conn,
@@ -238,6 +243,7 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
 ) {
     endpoint := listen_endpoint(address) or_return
     socket: net.UDP_Socket
+    transport: Packet_Transport
     if config.upstream_packet_listener.vtable != nil {
         if config.upstream_packet_listener.vtable.listen == nil {
             err = mcpe_runtime.make_error(
@@ -247,10 +253,58 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
             )
             return
         }
-        socket = config.upstream_packet_listener.vtable.listen(
+        transport = config.upstream_packet_listener.vtable.listen(
             config.upstream_packet_listener.user_data,
             endpoint,
         ) or_return
+        if transport.vtable == nil {
+            err = mcpe_runtime.make_error(
+                .Invalid_Argument,
+                "raknet.listen",
+                "upstream packet listener returned no transport",
+            )
+            return
+        }
+        if transport_err := packet_transport_validate(
+            transport,
+            "raknet.listen",
+        ); transport_err != nil {
+            if transport.vtable.close != nil {
+                if close_err := transport.vtable.close(
+                    transport.user_data,
+                ); close_err != nil {
+                    mcpe_runtime.destroy_error(close_err)
+                }
+            }
+            err = transport_err
+            return
+        }
+        if transport.vtable.set_deadline == nil {
+            if close_err := transport.vtable.close(
+                transport.user_data,
+            ); close_err != nil {
+                mcpe_runtime.destroy_error(close_err)
+            }
+            err = mcpe_runtime.make_error(
+                .Invalid_Argument,
+                "raknet.listen",
+                "upstream listener transport has no deadline procedure",
+            )
+            return
+        }
+        if deadline_err := packet_transport_set_deadline(
+            transport,
+            mcpe_runtime.system_now_ns(nil) + i64(100 * time.Millisecond),
+        ); deadline_err != nil {
+            if close_err := packet_transport_close(
+                transport,
+                {},
+            ); close_err != nil {
+                mcpe_runtime.destroy_error(close_err)
+            }
+            err = deadline_err
+            return
+        }
     } else {
         native_socket, socket_err := net.make_bound_udp_socket(
             endpoint.address,
@@ -262,18 +316,25 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
         }
         socket = native_socket
     }
-    keep_socket := false
-    defer if !keep_socket {
-        net.close(socket)
+    keep_transport := false
+    defer if !keep_transport {
+        if close_err := packet_transport_close(
+            transport,
+            socket,
+        ); close_err != nil {
+            mcpe_runtime.destroy_error(close_err)
+        }
     }
-    bound, bound_err := net.bound_endpoint(socket)
-    if bound_err != nil {
-        err = network_error("raknet.listen.bound_endpoint")
-        return
-    }
-    if option_err := net.set_option(socket, .Receive_Timeout, 100 * time.Millisecond); option_err != nil {
-        err = network_error("raknet.listen.deadline")
-        return
+    bound := packet_transport_local_endpoint(transport, socket) or_return
+    if transport.vtable == nil {
+        if option_err := net.set_option(
+            socket,
+            .Receive_Timeout,
+            100 * time.Millisecond,
+        ); option_err != nil {
+            err = network_error("raknet.listen.deadline")
+            return
+        }
     }
 
     listener = new(Listener, context.allocator)
@@ -284,6 +345,7 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
     }
     listener.config.max_mtu = clamp_mtu(listener.config.max_mtu, MIN_MTU_SIZE)
     listener.socket = socket
+    listener.transport = transport
     listener.endpoint = bound
     listener.id = next_listener_id()
     listener.cookie_salt = random_u64()
@@ -312,7 +374,7 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
     listener.worker = thread.create(listener_thread)
     listener.worker.data = listener
     thread.start(listener.worker)
-    keep_socket = true
+    keep_transport = true
     return
 }
 
@@ -369,25 +431,38 @@ close_listener :: proc(listener: ^Listener) -> mcpe_runtime.Error {
     if listener == nil {
         return nil
     }
-    first := false
+    close_transport := false
+    close_incoming := false
     if sync.mutex_guard(&listener.mutex) {
         if !listener.closed {
             listener.closed = true
-            first = true
+            close_transport = true
+        }
+        if !listener.incoming_closed {
+            listener.incoming_closed = true
+            close_incoming = true
         }
     }
-    if first {
-        net.close(listener.socket)
+    close_err: mcpe_runtime.Error
+    if close_transport {
+        close_err = packet_transport_close(
+            listener.transport,
+            listener.socket,
+        )
+    }
+    if close_incoming {
         channel.close(listener.incoming)
     }
-    return nil
+    return close_err
 }
 
 destroy_listener :: proc(listener: ^Listener) {
     if listener == nil {
         return
     }
-    close_listener(listener)
+    if close_err := close_listener(listener); close_err != nil {
+        mcpe_runtime.destroy_error(close_err)
+    }
     thread.join(listener.worker)
     thread.destroy(listener.worker)
 
@@ -452,10 +527,16 @@ destroy_listener :: proc(listener: ^Listener) {
 }
 
 listener_send :: proc(listener: ^Listener, data: []u8, remote: net.Endpoint) -> mcpe_runtime.Error {
-    if _, send_err := net.send_udp(listener.socket, data, remote); send_err != nil {
-        return network_error("raknet.listener.send")
+    _, _, err := packet_transport_write(
+        listener.transport,
+        listener.socket,
+        data,
+        remote,
+    )
+    if err != nil {
+        err.operation = "raknet.listener.send"
     }
-    return nil
+    return err
 }
 
 listener_handle_unconnected :: proc(
@@ -564,6 +645,7 @@ listener_handle_unconnected :: proc(
                 .Server,
                 false,
                 listener.allocator,
+                listener.transport,
             ) or_return
             conn.callback_data = listener
             conn.on_connected = listener_on_connected
@@ -599,17 +681,46 @@ listener_thread :: proc(worker: ^thread.Thread) {
     buffer: [1500]u8
     for !sync.atomic_load(&listener.closed) {
         listener_maintenance(listener)
-        count, remote, receive_err := net.recv_udp(listener.socket, buffer[:])
-        if receive_err != nil {
-            if sync.atomic_load(&listener.closed) {
+        if listener.transport.vtable != nil {
+            if deadline_err := packet_transport_set_deadline(
+                listener.transport,
+                mcpe_runtime.system_now_ns(nil) + i64(100 * time.Millisecond),
+            ); deadline_err != nil {
+                mcpe_runtime.report_error(
+                    listener.config.error_log,
+                    deadline_err,
+                )
+                mcpe_runtime.destroy_error(deadline_err)
+                if close_err := close_listener(listener); close_err != nil {
+                    mcpe_runtime.destroy_error(close_err)
+                }
                 break
             }
-            if receive_err == .Timeout || receive_err == .Would_Block {
+        }
+        count, remote, receive_err := packet_transport_read(
+            listener.transport,
+            listener.socket,
+            buffer[:],
+        )
+        if receive_err != nil {
+            if sync.atomic_load(&listener.closed) {
+                mcpe_runtime.destroy_error(receive_err)
+                break
+            }
+            if receive_err.kind == .Closed {
+                mcpe_runtime.destroy_error(receive_err)
+                if close_err := close_listener(listener); close_err != nil {
+                    mcpe_runtime.destroy_error(close_err)
+                }
+                break
+            }
+            if receive_err.kind == .Timeout {
+                mcpe_runtime.destroy_error(receive_err)
                 continue
             }
-            err := network_error("raknet.listener.receive")
-            mcpe_runtime.report_error(listener.config.error_log, err)
-            mcpe_runtime.destroy_error(err)
+            receive_err.operation = "raknet.listener.receive"
+            mcpe_runtime.report_error(listener.config.error_log, receive_err)
+            mcpe_runtime.destroy_error(receive_err)
             continue
         }
         if count == 0 {

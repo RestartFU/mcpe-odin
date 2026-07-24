@@ -30,6 +30,14 @@ MCPE_ODIN_ENFORCE_BENCHMARKS=1 ./tests/benchmarks/raknet-compare.sh
 ./tools/odinw run dragonfly
 ```
 
+RakNet examples:
+
+```sh
+./tools/odinw odin build examples/raknet-echo-server
+./tools/odinw odin build examples/raknet-echo-client
+./tools/odinw odin build examples/raknet-ping
+```
+
 Use packages from another Odin project:
 
 ```sh

@@ -193,6 +193,25 @@ binary_endian_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+ping_rejects_first_non_pong_like_go :: proc(t: ^testing.T) {
+    response, err := ping_decode_response([]u8{message.ID_OPEN_CONNECTION_REPLY_1})
+    testing.expect(t, response == nil)
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(t, err.kind, mcpe_runtime.Error_Kind.Protocol)
+        mcpe_runtime.destroy_error(err)
+    }
+
+    response, err = ping_decode_response(nil)
+    testing.expect(t, response == nil)
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(t, err.kind, mcpe_runtime.Error_Kind.Protocol)
+        mcpe_runtime.destroy_error(err)
+    }
+}
+
+@(test)
 connection_reliable_echo :: proc(t: ^testing.T) {
     listener, listen_err := listen("127.0.0.1:0")
     testing.expect(t, listen_err == nil)

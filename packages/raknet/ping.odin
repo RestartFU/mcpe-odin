@@ -47,6 +47,24 @@ resolve_endpoint :: proc(address: string) -> (endpoint: net.Endpoint, err: mcpe_
     return
 }
 
+ping_decode_response :: proc(data: []u8) -> (
+    response: []u8,
+    err: mcpe_runtime.Error,
+) {
+    if len(data) == 0 || data[0] != message.ID_UNCONNECTED_PONG {
+        err = mcpe_runtime.make_error(
+            .Protocol,
+            "raknet.ping",
+            "non-pong packet found",
+        )
+        return
+    }
+    pong := message.unmarshal_unconnected_pong(data[1:]) or_return
+    response = make([]u8, len(pong.data))
+    copy(response, pong.data)
+    return
+}
+
 ping :: proc(address: string) -> (response: []u8, err: mcpe_runtime.Error) {
     return ping_timeout(address, 5 * time.Second)
 }
@@ -124,13 +142,7 @@ ping_timeout_internal :: proc(
         if remote != endpoint {
             continue
         }
-        if received == 0 || buffer[0] != message.ID_UNCONNECTED_PONG {
-            continue
-        }
-        pong := message.unmarshal_unconnected_pong(buffer[1:received]) or_return
-        response = make([]u8, len(pong.data))
-        copy(response, pong.data)
-        return
+        return ping_decode_response(buffer[:received])
     }
     if mcpe_runtime.is_cancelled(token) {
         err = mcpe_runtime.make_error(.Cancelled, "raknet.ping")

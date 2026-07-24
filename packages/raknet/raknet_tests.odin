@@ -1145,10 +1145,10 @@ close_drains_before_disconnect :: proc(t: ^testing.T) {
     if dial_err != nil {
         return
     }
+    defer conn_destroy(client)
     server, accept_err := accept(listener)
     testing.expect(t, accept_err == nil)
     if accept_err != nil {
-        conn_destroy(client)
         return
     }
     defer conn_destroy(server)
@@ -1165,6 +1165,22 @@ close_drains_before_disconnect :: proc(t: ^testing.T) {
     }
     testing.expect(t, sync.atomic_load(&server.closed))
     testing.expect(t, time.since(started) < 2500 * time.Millisecond)
+
+    _, write_err := write(client, []u8{1})
+    testing.expect(t, write_err != nil)
+    if write_err != nil {
+        testing.expect_value(
+            t,
+            write_err.kind,
+            mcpe_runtime.Error_Kind.Closed,
+        )
+        mcpe_runtime.destroy_error(write_err)
+    }
+    testing.expect_value(
+        t,
+        remote_address(client),
+        listener_address(listener),
+    )
 }
 
 @(test)

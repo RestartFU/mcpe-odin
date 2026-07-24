@@ -679,7 +679,6 @@ close_connection :: proc(conn: ^Conn) -> mcpe_runtime.Error {
     if conn == nil {
         return nil
     }
-    begin_close := false
     if sync.mutex_guard(&conn.mutex) {
         if !conn.closed && conn.closing_at_ns == 0 {
             sync.atomic_store(
@@ -689,11 +688,7 @@ close_connection :: proc(conn: ^Conn) -> mcpe_runtime.Error {
             if conn_try_retain(conn) {
                 conn.closing_reference = true
             }
-            begin_close = true
         }
-    }
-    if begin_close || sync.atomic_load(&conn.closed) {
-        conn_release_app_reference(conn)
     }
     return nil
 }

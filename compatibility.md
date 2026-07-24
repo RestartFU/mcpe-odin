@@ -43,6 +43,8 @@ its sole close owner.
 
 `close` is overloaded for `Conn` and `Listener`. Closing starts shutdown;
 `conn_destroy` and `destroy_listener` additionally release Odin-owned storage.
+A `Conn` remains valid after `close` until `conn_destroy`, matching Go's
+ability to observe closed-operation errors after `Conn.Close`.
 
 `Error` is a nil-able pointer to rich `Error_Detail`, allowing Odin
 `or_return`. A non-nil terminal error must eventually be released with

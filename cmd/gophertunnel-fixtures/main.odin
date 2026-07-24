@@ -1,6 +1,7 @@
 package gophertunnel_fixtures
 
 import "core:fmt"
+import nbt "mcpe:gophertunnel/minecraft/nbt"
 import protocol "mcpe:gophertunnel/minecraft/protocol"
 
 emit :: proc(name: string, data: []u8) {
@@ -9,6 +10,76 @@ emit :: proc(name: string, data: []u8) {
         fmt.printf("%02x", value)
     }
     fmt.println()
+}
+
+nbt_fixture :: proc() -> nbt.Value {
+    list_one := nbt.new_value(nbt.value_int(1))
+    list_two := nbt.new_value(nbt.value_int(-2))
+    list_three := nbt.new_value(nbt.value_int(3))
+    list := make([]^nbt.Value, 3)
+    list[0] = list_one
+    list[1] = list_two
+    list[2] = list_three
+    nested_value := nbt.new_value(nbt.value_string("inside"))
+    nested_entries := make([]nbt.Named_Value, 1)
+    nested_entries[0] = {name = "Name", value = nested_value}
+    nested := nbt.new_value({
+        tag = .Compound,
+        compound = nested_entries,
+    })
+    entries := make([]nbt.Named_Value, 12)
+    entries[0] = {
+        name = "Byte",
+        value = nbt.new_value(nbt.value_byte(0x7f)),
+    }
+    entries[1] = {
+        name = "Short",
+        value = nbt.new_value(nbt.value_short(-1234)),
+    }
+    entries[2] = {
+        name = "Int",
+        value = nbt.new_value(nbt.value_int(-123_456)),
+    }
+    entries[3] = {
+        name = "Long",
+        value = nbt.new_value(nbt.value_long(-1_234_567_890_123)),
+    }
+    entries[4] = {
+        name = "Float",
+        value = nbt.new_value(nbt.value_float(123.5)),
+    }
+    entries[5] = {
+        name = "Double",
+        value = nbt.new_value(nbt.value_double(-987.25)),
+    }
+    entries[6] = {
+        name = "Bytes",
+        value = nbt.new_value(nbt.value_byte_array([]u8{1, 2, 3, 4})),
+    }
+    entries[7] = {
+        name = "String",
+        value = nbt.new_value(nbt.value_string("Minecraft")),
+    }
+    entries[8] = {
+        name = "List",
+        value = nbt.new_value({
+            tag = .List,
+            list_type = .Int,
+            list = list,
+        }),
+    }
+    entries[9] = {name = "Nested", value = nested}
+    entries[10] = {
+        name = "Ints",
+        value = nbt.new_value(nbt.value_int_array([]i32{-1, 0, 1})),
+    }
+    entries[11] = {
+        name = "Longs",
+        value = nbt.new_value(
+            nbt.value_long_array([]i64{min(i64), max(i64)}),
+        ),
+    }
+    return {tag = .Compound, compound = entries}
 }
 
 main :: proc() {
@@ -94,4 +165,24 @@ main :: proc() {
     protocol.write_rgba(&output, colour)
     protocol.write_var_rgba(&output, colour)
     emit("protocol_codec", protocol.writer_bytes(&output))
+
+    root := nbt_fixture()
+    encodings := [?]nbt.Encoding{
+        .Network_Little_Endian,
+        .Little_Endian,
+        .Network_Big_Endian,
+        .Big_Endian,
+    }
+    names := [?]string{
+        "nbt_network_little",
+        "nbt_little",
+        "nbt_network_big",
+        "nbt_big",
+    }
+    for encoding, index in encodings {
+        data, encode_err := nbt.marshal(&root, encoding)
+        assert(encode_err == nil)
+        emit(names[index], data)
+        delete(data)
+    }
 }

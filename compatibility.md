@@ -64,6 +64,14 @@ gophertunnel protocol `read_string`, `read_string_utf`, and
 using the `Reader` allocator. `writer_bytes` is borrowed until the next writer
 mutation or `writer_destroy`.
 
+NBT uses tagged `nbt.Value` trees instead of Go reflection. `marshal` returns
+allocator-owned bytes. `unmarshal` returns an allocator-owned root pointer and
+root-name string; call `destroy_value`, then `free` the root, and `delete` the
+name. `Value.compound` preserves wire order, while Go map decoding does not
+promise compound ordering. Network Little Endian encoding and decoding reject
+trees above 65,536 nodes to bound hostile heap amplification; byte and numeric
+arrays each count as one node.
+
 ## RakNet safety deviations
 
 Pinned go-raknet admits a seventeenth concurrent split assembly, then rejects

@@ -96,6 +96,10 @@ It currently includes byte-compatible little/big-endian primitives, signed
 and unsigned varints, strings and byte slices, vectors, block/chunk positions,
 UUID wire order, colours, and allocation guards. The differential fixture
 compares the combined Odin encoding byte-for-byte with pinned gophertunnel.
+The `mcpe:gophertunnel/minecraft/nbt` package adds tagged `Value` trees and
+Network Little Endian, Little Endian, Network Big Endian, and Big Endian
+binary NBT with upstream depth, string, and network-byte limits. Network
+encoding and decoding also share a 65,536-node heap-amplification ceiling.
 
 ## Compatibility policy
 

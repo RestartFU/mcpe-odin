@@ -8,8 +8,28 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
+
+type nestedNBT struct {
+	Name string
+}
+
+type nbtFixture struct {
+	Byte   byte
+	Short  int16
+	Int    int32
+	Long   int64
+	Float  float32
+	Double float64
+	Bytes  [4]byte
+	String string
+	List   []int32
+	Nested nestedNBT
+	Ints   [3]int32
+	Longs  [2]int64
+}
 
 func main() {
 	var buffer bytes.Buffer
@@ -76,4 +96,35 @@ func main() {
 	writer.VarRGBA(&rgba)
 
 	fmt.Printf("protocol_codec %s\n", hex.EncodeToString(buffer.Bytes()))
+
+	fixture := nbtFixture{
+		Byte:   0x7f,
+		Short:  -1234,
+		Int:    -123456,
+		Long:   -1234567890123,
+		Float:  123.5,
+		Double: -987.25,
+		Bytes:  [4]byte{1, 2, 3, 4},
+		String: "Minecraft",
+		List:   []int32{1, -2, 3},
+		Nested: nestedNBT{Name: "inside"},
+		Ints:   [3]int32{-1, 0, 1},
+		Longs:  [2]int64{-1 << 63, 1<<63 - 1},
+	}
+	encodings := []struct {
+		name     string
+		encoding nbt.Encoding
+	}{
+		{"nbt_network_little", nbt.NetworkLittleEndian},
+		{"nbt_little", nbt.LittleEndian},
+		{"nbt_network_big", nbt.NetworkBigEndian},
+		{"nbt_big", nbt.BigEndian},
+	}
+	for _, entry := range encodings {
+		data, err := nbt.MarshalEncoding(fixture, entry.encoding)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%s %s\n", entry.name, hex.EncodeToString(data))
+	}
 }

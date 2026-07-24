@@ -65,7 +65,8 @@ write_address :: proc(w: ^wire.Writer, address: Address) {
         for value in address.address {
             wire.write_u8(w, value)
         }
-        wire.write_u32_be(w, address.scope_id)
+        // Pinned go-raknet writes a zero scope ID.
+        wire.write_u32_be(w, 0)
         return
     }
 
@@ -88,17 +89,13 @@ read_address :: proc(r: ^wire.Reader) -> (address: Address, err: mcpe_runtime.Er
         address.port = wire.read_u16_be(r) or_return
         return
     }
-    if family != 6 {
-        err = mcpe_runtime.make_error(.Malformed, "wire.read_address", "unknown address family")
-        return
-    }
-
+    // Pinned go-raknet treats every non-zero/non-IPv4 family as IPv6.
     _ = wire.read_bytes(r, 2) or_return // AF_INET6.
     address.family = .IPv6
     address.port = wire.read_u16_be(r) or_return
     _ = wire.read_bytes(r, 4) or_return // Flow info.
     bytes := wire.read_bytes(r, 16) or_return
     copy(address.address[:], bytes)
-    address.scope_id = wire.read_u32_be(r) or_return
+    _ = wire.read_u32_be(r) or_return // Scope ID is discarded upstream.
     return
 }

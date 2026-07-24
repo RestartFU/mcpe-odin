@@ -17,6 +17,47 @@ address_v4_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+address_v6_round_trip_ignores_scope_like_upstream :: proc(t: ^testing.T) {
+    bytes := [16]u8{
+        0x20, 0x01, 0x0d, 0xb8,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 1,
+    }
+    expected := address_v6(bytes, 19132, 99)
+    w := wire.writer()
+    defer wire.writer_destroy(&w)
+    write_address(&w, expected)
+    testing.expect_value(t, wire.load_u32_be(w.data[len(w.data) - 4:]), u32(0))
+
+    r := wire.reader(w.data[:])
+    actual, err := read_address(&r)
+    testing.expect(t, err == nil)
+    expected.scope_id = 0
+    testing.expect_value(t, actual, expected)
+}
+
+@(test)
+address_unknown_family_decodes_as_ipv6_like_upstream :: proc(t: ^testing.T) {
+    data: [ADDRESS_V6_SIZE]u8
+    data[0] = 5
+    data[3] = 0x4a
+    data[4] = 0xbc
+    data[9] = 0x20
+    data[10] = 0x01
+    data[len(data) - 1] = 7
+
+    r := wire.reader(data[:])
+    actual, err := read_address(&r)
+    testing.expect(t, err == nil)
+    testing.expect_value(t, actual.family, Address_Family.IPv6)
+    testing.expect_value(t, actual.port, u16(19132))
+    testing.expect_value(t, actual.address[0], u8(0x20))
+    testing.expect_value(t, actual.address[1], u8(0x01))
+    testing.expect_value(t, actual.scope_id, u32(0))
+}
+
+@(test)
 unconnected_ping_round_trip :: proc(t: ^testing.T) {
     expected := Unconnected_Ping{ping_time = 1234567, client_guid = -42}
     data := marshal_unconnected_ping(expected)

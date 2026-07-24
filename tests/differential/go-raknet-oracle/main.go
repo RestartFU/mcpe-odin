@@ -184,7 +184,10 @@ func udpProxy(targetAddress string, dropPercent int, chaos bool) {
 	var heldPacket []byte
 	var heldDestination *net.UDPAddr
 	packetIndex := 0
-	dropState := uint32(0x6d2b79f5)
+	clientDropState := uint32(0x6d2b79f5)
+	serverDropState := uint32(0x1b56c4e9)
+	clientPacketCount := 0
+	serverPacketCount := 0
 	for {
 		if heldPacket != nil {
 			if err = socket.SetReadDeadline(time.Now().Add(10 * time.Millisecond)); err != nil {
@@ -206,18 +209,28 @@ func udpProxy(targetAddress string, dropPercent int, chaos bool) {
 			panic(readErr)
 		}
 		packetIndex++
-		dropState = dropState*1664525 + 1013904223
-		if dropPercent > 0 && int(dropState%100) < dropPercent {
-			continue
-		}
 		destination := target
-		if source.String() == target.String() {
+		fromServer := source.String() == target.String()
+		if fromServer {
 			if client == nil {
 				continue
 			}
 			destination = client
 		} else {
 			client = source
+		}
+		dropState := &clientDropState
+		directionPacketCount := &clientPacketCount
+		if fromServer {
+			dropState = &serverDropState
+			directionPacketCount = &serverPacketCount
+		}
+		*directionPacketCount++
+		if *directionPacketCount > 12 {
+			*dropState = *dropState*1664525 + 1013904223
+			if dropPercent > 0 && int(*dropState%100) < dropPercent {
+				continue
+			}
 		}
 		if chaos && packetIndex%5 == 0 && heldPacket == nil {
 			heldPacket = append([]byte(nil), buffer[:count]...)

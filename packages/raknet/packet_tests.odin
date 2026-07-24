@@ -2,6 +2,7 @@ package raknet
 
 import "core:slice"
 import "core:testing"
+import mcpe_runtime "mcpe:runtime"
 
 @(test)
 packet_round_trip :: proc(t: ^testing.T) {
@@ -224,6 +225,29 @@ sequenced_packets_discard_stale_indices :: proc(t: ^testing.T) {
     accepted, err = conn_accept_sequenced(&conn, &current)
     testing.expect(t, err == nil)
     testing.expect(t, accepted)
+}
+
+@(test)
+acknowledgements_are_bounded_and_batched :: proc(t: ^testing.T) {
+    conn: Conn
+    conn.pending_acks = make([dynamic]UInt24, 0, 4)
+    defer delete(conn.pending_acks)
+
+    testing.expect(t, conn_queue_ack(&conn, 10) == nil)
+    testing.expect(t, conn_queue_ack(&conn, 11) == nil)
+    testing.expect_value(t, len(conn.pending_acks), 2)
+
+    resize(&conn.pending_acks, MAX_PENDING_ACKS)
+    err := conn_queue_ack(&conn, 12)
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(err)
+    }
 }
 
 @(test)

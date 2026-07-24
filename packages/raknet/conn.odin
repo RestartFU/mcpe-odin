@@ -24,6 +24,7 @@ Connection_Callback_Kind :: enum {
 }
 
 MAX_INCOMING_BYTES :: i64(16 * 1024 * 1024)
+MAX_PENDING_ACKS   :: 8192
 
 Conn :: struct {
     allocator:   mem.Allocator,
@@ -35,6 +36,7 @@ Conn :: struct {
     mtu:         u16,
 
     mutex:          sync.Mutex,
+    ack_mutex:      sync.Mutex,
     closed:         bool,
     connected:      bool,
     app_reference:  bool,
@@ -66,6 +68,7 @@ Conn :: struct {
     resend:          Resend_Map,
     incoming:        channel.Chan([]u8),
     connected_event: channel.Chan(bool),
+    pending_acks:    [dynamic]UInt24,
 
     receive_thread: ^thread.Thread,
     tick_thread:    ^thread.Thread,
@@ -85,6 +88,15 @@ clamp_mtu :: proc(mtu, minimum: u16) -> u16 {
 
 effective_mtu :: proc(conn: ^Conn) -> u16 {
     return conn.mtu - 28
+}
+
+conn_destroy_empty_collections :: proc(conn: ^Conn) {
+    datagram_window_destroy(&conn.window)
+    reliable_window_destroy(&conn.reliable_window)
+    packet_queue_destroy(&conn.ordered)
+    split_assembler_destroy(&conn.splits)
+    resend_map_destroy(&conn.resend)
+    delete(conn.pending_acks)
 }
 
 conn_create :: proc(
@@ -111,12 +123,14 @@ conn_create :: proc(
     conn.ordered = packet_queue_init()
     conn.splits = split_assembler_init(allocator)
     conn.resend = resend_map_init()
+    conn.pending_acks = make([dynamic]UInt24, 0, 128, allocator)
     conn.created_at = mcpe_runtime.system_now_ns(nil)
     conn.last_activity = conn.created_at
 
     incoming, incoming_err := channel.create(channel.Chan([]u8), 4096, context.allocator)
     if incoming_err != .None {
         err = mcpe_runtime.make_error(.Internal, "raknet.conn_create", "create incoming channel")
+        conn_destroy_empty_collections(conn)
         free(conn, allocator)
         conn = nil
         return
@@ -125,6 +139,7 @@ conn_create :: proc(
     connected_event, connected_err := channel.create(channel.Chan(bool), 1, context.allocator)
     if connected_err != .None {
         channel.destroy(conn.incoming)
+        conn_destroy_empty_collections(conn)
         err = mcpe_runtime.make_error(.Internal, "raknet.conn_create", "create connected channel")
         free(conn, allocator)
         conn = nil
@@ -187,6 +202,7 @@ conn_finalize :: proc(conn: ^Conn) {
     packet_queue_destroy(&conn.ordered)
     split_assembler_destroy(&conn.splits)
     resend_map_destroy(&conn.resend)
+    delete(conn.pending_acks)
     channel.destroy(conn.incoming)
     channel.destroy(conn.connected_event)
     free(conn, conn.allocator)
@@ -549,6 +565,42 @@ conn_send_acknowledgement :: proc(conn: ^Conn, packets: []UInt24, flag: u8) -> m
     return nil
 }
 
+conn_queue_ack :: proc(conn: ^Conn, sequence: UInt24) -> mcpe_runtime.Error {
+    if sync.mutex_guard(&conn.ack_mutex) {
+        if len(conn.pending_acks) >= MAX_PENDING_ACKS {
+            return mcpe_runtime.make_error(
+                .Limit_Exceeded,
+                "raknet.receive_datagram",
+                "pending acknowledgement budget exceeded",
+            )
+        }
+        append(&conn.pending_acks, sequence)
+    }
+    return nil
+}
+
+conn_flush_acks :: proc(conn: ^Conn) -> mcpe_runtime.Error {
+    acknowledgements: []UInt24
+    if sync.mutex_guard(&conn.ack_mutex) {
+        if len(conn.pending_acks) == 0 {
+            return nil
+        }
+        acknowledgements = make(
+            []UInt24,
+            len(conn.pending_acks),
+            conn.allocator,
+        )
+        copy(acknowledgements, conn.pending_acks[:])
+        resize(&conn.pending_acks, 0)
+    }
+    defer delete(acknowledgements, conn.allocator)
+    return conn_send_acknowledgement(
+        conn,
+        acknowledgements,
+        BIT_FLAG_ACK,
+    )
+}
+
 conn_handle_ack :: proc(conn: ^Conn, data: []u8, negative: bool) -> mcpe_runtime.Error {
     ack := acknowledgement_init()
     defer acknowledgement_destroy(&ack)
@@ -890,7 +942,7 @@ conn_receive_datagram :: proc(conn: ^Conn, data: []u8) -> mcpe_runtime.Error {
     if !datagram_window_add(&conn.window, sequence, now) {
         return nil
     }
-    conn_send_acknowledgement(conn, []UInt24{sequence}, BIT_FLAG_ACK) or_return
+    conn_queue_ack(conn, sequence) or_return
 
     if conn.limits_enabled && datagram_window_size(&conn.window) > MAX_WINDOW_SIZE {
         return mcpe_runtime.make_error(.Limit_Exceeded, "raknet.receive_datagram", "datagram window too large")
@@ -967,6 +1019,9 @@ conn_tick_thread :: proc(worker: ^thread.Thread) {
         time.sleep(100 * time.Millisecond)
         ticks += 1
         now := mcpe_runtime.system_now_ns(nil)
+        if flush_err := conn_flush_acks(conn); flush_err != nil {
+            mcpe_runtime.destroy_error(flush_err)
+        }
         handshake_expired := false
         if conn.mode == .Server {
             if sync.mutex_guard(&conn.mutex) {

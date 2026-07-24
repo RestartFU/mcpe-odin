@@ -268,6 +268,8 @@ conn_release :: proc(conn: ^Conn) {
 }
 
 conn_finalize_detached :: proc(data: rawptr) {
+    // release_finished gates Listener-owned Released callbacks only. A
+    // detached client has no such waiter, and conn_finalize frees this flag.
     conn_finalize((^Conn)(data))
 }
 

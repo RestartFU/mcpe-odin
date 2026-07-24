@@ -68,13 +68,16 @@ unmarshal_open_connection_reply_1 :: proc(data: []u8) -> (
         return
     }
     pk.server_guid = i64(wire.load_u64_be(data[16:24]))
-    pk.server_has_security = data[24] != 0
+    security_value := data[24]
+    if len(data) < 27 + int(security_value) * 4 {
+        err = mcpe_runtime.make_error(.Unexpected_EOF, "wire.unmarshal_open_connection_reply_1")
+        return
+    }
+    // Upstream sizes this malformed-input preflight from the raw byte, but
+    // still interprets every non-zero value as true afterwards.
+    pk.server_has_security = security_value != 0
     offset := 25
     if pk.server_has_security {
-        if len(data) < 31 {
-            err = mcpe_runtime.make_error(.Unexpected_EOF, "wire.unmarshal_open_connection_reply_1")
-            return
-        }
         pk.cookie = wire.load_u32_be(data[offset:offset + 4])
         offset += 4
     }

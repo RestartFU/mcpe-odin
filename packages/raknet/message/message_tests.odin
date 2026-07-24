@@ -3,6 +3,7 @@ package raknet_message
 import "core:testing"
 import "core:slice"
 import wire "mcpe:raknet/wire"
+import mcpe_runtime "mcpe:runtime"
 
 @(test)
 address_v4_round_trip :: proc(t: ^testing.T) {
@@ -55,6 +56,31 @@ address_unknown_family_decodes_as_ipv6_like_upstream :: proc(t: ^testing.T) {
     testing.expect_value(t, actual.address[0], u8(0x20))
     testing.expect_value(t, actual.address[1], u8(0x01))
     testing.expect_value(t, actual.scope_id, u32(0))
+}
+
+@(test)
+reply_one_sizes_security_preflight_from_raw_byte :: proc(t: ^testing.T) {
+    data: [35]u8
+    data[24] = 2
+    wire.store_u32_be(data[25:29], 0xa1b2c3d4)
+    wire.store_u16_be(data[29:31], 1492)
+
+    _, err := unmarshal_open_connection_reply_1(data[:31])
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Unexpected_EOF,
+        )
+        mcpe_runtime.destroy_error(err)
+    }
+
+    actual, full_err := unmarshal_open_connection_reply_1(data[:])
+    testing.expect(t, full_err == nil)
+    testing.expect(t, actual.server_has_security)
+    testing.expect_value(t, actual.cookie, u32(0xa1b2c3d4))
+    testing.expect_value(t, actual.mtu, u16(1492))
 }
 
 @(test)

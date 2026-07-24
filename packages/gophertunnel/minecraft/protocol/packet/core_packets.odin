@@ -84,6 +84,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDResourcePacksInfo,
          IDResourcePackStack,
          IDResourcePackClientResponse,
+         IDText,
          IDSetTime,
          IDRemoveActor,
          IDTakeItemActor,
@@ -204,6 +205,58 @@ write_payload :: proc(
         protocol.write_u16(output, u16(len(packet.packs_to_download)))
         for entry in packet.packs_to_download {
             protocol.write_string(output, entry)
+        }
+    case Text:
+        if !valid_text_type(packet.text_type) {
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write",
+                "unknown text type",
+            )
+        }
+        if len(packet.message) == 0 {
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write",
+                "message cannot be empty",
+            )
+        }
+        if text_type_has_parameters(packet.text_type) &&
+           len(packet.parameters) > protocol.MAX_COLLECTION_ELEMENTS {
+            return packet_error(
+                .Limit_Exceeded,
+                "gophertunnel.packet.write",
+                "text parameter list exceeds entry limit",
+            )
+        }
+        protocol.write_bool(output, packet.needs_translation)
+        protocol.write_u8(output, text_category(packet.text_type))
+        protocol.write_u8(output, packet.text_type)
+        switch packet.text_type {
+        case Text_Type_Chat, Text_Type_Whisper, Text_Type_Announcement:
+            protocol.write_string(output, packet.source_name)
+            protocol.write_string(output, packet.message)
+        case Text_Type_Raw,
+             Text_Type_Tip,
+             Text_Type_System,
+             Text_Type_Object,
+             Text_Type_Object_Whisper,
+             Text_Type_Object_Announcement:
+            protocol.write_string(output, packet.message)
+        case Text_Type_Translation,
+             Text_Type_Popup,
+             Text_Type_Jukebox_Popup:
+            protocol.write_string(output, packet.message)
+            protocol.write_varuint32(output, u32(len(packet.parameters)))
+            for parameter in packet.parameters {
+                protocol.write_string(output, parameter)
+            }
+        }
+        protocol.write_string(output, packet.xuid)
+        protocol.write_string(output, packet.platform_chat_id)
+        protocol.write_bool(output, packet.filtered_message.set)
+        if packet.filtered_message.set {
+            protocol.write_string(output, packet.filtered_message.value)
         }
     case Set_Time:
         protocol.write_varint32(output, packet.time)
@@ -426,6 +479,8 @@ decode_packet :: proc(
         value = read_resource_pack_stack(&input) or_return
     case IDResourcePackClientResponse:
         value = read_resource_pack_client_response(&input) or_return
+    case IDText:
+        value = read_text(&input) or_return
     case IDSetTime:
         packet := Set_Time{}
         packet.time = protocol.read_varint32(&input) or_return

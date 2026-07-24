@@ -614,6 +614,33 @@ main :: proc() {
             include_editor_packs = true,
         },
     )
+    emit_packet(
+        "packet_text_raw",
+        packet.Text{
+            text_type = packet.Text_Type_Raw,
+            message = "raw message",
+        },
+    )
+    emit_packet(
+        "packet_text_chat",
+        packet.Text{
+            text_type = packet.Text_Type_Chat,
+            source_name = "Steve",
+            message = "hello",
+            xuid = "2533274790395904",
+            platform_chat_id = "platform",
+            filtered_message = protocol.option(string("filtered hello")),
+        },
+    )
+    emit_packet(
+        "packet_text_translation",
+        packet.Text{
+            text_type = packet.Text_Type_Translation,
+            needs_translation = true,
+            message = "chat.type.text",
+            parameters = []string{"Steve", "hello"},
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

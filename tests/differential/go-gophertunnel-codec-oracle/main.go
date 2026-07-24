@@ -599,6 +599,39 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_text_raw",
+		&packet.Text{
+			TextType: packet.TextTypeRaw,
+			Message:  "raw message",
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_text_chat",
+		&packet.Text{
+			TextType:        packet.TextTypeChat,
+			SourceName:      "Steve",
+			Message:         "hello",
+			XUID:            "2533274790395904",
+			PlatformChatID:  "platform",
+			FilteredMessage: protocol.Option("filtered hello"),
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_text_translation",
+		&packet.Text{
+			TextType:         packet.TextTypeTranslation,
+			NeedsTranslation: true,
+			Message:          "chat.type.text",
+			Parameters:       []string{"Steve", "hello"},
+		},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

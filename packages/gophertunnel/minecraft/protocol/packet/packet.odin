@@ -59,6 +59,7 @@ Packet :: union {
     Resource_Packs_Info,
     Resource_Pack_Stack,
     Resource_Pack_Client_Response,
+    Text,
     Set_Time,
     Remove_Actor,
     Take_Item_Actor,
@@ -124,6 +125,7 @@ packet_id :: proc(value: Packet) -> (
     case Resource_Pack_Stack:         id = IDResourcePackStack
     case Resource_Pack_Client_Response:
         id = IDResourcePackClientResponse
+    case Text:                        id = IDText
     case Set_Time:                    id = IDSetTime
     case Remove_Actor:                id = IDRemoveActor
     case Take_Item_Actor:             id = IDTakeItemActor
@@ -197,6 +199,8 @@ destroy_packet :: proc(
         destroy_resource_packs_info_value(packet, allocator)
     case Resource_Pack_Stack:
         destroy_resource_pack_stack_value(packet, allocator)
+    case Text:
+        destroy_text_value(packet, allocator)
     case Server_To_Client_Handshake:
         delete(packet.jwt, allocator)
     case Disconnect:

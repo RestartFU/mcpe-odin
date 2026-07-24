@@ -681,3 +681,116 @@ nested_resource_pack_fields_are_cleaned_on_truncation :: proc(
         delete(data)
     }
 }
+
+@(test)
+text_packet_variants_round_trip :: proc(t: ^testing.T) {
+    packets := [?]Packet{
+        Text{text_type = Text_Type_Raw, message = "raw message"},
+        Text{
+            text_type = Text_Type_Chat,
+            source_name = "Steve",
+            message = "hello",
+            xuid = "2533274790395904",
+            platform_chat_id = "platform",
+            filtered_message = protocol.option(string("filtered hello")),
+        },
+        Text{
+            text_type = Text_Type_Translation,
+            needs_translation = true,
+            message = "chat.type.text",
+            parameters = []string{"Steve", "hello"},
+        },
+    }
+    for original in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, header, decode_err := decode_packet(data)
+        testing.expect(t, decode_err == nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+            delete(data)
+            continue
+        }
+        testing.expect_value(t, header.packet_id, IDText)
+        reencoded, reencode_err := encode_packet(decoded)
+        testing.expect(t, reencode_err == nil)
+        if reencode_err == nil {
+            testing.expect(t, slice.equal(data, reencoded))
+            delete(reencoded)
+        } else {
+            mcpe_runtime.destroy_error(reencode_err)
+        }
+        destroy_packet(&decoded)
+        delete(data)
+    }
+}
+
+@(test)
+text_packet_rejects_empty_message_and_cleans_truncation :: proc(
+    t: ^testing.T,
+) {
+    _, empty_err := encode_packet(Text{text_type = Text_Type_Chat})
+    testing.expect(t, empty_err != nil)
+    if empty_err != nil {
+        testing.expect_value(
+            t,
+            empty_err.kind,
+            mcpe_runtime.Error_Kind.Invalid_Argument,
+        )
+        mcpe_runtime.destroy_error(empty_err)
+    }
+    _, type_err := encode_packet(
+        Text{text_type = 12, message = "invalid"},
+    )
+    testing.expect(t, type_err != nil)
+    if type_err != nil {
+        testing.expect_value(
+            t,
+            type_err.kind,
+            mcpe_runtime.Error_Kind.Invalid_Argument,
+        )
+        mcpe_runtime.destroy_error(type_err)
+    }
+    ignored_parameters := make(
+        []string,
+        protocol.MAX_COLLECTION_ELEMENTS + 1,
+    )
+    ignored_data, ignored_err := encode_packet(
+        Text{
+            text_type = Text_Type_Raw,
+            message = "parameters ignored",
+            parameters = ignored_parameters,
+        },
+    )
+    testing.expect(t, ignored_err == nil)
+    if ignored_err != nil {
+        mcpe_runtime.destroy_error(ignored_err)
+    }
+    delete(ignored_data)
+    delete(ignored_parameters)
+
+    original: Packet = Text{
+        text_type = Text_Type_Chat,
+        source_name = "Steve",
+        message = "hello",
+        xuid = "2533274790395904",
+        filtered_message = protocol.option(string("filtered")),
+    }
+    data, encode_err := encode_packet(original)
+    testing.expect(t, encode_err == nil)
+    if encode_err != nil {
+        mcpe_runtime.destroy_error(encode_err)
+        return
+    }
+    decoded, _, decode_err := decode_packet(data[:len(data) - 1])
+    testing.expect(t, decoded == nil)
+    testing.expect(t, decode_err != nil)
+    if decode_err != nil {
+        mcpe_runtime.destroy_error(decode_err)
+    }
+    delete(data)
+}

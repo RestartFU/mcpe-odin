@@ -106,6 +106,11 @@ pack IDs even though its reader rejects that count, and counts above 65,535
 wrap on the wire. Odin rejects more than 1,024 entries during encoding to keep
 its encoder and guarded decoder symmetric.
 
+Pinned gophertunnel's `Text` writer accepts unknown raw text-type bytes when
+the caller supplies a non-empty message, but emits no message field and
+therefore produces data its reader rejects. Odin rejects text types outside
+the twelve defined upstream variants.
+
 ## RakNet safety deviations
 
 Pinned go-raknet admits a seventeenth concurrent split assembly, then rejects

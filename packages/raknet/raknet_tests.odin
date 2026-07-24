@@ -171,6 +171,25 @@ uint24_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+generated_ids_match_upstream_sign_and_direction :: proc(t: ^testing.T) {
+    testing.expect_value(t, positive_id_seed(0), i64(1) << 61)
+    testing.expect(t, positive_id_seed(max(u64)) >= i64(1) << 61)
+    testing.expect(t, positive_id_seed(max(u64)) < i64(1) << 62)
+
+    first_client := next_dialer_id()
+    second_client := next_dialer_id()
+    testing.expect(t, first_client < 0)
+    testing.expect(t, second_client < 0)
+    testing.expect(t, second_client > first_client)
+
+    first_listener := next_listener_id()
+    second_listener := next_listener_id()
+    testing.expect(t, first_listener > 0)
+    testing.expect(t, second_listener > 0)
+    testing.expect(t, second_listener > first_listener)
+}
+
+@(test)
 uint24_wraps_at_wire_width :: proc(t: ^testing.T) {
     value := UInt24(UINT24_MASK)
     testing.expect_value(t, uint24_inc(&value), UInt24(UINT24_MASK))

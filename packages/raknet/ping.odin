@@ -12,14 +12,22 @@ MAX_MTU_SIZE     :: u16(1492)
 MAX_WINDOW_SIZE  :: UInt24(2048)
 
 START_TIME := time.now()
-DIALER_ID: i64 = -1
+DIALER_ID: i64
+DIALER_ID_MUTEX: sync.Mutex
 
 timestamp :: proc() -> i64 {
     return i64(time.duration_milliseconds(time.since(START_TIME)))
 }
 
 next_dialer_id :: proc() -> i64 {
-    return sync.atomic_add(&DIALER_ID, -1)
+    if sync.mutex_guard(&DIALER_ID_MUTEX) {
+        if DIALER_ID == 0 {
+            DIALER_ID = -random_positive_i64()
+        }
+        DIALER_ID += 1
+        return DIALER_ID
+    }
+    unreachable()
 }
 
 network_error :: proc(operation: string, kind: mcpe_runtime.Error_Kind = .Network) -> mcpe_runtime.Error {

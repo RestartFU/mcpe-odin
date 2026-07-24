@@ -73,6 +73,30 @@ random_u64 :: proc() -> u64 {
     return load_u64_be(bytes[:])
 }
 
+positive_id_seed :: proc(raw: u64) -> i64 {
+    ID_SEED_MIN  :: u64(1) << 61
+    ID_SEED_SPAN :: u64(1) << 61
+    return i64(raw % ID_SEED_SPAN + ID_SEED_MIN)
+}
+
+random_positive_i64 :: proc() -> i64 {
+    return positive_id_seed(random_u64())
+}
+
+LISTENER_ID: i64
+LISTENER_ID_MUTEX: sync.Mutex
+
+next_listener_id :: proc() -> i64 {
+    if sync.mutex_guard(&LISTENER_ID_MUTEX) {
+        if LISTENER_ID == 0 {
+            LISTENER_ID = random_positive_i64()
+        }
+        LISTENER_ID += 1
+        return LISTENER_ID
+    }
+    unreachable()
+}
+
 listener_cookie :: proc(listener: ^Listener, remote: net.Endpoint, salt: u64) -> u32 {
     if listener.config.disable_cookies {
         return 0
@@ -261,7 +285,7 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
     listener.config.max_mtu = clamp_mtu(listener.config.max_mtu, MIN_MTU_SIZE)
     listener.socket = socket
     listener.endpoint = bound
-    listener.id = i64(random_u64())
+    listener.id = next_listener_id()
     listener.cookie_salt = random_u64()
     listener.previous_salt = random_u64()
     listener.connections = make(map[net.Endpoint]^Conn, listener.allocator)

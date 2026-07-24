@@ -45,6 +45,9 @@ serve_echo :: proc() {
     if _, write_err := raknet.write(conn, buffer[:count]); write_err != nil {
         fail("write", write_err)
     }
+    // Keep the oracle endpoint alive long enough to prove retransmission when
+    // the proxy drops the first echo datagram.
+    time.sleep(1500 * time.Millisecond)
 }
 
 dial_echo :: proc(address: string) {

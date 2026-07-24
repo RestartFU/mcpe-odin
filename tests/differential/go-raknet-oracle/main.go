@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"net"
 	"net/netip"
 	"os"
+	"strconv"
 	"time"
 
 	raknet "github.com/sandertv/go-raknet"
@@ -133,7 +135,7 @@ func serveEcho() {
 		panic(err)
 	}
 	_ = conn.Close()
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(1500 * time.Millisecond)
 }
 
 func dialEcho(address string) {
@@ -156,6 +158,47 @@ func dialEcho(address string) {
 	fmt.Println("go-client-ok")
 }
 
+func udpProxy(targetAddress string, dropEvery int) {
+	target, err := net.ResolveUDPAddr("udp", targetAddress)
+	if err != nil {
+		panic(err)
+	}
+	socket, err := net.ListenUDP("udp", &net.UDPAddr{
+		IP: net.IPv4(127, 0, 0, 1),
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer socket.Close()
+	fmt.Println(socket.LocalAddr().String())
+
+	buffer := make([]byte, 2048)
+	var client *net.UDPAddr
+	packetIndex := 0
+	for {
+		count, source, readErr := socket.ReadFromUDP(buffer)
+		if readErr != nil {
+			panic(readErr)
+		}
+		packetIndex++
+		if dropEvery > 0 && packetIndex%dropEvery == 0 {
+			continue
+		}
+		destination := target
+		if source.String() == target.String() {
+			if client == nil {
+				continue
+			}
+			destination = client
+		} else {
+			client = source
+		}
+		if _, err = socket.WriteToUDP(buffer[:count], destination); err != nil {
+			panic(err)
+		}
+	}
+}
+
 func main() {
 	if len(os.Args) == 1 || os.Args[1] == "fixtures" {
 		fixtures()
@@ -169,6 +212,15 @@ func main() {
 			panic("usage: go-oracle dial-echo <address>")
 		}
 		dialEcho(os.Args[2])
+	case "udp-proxy":
+		if len(os.Args) != 4 {
+			panic("usage: go-oracle udp-proxy <target> <drop-every>")
+		}
+		dropEvery, err := strconv.Atoi(os.Args[3])
+		if err != nil || dropEvery < 0 {
+			panic("invalid drop-every")
+		}
+		udpProxy(os.Args[2], dropEvery)
 	default:
 		panic("unknown operation")
 	}

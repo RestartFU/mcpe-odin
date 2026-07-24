@@ -111,7 +111,7 @@ ping_timeout_internal :: proc(
         }
         received, remote, receive_err := net.recv_udp(socket, buffer[:])
         if receive_err != nil {
-            if receive_err == .Timeout {
+            if receive_err == .Timeout || receive_err == .Would_Block {
                 continue
             }
             if mcpe_runtime.is_cancelled(token) {

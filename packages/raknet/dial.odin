@@ -69,7 +69,7 @@ dialer_receive :: proc(
     count, remote, receive_err = net.recv_udp(socket, buffer)
     if receive_err != nil {
         kind := mcpe_runtime.Error_Kind.Network
-        if receive_err == .Timeout {
+        if receive_err == .Timeout || receive_err == .Would_Block {
             kind = .Timeout
         }
         err = network_error("raknet.dial.receive", kind)

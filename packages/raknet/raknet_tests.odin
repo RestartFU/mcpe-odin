@@ -4,6 +4,7 @@ import "core:net"
 import "core:slice"
 import "core:sync"
 import channel "core:sync/chan"
+import "core:sys/linux"
 import "core:testing"
 import "core:thread"
 import "core:time"
@@ -60,6 +61,78 @@ test_upstream_listen :: proc "odin" (
 
 TEST_UPSTREAM_LISTENER_VTABLE := Upstream_Packet_Listener_VTable{
     listen = test_upstream_listen,
+}
+
+@(test)
+dialer_retries_only_go_transient_receive_errors :: proc(t: ^testing.T) {
+    transient_codes := [?]linux.Errno{
+        .ECONNREFUSED,
+        .EHOSTUNREACH,
+        .ENETUNREACH,
+        .ECONNRESET,
+    }
+    for code in transient_codes {
+        count := 0
+        err := mcpe_runtime.make_error(
+            .Network,
+            "raknet.test",
+            native_code = i64(code),
+        )
+        retry, terminal := dialer_retry_receive_error(
+            Dialer{max_transient_errors = 1},
+            &count,
+            err,
+        )
+        testing.expect(t, retry)
+        testing.expect(t, terminal == nil)
+        testing.expect_value(t, count, 1)
+    }
+
+    count := 0
+    err := mcpe_runtime.make_error(
+        .Network,
+        "raknet.test",
+        native_code = i64(linux.Errno.EINVAL),
+    )
+    retry, terminal := dialer_retry_receive_error(
+        Dialer{max_transient_errors = -1},
+        &count,
+        err,
+    )
+    testing.expect(t, !retry)
+    testing.expect(t, terminal == err)
+    testing.expect_value(t, count, 0)
+    mcpe_runtime.destroy_error(terminal)
+}
+
+@(test)
+dialer_receive_retry_limit_matches_go :: proc(t: ^testing.T) {
+    count := 1
+    err := mcpe_runtime.make_error(
+        .Network,
+        "raknet.test",
+        native_code = i64(linux.Errno.ECONNREFUSED),
+    )
+    retry, terminal := dialer_retry_receive_error(
+        Dialer{max_transient_errors = 1},
+        &count,
+        err,
+    )
+    testing.expect(t, !retry)
+    testing.expect(t, terminal == err)
+    testing.expect_value(t, count, 1)
+    mcpe_runtime.destroy_error(terminal)
+
+    timeout_count := 0
+    timeout_err := mcpe_runtime.make_error(.Timeout, "raknet.test")
+    retry, terminal = dialer_retry_receive_error(
+        Dialer{max_transient_errors = 1},
+        &timeout_count,
+        timeout_err,
+    )
+    testing.expect(t, retry)
+    testing.expect(t, terminal == nil)
+    testing.expect_value(t, timeout_count, 0)
 }
 
 Test_Error_Log :: struct {

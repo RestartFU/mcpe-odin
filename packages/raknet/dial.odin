@@ -1,6 +1,7 @@
 package raknet
 
 import "core:net"
+import "core:sys/linux"
 import channel "core:sync/chan"
 import "core:time"
 import message "mcpe:raknet/message"
@@ -86,6 +87,12 @@ dialer_retry_receive_error :: proc(
     if receive_err.kind == .Timeout {
         mcpe_runtime.destroy_error(receive_err)
         return true, nil
+    }
+    errno := linux.Errno(receive_err.native_code)
+    #partial switch errno {
+    case .ECONNREFUSED, .EHOSTUNREACH, .ENETUNREACH, .ECONNRESET:
+    case:
+        return false, receive_err
     }
     if dialer.max_transient_errors == -1 ||
        transient_error_count^ < dialer.max_transient_errors {

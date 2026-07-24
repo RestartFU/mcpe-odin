@@ -580,25 +580,21 @@ conn_queue_ack :: proc(conn: ^Conn, sequence: UInt24) -> mcpe_runtime.Error {
 }
 
 conn_flush_acks :: proc(conn: ^Conn) -> mcpe_runtime.Error {
-    acknowledgements: []UInt24
     if sync.mutex_guard(&conn.ack_mutex) {
         if len(conn.pending_acks) == 0 {
             return nil
         }
-        acknowledgements = make(
-            []UInt24,
-            len(conn.pending_acks),
-            conn.allocator,
+        send_err := conn_send_acknowledgement(
+            conn,
+            conn.pending_acks[:],
+            BIT_FLAG_ACK,
         )
-        copy(acknowledgements, conn.pending_acks[:])
+        if send_err != nil {
+            return send_err
+        }
         resize(&conn.pending_acks, 0)
     }
-    defer delete(acknowledgements, conn.allocator)
-    return conn_send_acknowledgement(
-        conn,
-        acknowledgements,
-        BIT_FLAG_ACK,
-    )
+    return nil
 }
 
 conn_handle_ack :: proc(conn: ^Conn, data: []u8, negative: bool) -> mcpe_runtime.Error {

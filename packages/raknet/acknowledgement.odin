@@ -96,7 +96,9 @@ acknowledgement_read :: proc(ack: ^Acknowledgement, data: []u8) -> mcpe_runtime.
                 return mcpe_runtime.make_error(.Limit_Exceeded, "raknet.acknowledgement_read", "descending acknowledgement range")
             }
             count := int(u32(end) - u32(start)) + 1
-            if len(ack.packets) + count > MAX_ACKNOWLEDGEMENT_PACKETS {
+            // Pinned go-raknet checks the inclusive range as end-start and
+            // therefore permits one more range entry than the named limit.
+            if len(ack.packets) + count - 1 > MAX_ACKNOWLEDGEMENT_PACKETS {
                 return mcpe_runtime.make_error(.Limit_Exceeded, "raknet.acknowledgement_read", "maximum acknowledgement packets exceeded")
             }
             for raw := u32(start); raw <= u32(end); raw += 1 {

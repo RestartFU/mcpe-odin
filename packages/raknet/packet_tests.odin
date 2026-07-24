@@ -310,6 +310,41 @@ malformed_acknowledgement_ranges_are_bounded :: proc(t: ^testing.T) {
 }
 
 @(test)
+acknowledgement_range_preserves_upstream_inclusive_limit :: proc(t: ^testing.T) {
+    upstream_boundary := []u8{
+        0, 1,
+        ACK_RANGE,
+        0, 0, 0,
+        0, 32, 0,
+    }
+    ack := acknowledgement_init()
+    err := acknowledgement_read(&ack, upstream_boundary)
+    testing.expect(t, err == nil)
+    testing.expect_value(t, len(ack.packets), 8193)
+    acknowledgement_destroy(&ack)
+
+    above_boundary := []u8{
+        0, 1,
+        ACK_RANGE,
+        0, 0, 0,
+        1, 32, 0,
+    }
+    ack = acknowledgement_init()
+    err = acknowledgement_read(&ack, above_boundary)
+    testing.expect(t, err != nil)
+    testing.expect_value(t, len(ack.packets), 0)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(err)
+    }
+    acknowledgement_destroy(&ack)
+}
+
+@(test)
 resend_map_tracks_rtt :: proc(t: ^testing.T) {
     resend := resend_map_init()
     defer resend_map_destroy(&resend)

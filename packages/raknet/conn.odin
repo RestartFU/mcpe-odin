@@ -786,6 +786,18 @@ conn_handle_control :: proc(conn: ^Conn, data: []u8) -> (
 }
 
 conn_deliver_content :: proc(conn: ^Conn, content: []u8) -> mcpe_runtime.Error {
+    if len(content) == 0 {
+        return mcpe_runtime.make_error(
+            .Malformed,
+            "raknet.handle_packet",
+            "zero packet length",
+        )
+    }
+    // ACK/NACK handling happens before this boundary. Pinned go-raknet drops
+    // all decoded packet content once graceful closing has started.
+    if sync.atomic_load(&conn.closing_at_ns) != 0 {
+        return nil
+    }
     handled, control_err := conn_handle_control(conn, content)
     if control_err != nil {
         return control_err

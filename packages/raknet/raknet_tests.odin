@@ -524,6 +524,16 @@ connected_pong_send_is_unreliable :: proc(t: ^testing.T) {
 }
 
 @(test)
+closing_connection_drops_decoded_content :: proc(t: ^testing.T) {
+    conn := Conn{
+        closing_at_ns = 1,
+    }
+    err := conn_deliver_content(&conn, []u8{0xfe, 1, 2, 3})
+    testing.expect(t, err == nil)
+    testing.expect_value(t, conn.incoming_bytes, i64(0))
+}
+
+@(test)
 close_drains_before_disconnect :: proc(t: ^testing.T) {
     listener, listen_err := listen("127.0.0.1:0")
     testing.expect(t, listen_err == nil)

@@ -165,7 +165,7 @@ func dialEcho(address string, payloadSize int) {
 	fmt.Println("go-client-ok")
 }
 
-func udpProxy(targetAddress string, dropEvery int, chaos bool) {
+func udpProxy(targetAddress string, dropPercent int, chaos bool) {
 	target, err := net.ResolveUDPAddr("udp", targetAddress)
 	if err != nil {
 		panic(err)
@@ -184,6 +184,7 @@ func udpProxy(targetAddress string, dropEvery int, chaos bool) {
 	var heldPacket []byte
 	var heldDestination *net.UDPAddr
 	packetIndex := 0
+	dropState := uint32(0x6d2b79f5)
 	for {
 		if heldPacket != nil {
 			if err = socket.SetReadDeadline(time.Now().Add(10 * time.Millisecond)); err != nil {
@@ -205,7 +206,8 @@ func udpProxy(targetAddress string, dropEvery int, chaos bool) {
 			panic(readErr)
 		}
 		packetIndex++
-		if dropEvery > 0 && packetIndex%dropEvery == 0 {
+		dropState = dropState*1664525 + 1013904223
+		if dropPercent > 0 && int(dropState%100) < dropPercent {
 			continue
 		}
 		destination := target
@@ -264,14 +266,14 @@ func main() {
 		dialEcho(os.Args[2], payloadSize)
 	case "udp-proxy":
 		if len(os.Args) != 4 && len(os.Args) != 5 {
-			panic("usage: go-oracle udp-proxy <target> <drop-every> [chaos]")
+			panic("usage: go-oracle udp-proxy <target> <drop-percent> [chaos]")
 		}
-		dropEvery, err := strconv.Atoi(os.Args[3])
-		if err != nil || dropEvery < 0 {
-			panic("invalid drop-every")
+		dropPercent, err := strconv.Atoi(os.Args[3])
+		if err != nil || dropPercent < 0 || dropPercent > 100 {
+			panic("invalid drop-percent")
 		}
 		chaos := len(os.Args) == 5 && os.Args[4] == "chaos"
-		udpProxy(os.Args[2], dropEvery, chaos)
+		udpProxy(os.Args[2], dropPercent, chaos)
 	default:
 		panic("unknown operation")
 	}

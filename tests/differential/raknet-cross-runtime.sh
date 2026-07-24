@@ -14,7 +14,9 @@ if [[ ! -d "$UPSTREAM_DIR/.git" ]]; then
         https://github.com/Sandertv/go-raknet.git \
         "$UPSTREAM_DIR"
 fi
-git -C "$UPSTREAM_DIR" fetch --quiet origin "$LOCKED_COMMIT"
+if ! git -C "$UPSTREAM_DIR" cat-file -e "${LOCKED_COMMIT}^{commit}" 2>/dev/null; then
+    git -C "$UPSTREAM_DIR" fetch --quiet origin "$LOCKED_COMMIT"
+fi
 git -C "$UPSTREAM_DIR" checkout --quiet --detach "$LOCKED_COMMIT"
 
 ORACLE_PACKAGE="$UPSTREAM_DIR/cmd/mcpe-odin-oracle"
@@ -73,7 +75,7 @@ for _ in $(seq 1 100); do
     sleep 0.02
 done
 GO_LOSS_ADDRESS=$(head -n 1 "$WORK_DIR/go-loss-server.txt")
-stdbuf -oL "$WORK_DIR/go-oracle" udp-proxy "$GO_LOSS_ADDRESS" 5 \
+stdbuf -oL "$WORK_DIR/go-oracle" udp-proxy "$GO_LOSS_ADDRESS" 20 \
     >"$WORK_DIR/go-loss-proxy.txt" 2>"$WORK_DIR/go-loss-proxy.err" &
 PROXY_PID=$!
 for _ in $(seq 1 100); do
@@ -96,7 +98,7 @@ for _ in $(seq 1 100); do
     sleep 0.02
 done
 ODIN_LOSS_ADDRESS=$(head -n 1 "$WORK_DIR/odin-loss-server.txt")
-stdbuf -oL "$WORK_DIR/go-oracle" udp-proxy "$ODIN_LOSS_ADDRESS" 5 \
+stdbuf -oL "$WORK_DIR/go-oracle" udp-proxy "$ODIN_LOSS_ADDRESS" 20 \
     >"$WORK_DIR/odin-loss-proxy.txt" 2>"$WORK_DIR/odin-loss-proxy.err" &
 PROXY_PID=$!
 for _ in $(seq 1 100); do

@@ -14,7 +14,9 @@ if [[ ! -d "$UPSTREAM_DIR/.git" ]]; then
         https://github.com/Sandertv/go-raknet.git \
         "$UPSTREAM_DIR"
 fi
-git -C "$UPSTREAM_DIR" fetch --quiet origin "$LOCKED_COMMIT"
+if ! git -C "$UPSTREAM_DIR" cat-file -e "${LOCKED_COMMIT}^{commit}" 2>/dev/null; then
+    git -C "$UPSTREAM_DIR" fetch --quiet origin "$LOCKED_COMMIT"
+fi
 git -C "$UPSTREAM_DIR" checkout --quiet --detach "$LOCKED_COMMIT"
 
 ORACLE_PACKAGE="$UPSTREAM_DIR/cmd/mcpe-odin-oracle"

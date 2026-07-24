@@ -427,6 +427,8 @@ listener_handle_unconnected :: proc(
 
     case message.ID_OPEN_CONNECTION_REQUEST_1:
         request := message.unmarshal_open_connection_request_1(data[1:]) or_return
+        // Pinned go-raknet echoes a sub-minimum request MTU, then clamps only
+        // its internal Conn. Preserve this malformed-peer handshake quirk.
         mtu := min(request.mtu, listener.config.max_mtu)
         if request.client_protocol != PROTOCOL_VERSION {
             response := message.marshal_incompatible_protocol_version({

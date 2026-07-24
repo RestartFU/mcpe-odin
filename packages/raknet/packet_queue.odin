@@ -19,6 +19,9 @@ packet_queue_put :: proc(queue: ^Packet_Queue, index: UInt24, packet: []u8) -> b
     if uint24_before(index, queue.lowest) {
         return false
     }
+    if uint24_forward_distance(queue.lowest, index) > u32(MAX_WINDOW_SIZE) {
+        return false
+    }
     if _, exists := queue.entries[index]; exists {
         return false
     }

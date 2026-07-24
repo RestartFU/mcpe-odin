@@ -142,6 +142,24 @@ datagram_window_wraps :: proc(t: ^testing.T) {
 }
 
 @(test)
+datagram_window_rejects_far_indices :: proc(t: ^testing.T) {
+    window := datagram_window_init()
+    defer datagram_window_destroy(&window)
+    far := uint24_add(window.lowest, u32(MAX_WINDOW_SIZE) + 1)
+    testing.expect(t, !datagram_window_add(&window, far, 1))
+    testing.expect_value(t, len(window.entries), 0)
+}
+
+@(test)
+ordered_packet_queue_rejects_far_indices :: proc(t: ^testing.T) {
+    queue := packet_queue_init()
+    defer packet_queue_destroy(&queue)
+    far := uint24_add(queue.lowest, u32(MAX_WINDOW_SIZE) + 1)
+    testing.expect(t, !packet_queue_put(&queue, far, []u8{1}))
+    testing.expect_value(t, len(queue.entries), 0)
+}
+
+@(test)
 resend_map_tracks_rtt :: proc(t: ^testing.T) {
     resend := resend_map_init()
     defer resend_map_destroy(&resend)

@@ -648,6 +648,25 @@ conn_receive_packet :: proc(conn: ^Conn, packet: ^Packet) -> mcpe_runtime.Error 
         }
         return deliver_err
     }
+    if uint24_before(packet.order_index, conn.ordered.lowest) {
+        if content_owned {
+            delete(content, conn.splits.allocator)
+        }
+        return nil
+    }
+    if uint24_forward_distance(
+        conn.ordered.lowest,
+        packet.order_index,
+    ) > u32(MAX_WINDOW_SIZE) {
+        if content_owned {
+            delete(content, conn.splits.allocator)
+        }
+        return mcpe_runtime.make_error(
+            .Limit_Exceeded,
+            "raknet.receive_packet",
+            "ordered packet is outside receive window",
+        )
+    }
     queued := make([]u8, len(content), conn.allocator)
     copy(queued, content)
     if content_owned {
@@ -678,6 +697,19 @@ conn_receive_datagram :: proc(conn: ^Conn, data: []u8) -> mcpe_runtime.Error {
     }
     sequence := load_u24_le(data[:3])
     now := mcpe_runtime.system_now_ns(nil)
+    if datagram_window_seen(&conn.window, sequence) {
+        return nil
+    }
+    if uint24_forward_distance(
+        conn.window.lowest,
+        sequence,
+    ) > u32(MAX_WINDOW_SIZE) {
+        return mcpe_runtime.make_error(
+            .Limit_Exceeded,
+            "raknet.receive_datagram",
+            "datagram is outside receive window",
+        )
+    }
     if !datagram_window_add(&conn.window, sequence, now) {
         return nil
     }

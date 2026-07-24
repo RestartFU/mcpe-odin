@@ -168,6 +168,8 @@ dialer_discover_mtu :: proc(
                        reply.mtu > 1500 {
                         continue
                     }
+                    // Pinned go-raknet trusts a valid fixed-range server MTU
+                    // even when it exceeds the current MaxMTU probe.
                     return reply.mtu, reply.server_has_security, reply.cookie, nil
                 case message.ID_INCOMPATIBLE_PROTOCOL_VERSION:
                     reply := message.unmarshal_incompatible_protocol_version(buffer[1:count]) or_return
@@ -247,6 +249,7 @@ dialer_open_connection :: proc(
                 continue
             }
             reply := message.unmarshal_open_connection_reply_2(buffer[1:count]) or_return
+            // Pinned go-raknet likewise accepts Reply 2's MTU verbatim.
             return reply.mtu, nil
         }
     }

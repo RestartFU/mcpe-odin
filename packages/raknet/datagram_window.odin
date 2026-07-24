@@ -27,6 +27,9 @@ datagram_window_add :: proc(window: ^Datagram_Window, index: UInt24, now_ns: i64
     if datagram_window_seen(window, index) {
         return false
     }
+    if uint24_forward_distance(window.lowest, index) > u32(MAX_WINDOW_SIZE) {
+        return false
+    }
     candidate := uint24_next(index)
     if uint24_before(window.highest, candidate) {
         window.highest = candidate

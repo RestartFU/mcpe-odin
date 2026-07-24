@@ -25,12 +25,23 @@ test_pong_data_proc :: proc "odin" (
     return transmute([]u8)string("MCPE;dynamic;1001;1.26.30")
 }
 
+Test_Upstream_Dial_State :: struct {
+    called:      bool,
+    token:       ^mcpe_runtime.Cancel_Token,
+    deadline_ns: i64,
+}
+
 test_upstream_dial :: proc "odin" (
     user_data: rawptr,
+    token: ^mcpe_runtime.Cancel_Token,
+    deadline_ns: i64,
     remote: net.Endpoint,
 ) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error) {
     _ = remote
-    (^bool)(user_data)^ = true
+    state := (^Test_Upstream_Dial_State)(user_data)
+    state.called = true
+    state.token = token
+    state.deadline_ns = deadline_ns
     native_socket, socket_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
     if socket_err != nil {
         err = network_error("raknet.test_upstream_dial")
@@ -350,17 +361,26 @@ custom_upstream_dialer_connects :: proc(t: ^testing.T) {
     }
     defer destroy_listener(listener)
 
-    called := false
+    state: Test_Upstream_Dial_State
+    token: mcpe_runtime.Cancel_Token
     dialer := Dialer{
         upstream_dialer = {
-            user_data = &called,
+            user_data = &state,
             vtable = &TEST_UPSTREAM_DIALER_VTABLE,
         },
     }
     address := net.endpoint_to_string(listener_address(listener))
-    client, dial_err := dialer_dial_timeout(dialer, address, 3 * time.Second)
+    before := mcpe_runtime.system_now_ns(nil)
+    client, dial_err := dialer_dial_context(
+        dialer,
+        &token,
+        address,
+        3 * time.Second,
+    )
     testing.expect(t, dial_err == nil)
-    testing.expect(t, called)
+    testing.expect(t, state.called)
+    testing.expect(t, state.token == &token)
+    testing.expect(t, state.deadline_ns >= before + i64(2 * time.Second))
     if dial_err != nil {
         return
     }

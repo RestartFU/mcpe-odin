@@ -98,8 +98,14 @@ ping_timeout_internal :: proc(
         err = mcpe_runtime.make_error(.Cancelled, "raknet.ping")
         return
     }
+    deadline_ns := mcpe_runtime.system_now_ns(nil) + i64(timeout)
     endpoint := resolve_endpoint(address) or_return
-    socket := dialer_make_socket(dialer, endpoint) or_return
+    socket := dialer_make_socket(
+        dialer,
+        endpoint,
+        token,
+        deadline_ns,
+    ) or_return
     defer net.close(socket)
 
     if option_err := net.set_option(
@@ -120,7 +126,6 @@ ping_timeout_internal :: proc(
         return
     }
 
-    deadline_ns := mcpe_runtime.system_now_ns(nil) + i64(timeout)
     buffer: [MAX_MTU_SIZE]u8
     for mcpe_runtime.system_now_ns(nil) < deadline_ns {
         if mcpe_runtime.is_cancelled(token) {

@@ -9,6 +9,8 @@ import mcpe_runtime "mcpe:runtime"
 
 Upstream_Dial_Proc :: proc "odin" (
     user_data: rawptr,
+    token: ^mcpe_runtime.Cancel_Token,
+    deadline_ns: i64,
     remote: net.Endpoint,
 ) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error)
 
@@ -106,6 +108,8 @@ dialer_retry_receive_error :: proc(
 dialer_make_socket :: proc(
     dialer: Dialer,
     remote: net.Endpoint,
+    token: ^mcpe_runtime.Cancel_Token = nil,
+    deadline_ns: i64 = 0,
 ) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error) {
     if dialer.upstream_dialer.vtable != nil {
         if dialer.upstream_dialer.vtable.dial == nil {
@@ -118,6 +122,8 @@ dialer_make_socket :: proc(
         }
         return dialer.upstream_dialer.vtable.dial(
             dialer.upstream_dialer.user_data,
+            token,
+            deadline_ns,
             remote,
         )
     }
@@ -326,7 +332,12 @@ dial_config :: proc(
         return
     }
     remote := resolve_endpoint(address) or_return
-    socket := dialer_make_socket(configured_dialer, remote) or_return
+    socket := dialer_make_socket(
+        configured_dialer,
+        remote,
+        token,
+        deadline_ns,
+    ) or_return
     keep_socket := false
     defer if !keep_socket {
         net.close(socket)

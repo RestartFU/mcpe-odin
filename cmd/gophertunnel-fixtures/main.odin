@@ -311,4 +311,21 @@ main :: proc() {
             needs_response = true,
         },
     )
+
+    batch_time, batch_time_err := packet.encode_packet(
+        packet.Set_Time{time = 42},
+    )
+    assert(batch_time_err == nil)
+    defer delete(batch_time)
+    batch_settings, batch_settings_err := packet.encode_packet(
+        packet.Request_Network_Settings{client_protocol = 1001},
+    )
+    assert(batch_settings_err == nil)
+    defer delete(batch_settings)
+    batch, batch_err := packet.encode_batch(
+        [][]u8{batch_time, batch_settings},
+    )
+    assert(batch_err == nil)
+    defer delete(batch)
+    emit("packet_batch", batch)
 }

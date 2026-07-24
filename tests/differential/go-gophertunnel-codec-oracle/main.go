@@ -56,7 +56,7 @@ func emitNBTDump(name string, value any) {
 	fmt.Printf("%s %s\n", name, hex.EncodeToString([]byte(text)))
 }
 
-func emitPacket(name string, pk packet.Packet, sender, target byte) {
+func encodePacket(pk packet.Packet, sender, target byte) []byte {
 	var buffer bytes.Buffer
 	header := packet.Header{
 		PacketID:        pk.ID(),
@@ -68,7 +68,12 @@ func emitPacket(name string, pk packet.Packet, sender, target byte) {
 	}
 	writer := protocol.NewWriter(&buffer, 0)
 	pk.Marshal(writer)
-	fmt.Printf("%s %s\n", name, hex.EncodeToString(buffer.Bytes()))
+	return buffer.Bytes()
+}
+
+func emitPacket(name string, pk packet.Packet, sender, target byte) {
+	data := encodePacket(pk, sender, target)
+	fmt.Printf("%s %s\n", name, hex.EncodeToString(data))
 }
 
 func main() {
@@ -237,4 +242,18 @@ func main() {
 		0,
 		0,
 	)
+
+	var batch bytes.Buffer
+	batchEncoder := packet.NewEncoder(&batch)
+	if err := batchEncoder.Encode([][]byte{
+		encodePacket(&packet.SetTime{Time: 42}, 0, 0),
+		encodePacket(
+			&packet.RequestNetworkSettings{ClientProtocol: 1001},
+			0,
+			0,
+		),
+	}); err != nil {
+		panic(err)
+	}
+	fmt.Printf("packet_batch %s\n", hex.EncodeToString(batch.Bytes()))
 }

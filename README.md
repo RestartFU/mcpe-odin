@@ -105,7 +105,8 @@ encoding and decoding also share a 65,536-node heap-amplification ceiling.
 The first protocol `packet` slice includes header/sub-client framing, a tagged
 `Packet` union, unknown-payload preservation, and login/network control packet
 codecs for protocol 1001. Pinned-Go differential fixtures cover headers,
-network settings, disconnect variants, time, and latency.
+network settings, disconnect variants, time, latency, and uncompressed batch
+framing. Batch decoding enforces upstream's 812-packet client-side limit.
 
 ## Compatibility policy
 

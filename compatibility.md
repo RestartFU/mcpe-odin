@@ -78,6 +78,10 @@ allocator-owned bytes. `decode_packet` owns byte slices and strings stored in
 the returned union; release them with `packet.destroy_packet`. Unknown packet
 IDs within the 10-bit wire range retain their raw payload and may be encoded
 again unchanged. Modeled protocol-1001 packets reject trailing bytes.
+`packet.decode_batch` returns an owned outer slice whose packet payloads borrow
+the input batch bytes. Only delete the outer slice. Zero-byte transport reads
+return no packets and no error, matching upstream. Disabling the 812-packet
+client limit retains a 65,536-entry allocation ceiling.
 
 ## RakNet safety deviations
 

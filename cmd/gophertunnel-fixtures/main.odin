@@ -12,6 +12,16 @@ emit :: proc(name: string, data: []u8) {
     fmt.println()
 }
 
+emit_dump :: proc(name: string, root: ^nbt.Value) {
+    data, encode_err := nbt.marshal(root, .Little_Endian)
+    assert(encode_err == nil)
+    defer delete(data)
+    text, dump_err := nbt.dump(data, .Little_Endian)
+    assert(dump_err == nil)
+    defer delete(text)
+    emit(name, transmute([]u8)text)
+}
+
 nbt_fixture :: proc() -> nbt.Value {
     list_one := nbt.new_value(nbt.value_int(1))
     list_two := nbt.new_value(nbt.value_int(-2))
@@ -185,4 +195,60 @@ main :: proc() {
         emit(names[index], data)
         delete(data)
     }
+
+    dump_list := nbt.value_list(
+        .Int,
+        []nbt.Value{
+            nbt.value_int(1),
+            nbt.value_int(-2),
+            nbt.value_int(3),
+        },
+    )
+    dump_root := nbt.value_compound(
+        []nbt.Named_Value{nbt.named_value("Values", dump_list)},
+    )
+    defer nbt.destroy_value(&dump_root)
+    emit_dump("nbt_dump", &dump_root)
+
+    inner := nbt.new_value(
+        nbt.value_list(.Int, []nbt.Value{nbt.value_int(1)}),
+    )
+    nested_children := make([]^nbt.Value, 1)
+    nested_children[0] = inner
+    nested_root := nbt.value_compound(
+        []nbt.Named_Value{
+            nbt.named_value(
+                "Values",
+                {
+                    tag = .List,
+                    list_type = .List,
+                    list = nested_children,
+                },
+            ),
+        },
+    )
+    defer nbt.destroy_value(&nested_root)
+    emit_dump("nbt_dump_nested", &nested_root)
+
+    empty_string_root := nbt.value_compound(
+        []nbt.Named_Value{
+            nbt.named_value(
+                "Values",
+                {tag = .List, list_type = .String},
+            ),
+        },
+    )
+    defer nbt.destroy_value(&empty_string_root)
+    emit_dump("nbt_dump_empty_string", &empty_string_root)
+
+    empty_int_root := nbt.value_compound(
+        []nbt.Named_Value{
+            nbt.named_value(
+                "Values",
+                {tag = .List, list_type = .Int},
+            ),
+        },
+    )
+    defer nbt.destroy_value(&empty_int_root)
+    emit_dump("nbt_dump_empty_int", &empty_int_root)
 }

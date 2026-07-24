@@ -31,6 +31,30 @@ type nbtFixture struct {
 	Longs  [2]int64
 }
 
+type nbtDumpFixture struct {
+	Values []int32
+}
+
+type nbtNestedDumpFixture struct {
+	Values [][]int32
+}
+
+type nbtEmptyStringDumpFixture struct {
+	Values []string
+}
+
+func emitNBTDump(name string, value any) {
+	data, err := nbt.MarshalEncoding(value, nbt.LittleEndian)
+	if err != nil {
+		panic(err)
+	}
+	text, err := nbt.Dump(data, nbt.LittleEndian)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s %s\n", name, hex.EncodeToString([]byte(text)))
+}
+
 func main() {
 	var buffer bytes.Buffer
 	writer := protocol.NewWriter(&buffer, 0)
@@ -127,4 +151,21 @@ func main() {
 		}
 		fmt.Printf("%s %s\n", entry.name, hex.EncodeToString(data))
 	}
+
+	emitNBTDump(
+		"nbt_dump",
+		nbtDumpFixture{Values: []int32{1, -2, 3}},
+	)
+	emitNBTDump(
+		"nbt_dump_nested",
+		nbtNestedDumpFixture{Values: [][]int32{{1}}},
+	)
+	emitNBTDump(
+		"nbt_dump_empty_string",
+		nbtEmptyStringDumpFixture{Values: []string{}},
+	)
+	emitNBTDump(
+		"nbt_dump_empty_int",
+		nbtDumpFixture{Values: []int32{}},
+	)
 }

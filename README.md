@@ -100,6 +100,7 @@ The `mcpe:gophertunnel/minecraft/nbt` package adds tagged `Value` trees and
 Network Little Endian, Little Endian, Network Big Endian, and Big Endian
 binary NBT with upstream depth, string, and network-byte limits. Network
 encoding and decoding also share a 65,536-node heap-amplification ceiling.
+`nbt.dump` reproduces upstream's human-readable tagged tree format.
 
 ## Compatibility policy
 

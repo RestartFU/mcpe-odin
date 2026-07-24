@@ -70,7 +70,8 @@ root-name string; call `destroy_value`, then `free` the root, and `delete` the
 name. `Value.compound` preserves wire order, while Go map decoding does not
 promise compound ordering. Network Little Endian encoding and decoding reject
 trees above 65,536 nodes to bound hostile heap amplification; byte and numeric
-arrays each count as one node.
+arrays each count as one node. `nbt.dump` returns an allocator-owned string.
+Unlike Go's map-backed dump, compound fields retain wire order.
 
 ## RakNet safety deviations
 

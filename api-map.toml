@@ -2,11 +2,41 @@ format = 1
 
 [summary]
 go_raknet = "partial"
-gophertunnel = "missing"
+gophertunnel = "partial"
 dragonfly = "missing"
 
 # "partial" means source exists but the RakNet release gate has not passed.
 # "missing" records an intentionally visible gap; no stable API is implied.
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/nbt.Encoding"
+odin = "mcpe:gophertunnel/minecraft/nbt.Encoding"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/nbt.Marshal"
+odin = "mcpe:gophertunnel/minecraft/nbt.marshal"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/nbt.MarshalEncoding"
+odin = "mcpe:gophertunnel/minecraft/nbt.marshal"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/nbt.Unmarshal"
+odin = "mcpe:gophertunnel/minecraft/nbt.unmarshal"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/nbt.UnmarshalEncoding"
+odin = "mcpe:gophertunnel/minecraft/nbt.unmarshal"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/nbt.Dump"
+odin = "mcpe:gophertunnel/minecraft/nbt.dump"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.ErrBufferTooSmall"

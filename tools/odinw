@@ -16,7 +16,14 @@ bootstrap() {
     mkdir -p "$ODIN_DIR"
     archive=$(mktemp "/tmp/odin-${ODIN_TAG}.XXXXXX.tar.gz")
     trap 'rm -f "$archive"' EXIT
-    curl --fail --location "$ODIN_URL" --output "$archive"
+    curl \
+        --fail \
+        --location \
+        --retry 5 \
+        --retry-all-errors \
+        --retry-delay 2 \
+        "$ODIN_URL" \
+        --output "$archive"
     printf '%s  %s\n' "$ODIN_SHA256" "$archive" | sha256sum --check -
     tar -xzf "$archive" -C "$ODIN_DIR" --strip-components=1
 }

@@ -66,6 +66,110 @@ zero_byte_transport_reads_match_upstream :: proc(t: ^testing.T) {
 }
 
 @(test)
+compressed_batch_round_trip_retains_storage :: proc(t: ^testing.T) {
+    packets := [][]u8{
+        []u8{1, 2, 3},
+        []u8{4, 5},
+    }
+    data, encode_err := encode_compressed_batch(packets, .Flate, 0)
+    testing.expect(t, encode_err == nil)
+    if encode_err != nil {
+        mcpe_runtime.destroy_error(encode_err)
+        return
+    }
+    defer delete(data)
+    testing.expect(
+        t,
+        slice.equal(
+            data,
+            []u8{
+                BATCH_HEADER,
+                0,
+                1,
+                7,
+                0,
+                248,
+                255,
+                3,
+                1,
+                2,
+                3,
+                2,
+                4,
+                5,
+            },
+        ),
+    )
+    decoded, decode_err := decode_compressed_batch(data)
+    testing.expect(t, decode_err == nil)
+    if decode_err != nil {
+        mcpe_runtime.destroy_error(decode_err)
+        return
+    }
+    defer destroy_decoded_batch(&decoded)
+    testing.expect_value(t, len(decoded.packets), 2)
+    testing.expect(t, len(decoded.storage) != 0)
+    testing.expect(t, slice.equal(decoded.packets[0], packets[0]))
+    testing.expect(t, slice.equal(decoded.packets[1], packets[1]))
+}
+
+@(test)
+compressed_batch_threshold_uses_no_op_marker :: proc(t: ^testing.T) {
+    packets := [][]u8{[]u8{1, 2, 3}}
+    data, encode_err := encode_compressed_batch(packets, .Flate, 1024)
+    testing.expect(t, encode_err == nil)
+    if encode_err != nil {
+        mcpe_runtime.destroy_error(encode_err)
+        return
+    }
+    defer delete(data)
+    testing.expect_value(t, data[1], u8(0xff))
+    decoded, decode_err := decode_compressed_batch(data)
+    testing.expect(t, decode_err == nil)
+    if decode_err == nil {
+        testing.expect(t, decoded.storage == nil)
+        testing.expect(t, slice.equal(decoded.packets[0], packets[0]))
+        destroy_decoded_batch(&decoded)
+    } else {
+        mcpe_runtime.destroy_error(decode_err)
+    }
+}
+
+@(test)
+compressed_batch_rejects_algorithm_mismatch :: proc(t: ^testing.T) {
+    packets := [][]u8{[]u8{1}}
+    data, encode_err := encode_compressed_batch(packets, .Flate, 0)
+    testing.expect(t, encode_err == nil)
+    if encode_err != nil {
+        mcpe_runtime.destroy_error(encode_err)
+        return
+    }
+    defer delete(data)
+    decoded, err := decode_compressed_batch(data, .Snappy)
+    testing.expect(t, decoded.packets == nil)
+    testing.expect(t, decoded.storage == nil)
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Protocol,
+        )
+        mcpe_runtime.destroy_error(err)
+    }
+}
+
+@(test)
+compressed_batch_zero_byte_transport_read_matches_upstream :: proc(
+    t: ^testing.T,
+) {
+    decoded, err := decode_compressed_batch(nil)
+    testing.expect(t, err == nil)
+    testing.expect(t, decoded.packets == nil)
+    testing.expect(t, decoded.storage == nil)
+}
+
+@(test)
 batch_packet_limit_matches_upstream :: proc(t: ^testing.T) {
     packets := make([][]u8, MAXIMUM_BATCH_PACKETS + 1)
     defer delete(packets)

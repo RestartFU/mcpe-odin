@@ -89,6 +89,26 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.compression_by_id"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Encoder.Encode"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.encode_batch; mcpe:gophertunnel/minecraft/protocol/packet.encode_compressed_batch"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Decoder.Decode"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.decode_batch; mcpe:gophertunnel/minecraft/protocol/packet.decode_compressed_batch"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.FlateCompression"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression.Flate"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.NopCompression"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression.None"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/go-raknet.ErrBufferTooSmall"
 odin = "mcpe:runtime.Error_Kind.Limit_Exceeded"
 status = "partial"

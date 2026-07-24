@@ -83,6 +83,11 @@ the input batch bytes. Only delete the outer slice. Zero-byte transport reads
 return no packets and no error, matching upstream. Disabling the 812-packet
 client limit retains a 65,536-entry allocation ceiling.
 
+`packet.decode_compressed_batch` returns a `Decoded_Batch`. Flate-compressed
+payloads borrow from its owned `storage`; threshold no-op payloads borrow from
+the input bytes and leave `storage` nil. Call `destroy_decoded_batch` in both
+cases to release the outer packet slice and any owned decompressed storage.
+
 `packet.compress_flate` currently emits raw DEFLATE stored blocks. They are
 wire-compatible but intentionally not yet throughput-equivalent to upstream's
 level-6 encoder. `decompress_flate` accepts upstream streams and enforces its

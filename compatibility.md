@@ -21,6 +21,11 @@ Constructors use `context.allocator` unless an explicit allocator overload is
 provided. Long-lived objects retain their construction allocator. Borrowed
 data is valid only for the documented operation window.
 
+`raknet.read_packet` returns bytes borrowed from its `Conn`; the next
+successful `read` or `read_packet` call on that connection invalidates them.
+`clone_packet` creates an allocator-owned copy when data must outlive that
+window.
+
 `close` is overloaded for `Conn` and `Listener`. Closing starts shutdown;
 `conn_destroy` and `destroy_listener` additionally release Odin-owned storage.
 

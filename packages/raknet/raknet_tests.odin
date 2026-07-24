@@ -1043,3 +1043,97 @@ write_rejects_more_splits_than_receiver_accepts :: proc(t: ^testing.T) {
         mcpe_runtime.destroy_error(write_err)
     }
 }
+
+@(test)
+read_packet_borrows_until_next_read :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    address := net.endpoint_to_string(listener_address(listener))
+    client, dial_err := dial_timeout(address, 3 * time.Second)
+    testing.expect(t, dial_err == nil)
+    if dial_err != nil {
+        return
+    }
+    defer conn_destroy(client)
+
+    server, accept_err := accept(listener)
+    testing.expect(t, accept_err == nil)
+    if accept_err != nil {
+        return
+    }
+    defer conn_destroy(server)
+
+    first_payload := []u8{1, 2, 3, 4}
+    _, first_write_err := write(server, first_payload)
+    testing.expect(t, first_write_err == nil)
+    if first_write_err != nil {
+        mcpe_runtime.destroy_error(first_write_err)
+        return
+    }
+    first, first_read_err := read_packet(client)
+    testing.expect(t, first_read_err == nil)
+    if first_read_err != nil {
+        mcpe_runtime.destroy_error(first_read_err)
+        return
+    }
+    testing.expect(t, raw_data(first) == raw_data(client.borrowed_packet))
+    first_clone := clone_packet(first)
+    defer delete(first_clone)
+
+    _, overlap_err := read(client, first)
+    testing.expect(t, overlap_err != nil)
+    if overlap_err != nil {
+        testing.expect_value(
+            t,
+            overlap_err.kind,
+            mcpe_runtime.Error_Kind.Invalid_Argument,
+        )
+        mcpe_runtime.destroy_error(overlap_err)
+    }
+    testing.expect(t, raw_data(first) == raw_data(client.borrowed_packet))
+
+    second_payload := []u8{5, 6, 7}
+    _, second_write_err := write(server, second_payload)
+    testing.expect(t, second_write_err == nil)
+    if second_write_err != nil {
+        mcpe_runtime.destroy_error(second_write_err)
+        return
+    }
+    small_output: [2]u8
+    _, small_read_err := read(client, small_output[:])
+    testing.expect(t, small_read_err != nil)
+    if small_read_err != nil {
+        testing.expect_value(
+            t,
+            small_read_err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(small_read_err)
+    }
+    testing.expect(t, raw_data(first) == raw_data(client.borrowed_packet))
+    testing.expect(t, slice.equal(first_clone, first_payload))
+
+    third_payload := []u8{8, 9, 10}
+    _, third_write_err := write(server, third_payload)
+    testing.expect(t, third_write_err == nil)
+    if third_write_err != nil {
+        mcpe_runtime.destroy_error(third_write_err)
+        return
+    }
+    output: [3]u8
+    count, third_read_err := read(client, output[:])
+    testing.expect(t, third_read_err == nil)
+    if third_read_err != nil {
+        mcpe_runtime.destroy_error(third_read_err)
+        return
+    }
+    testing.expect_value(t, count, len(third_payload))
+    testing.expect(t, client.borrowed_packet == nil)
+    testing.expect(t, slice.equal(first_clone, first_payload))
+    testing.expect(t, slice.equal(output[:], third_payload))
+}

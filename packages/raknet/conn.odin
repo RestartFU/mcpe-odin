@@ -38,6 +38,7 @@ Conn :: struct {
 
     mutex:          sync.Mutex,
     ack_mutex:      sync.Mutex,
+    read_mutex:     sync.Mutex,
     closed:         bool,
     connected:      bool,
     app_reference:  bool,
@@ -68,6 +69,7 @@ Conn :: struct {
     incoming:        channel.Chan([]u8),
     connected_event: channel.Chan(bool),
     pending_acks:    [dynamic]UInt24,
+    borrowed_packet: []u8,
 
     receive_thread: ^thread.Thread,
     tick_thread:    ^thread.Thread,
@@ -215,6 +217,7 @@ conn_finalize :: proc(conn: ^Conn) {
         }
         delete(content, conn.allocator)
     }
+    delete(conn.borrowed_packet, conn.allocator)
     datagram_window_destroy(&conn.window)
     packet_queue_destroy(&conn.ordered)
     split_assembler_destroy(&conn.splits)
@@ -476,20 +479,65 @@ read_packet_owned :: proc(conn: ^Conn) -> (data: []u8, err: mcpe_runtime.Error) 
     return
 }
 
-// read_packet returns an owned packet. The caller must delete it with the
-// connection's construction allocator after use.
+// read_packet returns packet bytes borrowed from conn. The slice remains valid
+// until the next successful read or read_packet call on the same connection.
 read_packet :: proc(conn: ^Conn) -> (data: []u8, err: mcpe_runtime.Error) {
-    return read_packet_owned(conn)
+    if conn == nil {
+        err = mcpe_runtime.make_error(.Invalid_Argument, "raknet.read", "nil connection")
+        return
+    }
+    if sync.mutex_guard(&conn.read_mutex) {
+        data = read_packet_owned(conn) or_return
+        delete(conn.borrowed_packet, conn.allocator)
+        conn.borrowed_packet = data
+    }
+    return
+}
+
+// clone_packet copies borrowed packet bytes into allocator-owned storage.
+clone_packet :: proc(
+    data: []u8,
+    allocator: mem.Allocator = context.allocator,
+) -> []u8 {
+    owned := make([]u8, len(data), allocator)
+    copy(owned, data)
+    return owned
+}
+
+byte_slices_overlap :: proc(a, b: []u8) -> bool {
+    if len(a) == 0 || len(b) == 0 {
+        return false
+    }
+    a_start := uintptr(raw_data(a))
+    b_start := uintptr(raw_data(b))
+    return a_start < b_start + uintptr(len(b)) &&
+           b_start < a_start + uintptr(len(a))
 }
 
 read :: proc(conn: ^Conn, output: []u8) -> (read_count: int, err: mcpe_runtime.Error) {
-    data := read_packet_owned(conn) or_return
-    defer delete(data, conn.allocator)
-    if len(output) < len(data) {
-        err = mcpe_runtime.make_error(.Limit_Exceeded, "raknet.read", "buffer too small")
+    if conn == nil {
+        err = mcpe_runtime.make_error(.Invalid_Argument, "raknet.read", "nil connection")
         return
     }
-    read_count = copy(output, data)
+    if sync.mutex_guard(&conn.read_mutex) {
+        if byte_slices_overlap(output, conn.borrowed_packet) {
+            err = mcpe_runtime.make_error(
+                .Invalid_Argument,
+                "raknet.read",
+                "output overlaps borrowed packet",
+            )
+            return
+        }
+        data := read_packet_owned(conn) or_return
+        defer delete(data, conn.allocator)
+        if len(output) < len(data) {
+            err = mcpe_runtime.make_error(.Limit_Exceeded, "raknet.read", "buffer too small")
+            return
+        }
+        read_count = copy(output, data)
+        delete(conn.borrowed_packet, conn.allocator)
+        conn.borrowed_packet = nil
+    }
     return
 }
 

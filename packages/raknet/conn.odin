@@ -432,6 +432,14 @@ conn_send_control :: proc(conn: ^Conn, data: []u8) -> mcpe_runtime.Error {
     return err
 }
 
+conn_send_unreliable_control :: proc(
+    conn: ^Conn,
+    data: []u8,
+) -> mcpe_runtime.Error {
+    _, err := conn_write_reliability(conn, data, .Unreliable)
+    return err
+}
+
 read_packet_owned :: proc(conn: ^Conn) -> (data: []u8, err: mcpe_runtime.Error) {
     if conn == nil {
         err = mcpe_runtime.make_error(.Invalid_Argument, "raknet.read", "nil connection")
@@ -752,10 +760,17 @@ conn_handle_control :: proc(conn: ^Conn, data: []u8) -> (
             ping_time = ping.ping_time,
             pong_time = timestamp(),
         })
-        return true, conn_send_control(conn, pong[:])
+        return true, conn_send_unreliable_control(conn, pong[:])
 
     case message.ID_CONNECTED_PONG:
-        _ = message.unmarshal_connected_pong(data[1:]) or_return
+        pong := message.unmarshal_connected_pong(data[1:]) or_return
+        if pong.ping_time > timestamp() {
+            return true, mcpe_runtime.make_error(
+                .Protocol,
+                "raknet.handle_packet",
+                "connected pong timestamp is in the future",
+            )
+        }
         return true, nil
 
     case message.ID_DISCONNECT_NOTIFICATION:

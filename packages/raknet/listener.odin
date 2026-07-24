@@ -237,14 +237,16 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
         }
         socket = native_socket
     }
+    keep_socket := false
+    defer if !keep_socket {
+        net.close(socket)
+    }
     bound, bound_err := net.bound_endpoint(socket)
     if bound_err != nil {
-        net.close(socket)
         err = network_error("raknet.listen.bound_endpoint")
         return
     }
     if option_err := net.set_option(socket, .Receive_Timeout, 100 * time.Millisecond); option_err != nil {
-        net.close(socket)
         err = network_error("raknet.listen.deadline")
         return
     }
@@ -271,7 +273,6 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
 
     incoming, incoming_err := channel.create(channel.Chan(^Conn), 64, context.allocator)
     if incoming_err != .None {
-        net.close(socket)
         delete(listener.connections)
         delete(listener.owned)
         delete(listener.retired)
@@ -286,6 +287,7 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
     listener.worker = thread.create(listener_thread)
     listener.worker.data = listener
     thread.start(listener.worker)
+    keep_socket = true
     return
 }
 

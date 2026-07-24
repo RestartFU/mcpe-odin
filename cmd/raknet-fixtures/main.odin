@@ -3,6 +3,7 @@ package raknet_fixtures
 import "core:encoding/hex"
 import "core:fmt"
 import "core:os"
+import raknet "mcpe:raknet"
 import message "mcpe:raknet/message"
 import wire "mcpe:raknet/wire"
 import mcpe_runtime "mcpe:runtime"
@@ -110,6 +111,47 @@ fixtures :: proc() {
     wire.writer_destroy(&incoming)
 }
 
+wire_fixtures :: proc() {
+    packet := raknet.Packet{
+        reliability = .Reliable_Ordered,
+        message_index = 0x010203,
+        order_index = 0x040506,
+        content = []u8{0x11, 0x22, 0x33},
+        split = true,
+        split_count = 3,
+        split_index = 1,
+        split_id = 0x0708,
+    }
+    writer := raknet.writer()
+    raknet.write_packet(&writer, &packet)
+    emit("encapsulated_packet", writer.data[:])
+    raknet.writer_destroy(&writer)
+
+    reserved := raknet.Packet{
+        reliability = raknet.Reliability(5),
+        content = []u8{0x42},
+    }
+    writer = raknet.writer()
+    raknet.write_packet(&writer, &reserved)
+    emit("reserved_reliability_packet", writer.data[:])
+    raknet.writer_destroy(&writer)
+
+    acknowledgement := raknet.acknowledgement_init()
+    defer raknet.acknowledgement_destroy(&acknowledgement)
+    values := []raknet.UInt24{1, 1, 2, 8}
+    for value in values {
+        raknet.acknowledgement_add(&acknowledgement, value)
+    }
+    writer = raknet.writer()
+    raknet.write_u8(
+        &writer,
+        raknet.BIT_FLAG_ACK | raknet.BIT_FLAG_DATAGRAM,
+    )
+    _ = raknet.acknowledgement_write(&acknowledgement, &writer, 1400)
+    emit("acknowledgement", writer.data[:])
+    raknet.writer_destroy(&writer)
+}
+
 round_trip :: proc(name: string, data: []u8) -> mcpe_runtime.Error {
     if len(data) == 0 {
         return mcpe_runtime.make_error(
@@ -190,6 +232,10 @@ round_trip :: proc(name: string, data: []u8) -> mcpe_runtime.Error {
 main :: proc() {
     if len(os.args) == 1 {
         fixtures()
+        return
+    }
+    if len(os.args) == 2 && os.args[1] == "wire" {
+        wire_fixtures()
         return
     }
     if len(os.args) != 4 || os.args[1] != "round-trip" {

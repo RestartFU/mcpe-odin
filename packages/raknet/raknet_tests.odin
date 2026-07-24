@@ -568,6 +568,64 @@ listener_ping_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+pong_data_retains_caller_slice_like_upstream :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    pong_data := [4]u8{'M', 'C', 'P', 'E'}
+    pong_err := set_pong_data(listener, pong_data[:])
+    testing.expect(t, pong_err == nil)
+    if pong_err != nil {
+        mcpe_runtime.destroy_error(pong_err)
+        return
+    }
+    pong_data[3] = 'X'
+
+    address := net.endpoint_to_string(listener_address(listener))
+    actual, ping_err := ping_timeout(address, time.Second)
+    testing.expect(t, ping_err == nil)
+    if ping_err != nil {
+        mcpe_runtime.destroy_error(ping_err)
+        return
+    }
+    defer delete(actual)
+    testing.expect(t, slice.equal(actual, pong_data[:]))
+}
+
+@(test)
+pong_data_clone_owns_copy :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    pong_data := [4]u8{'M', 'C', 'P', 'E'}
+    pong_err := set_pong_data_clone(listener, pong_data[:])
+    testing.expect(t, pong_err == nil)
+    if pong_err != nil {
+        mcpe_runtime.destroy_error(pong_err)
+        return
+    }
+    pong_data[3] = 'X'
+
+    address := net.endpoint_to_string(listener_address(listener))
+    actual, ping_err := ping_timeout(address, time.Second)
+    testing.expect(t, ping_err == nil)
+    if ping_err != nil {
+        mcpe_runtime.destroy_error(ping_err)
+        return
+    }
+    defer delete(actual)
+    testing.expect(t, slice.equal(actual, []u8{'M', 'C', 'P', 'E'}))
+}
+
+@(test)
 listener_dynamic_pong_provider :: proc(t: ^testing.T) {
     listener, listen_err := listen("127.0.0.1:0")
     testing.expect(t, listen_err == nil)

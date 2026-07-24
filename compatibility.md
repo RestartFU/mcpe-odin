@@ -41,6 +41,12 @@ with Go's `net.Conn` and `net.PacketConn`, `close` must interrupt an in-progress
 contract; the listener shares it with accepted server connections and remains
 its sole close owner.
 
+`set_pong_data` retains a borrowed slice, matching pinned Go
+`Listener.PongData`: caller mutations are visible to later pings. The slice
+must not be freed, resized, or moved until the next `set_pong_data` call or
+listener destruction. `set_pong_data_clone` is the safe allocator-owned
+alternative for shorter-lived Odin data.
+
 `close` is overloaded for `Conn` and `Listener`. Closing starts shutdown;
 `conn_destroy` and `destroy_listener` additionally release Odin-owned storage.
 A `Conn` remains valid after `close` until `conn_destroy`, matching Go's

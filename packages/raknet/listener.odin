@@ -70,6 +70,7 @@ Listener :: struct {
     security_ticks:     u64,
     worker:      ^thread.Thread,
     pong_data:   []u8,
+    pong_data_owned: bool,
 }
 
 random_u64 :: proc() -> u64 {
@@ -357,6 +358,7 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
     listener.last_security_tick = mcpe_runtime.system_now_ns(nil)
     listener.pong_data = make([]u8, len(config.pong_data), listener.allocator)
     copy(listener.pong_data, config.pong_data)
+    listener.pong_data_owned = true
 
     incoming, incoming_err := channel.create(channel.Chan(^Conn), 64, context.allocator)
     if incoming_err != .None {
@@ -364,7 +366,9 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
         delete(listener.owned)
         delete(listener.retired)
         delete(listener.blocks)
-        delete(listener.pong_data, listener.allocator)
+        if listener.pong_data_owned {
+            delete(listener.pong_data, listener.allocator)
+        }
         free(listener, listener.allocator)
         listener = nil
         err = mcpe_runtime.make_error(.Internal, "raknet.listen", "create incoming channel")
@@ -407,11 +411,39 @@ set_pong_data :: proc(listener: ^Listener, data: []u8) -> mcpe_runtime.Error {
     if len(data) > int(max(i16)) {
         return mcpe_runtime.make_error(.Limit_Exceeded, "raknet.set_pong_data", "pong data exceeds int16")
     }
+    if sync.mutex_guard(&listener.mutex) {
+        if listener.pong_data_owned {
+            delete(listener.pong_data, listener.allocator)
+        }
+        // Intentional cross-call borrow: Pinned go-raknet stores the caller's
+        // slice without cloning it, so later caller mutations affect pongs.
+        // The caller must not release or move this storage before replacing
+        // the data or destroying Listener. Use set_pong_data_clone otherwise.
+        listener.pong_data = data
+        listener.pong_data_owned = false
+    }
+    return nil
+}
+
+set_pong_data_clone :: proc(
+    listener: ^Listener,
+    data: []u8,
+) -> mcpe_runtime.Error {
+    if len(data) > int(max(i16)) {
+        return mcpe_runtime.make_error(
+            .Limit_Exceeded,
+            "raknet.set_pong_data_clone",
+            "pong data exceeds int16",
+        )
+    }
     owned := make([]u8, len(data), listener.allocator)
     copy(owned, data)
     if sync.mutex_guard(&listener.mutex) {
-        delete(listener.pong_data, listener.allocator)
+        if listener.pong_data_owned {
+            delete(listener.pong_data, listener.allocator)
+        }
         listener.pong_data = owned
+        listener.pong_data_owned = true
     }
     return nil
 }
@@ -521,7 +553,9 @@ destroy_listener :: proc(listener: ^Listener) {
     delete(listener.owned)
     delete(listener.retired)
     delete(listener.blocks)
-    delete(listener.pong_data, listener.allocator)
+    if listener.pong_data_owned {
+        delete(listener.pong_data, listener.allocator)
+    }
     channel.destroy(listener.incoming)
     free(listener, listener.allocator)
 }

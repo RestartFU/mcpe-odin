@@ -29,6 +29,7 @@ MCPE_ODIN_RELEASE_BENCHMARKS=1 ./tests/benchmarks/raknet-compare.sh
 MCPE_ODIN_RELEASE_BENCHMARKS=1 ./tests/benchmarks/raknet-network-compare.sh
 ./tests/differential/raknet-messages.sh
 ./tests/differential/raknet-cross-runtime.sh
+./tests/differential/gophertunnel-codec.sh
 ./tools/api-audit/check.sh
 ./tools/release-raknet
 ./tools/odinw build dragonfly
@@ -84,6 +85,17 @@ odin build . -collection:mcpe=/path/to/mcpe-odin/packages
 ```odin
 import raknet "mcpe:raknet"
 ```
+
+The gophertunnel protocol foundation is available at:
+
+```odin
+import protocol "mcpe:gophertunnel/minecraft/protocol"
+```
+
+It currently includes byte-compatible little/big-endian primitives, signed
+and unsigned varints, strings and byte slices, vectors, block/chunk positions,
+UUID wire order, colours, and allocation guards. The differential fixture
+compares the combined Odin encoding byte-for-byte with pinned gophertunnel.
 
 ## Compatibility policy
 

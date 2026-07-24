@@ -59,6 +59,11 @@ ability to observe closed-operation errors after `Conn.Close`.
 Error-logger callbacks borrow their `Error` only for the callback. Default
 zero-value loggers discard errors, matching upstream's disabled default.
 
+gophertunnel protocol `read_string`, `read_string_utf`, and
+`read_byte_slice` return allocator-owned values. Release them with `delete`
+using the `Reader` allocator. `writer_bytes` is borrowed until the next writer
+mutation or `writer_destroy`.
+
 ## RakNet safety deviations
 
 Pinned go-raknet admits a seventeenth concurrent split assembly, then rejects

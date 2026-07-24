@@ -103,7 +103,7 @@ encoding and decoding also share a 65,536-node heap-amplification ceiling.
 `nbt.dump` reproduces upstream's human-readable tagged tree format.
 
 The protocol `packet` slice includes header/sub-client framing, a tagged
-`Packet` union, unknown-payload preservation, and 49 login, network, and game
+`Packet` union, unknown-payload preservation, and 56 login, network, and game
 state packet codecs for protocol 1001. `protocol.Optional(T)` preserves
 presence separately from zero values for newer packet fields. Pinned-Go
 differential fixtures cover every modeled packet plus uncompressed batch
@@ -113,6 +113,8 @@ and stack negotiation, client responses, metadata, chunk requests, and chunk
 payloads.
 Chat support includes all upstream `Text` variants, category framing,
 translation parameters, platform identifiers, and optional filtered messages.
+UI coverage includes titles, store offers and receipts, modal responses,
+server-settings forms, and settings-issued commands.
 Raw DEFLATE compression is interoperable in both directions: Odin decodes Go
 level-6 streams and emits standards-compliant stored blocks. Compressed batch
 framing supports upstream's per-batch algorithm byte, threshold no-op marker,

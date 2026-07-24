@@ -84,13 +84,20 @@ Packet :: union {
     Resource_Pack_Chunk_Request,
     Transfer,
     Stop_Sound,
+    Set_Title,
+    Show_Store_Offer,
+    Purchase_Receipt,
     Set_Last_Hurt_By,
     Modal_Form_Request,
+    Modal_Form_Response,
+    Server_Settings_Request,
+    Server_Settings_Response,
     Show_Profile,
     Set_Default_Game_Type,
     Remove_Objective,
     Set_Local_Player_As_Initialised,
     Network_Stack_Latency,
+    Settings_Command,
     Network_Settings,
     Update_Player_Game_Type,
     Filter_Text,
@@ -150,14 +157,21 @@ packet_id :: proc(value: Packet) -> (
     case Resource_Pack_Chunk_Request: id = IDResourcePackChunkRequest
     case Transfer:                    id = IDTransfer
     case Stop_Sound:                  id = IDStopSound
+    case Set_Title:                   id = IDSetTitle
+    case Show_Store_Offer:            id = IDShowStoreOffer
+    case Purchase_Receipt:            id = IDPurchaseReceipt
     case Set_Last_Hurt_By:            id = IDSetLastHurtBy
     case Modal_Form_Request:          id = IDModalFormRequest
+    case Modal_Form_Response:         id = IDModalFormResponse
+    case Server_Settings_Request:     id = IDServerSettingsRequest
+    case Server_Settings_Response:    id = IDServerSettingsResponse
     case Show_Profile:                id = IDShowProfile
     case Set_Default_Game_Type:       id = IDSetDefaultGameType
     case Remove_Objective:            id = IDRemoveObjective
     case Set_Local_Player_As_Initialised:
         id = IDSetLocalPlayerAsInitialised
     case Network_Stack_Latency:       id = IDNetworkStackLatency
+    case Settings_Command:            id = IDSettingsCommand
     case Network_Settings:            id = IDNetworkSettings
     case Update_Player_Game_Type:     id = IDUpdatePlayerGameType
     case Filter_Text:                 id = IDFilterText
@@ -210,6 +224,10 @@ destroy_packet :: proc(
         delete(packet.address, allocator)
     case Stop_Sound:
         delete(packet.sound_name, allocator)
+    case Set_Title:
+        destroy_set_title_value(packet, allocator)
+    case Purchase_Receipt:
+        destroy_purchase_receipt_value(packet, allocator)
     case Resource_Pack_Client_Response:
         for entry in packet.packs_to_download {
             delete(entry, allocator)
@@ -225,12 +243,20 @@ destroy_packet :: proc(
         delete(packet.uuid, allocator)
     case Modal_Form_Request:
         delete(packet.form_data, allocator)
+    case Modal_Form_Response:
+        if packet.response_data.set {
+            delete(packet.response_data.value, allocator)
+        }
+    case Server_Settings_Response:
+        delete(packet.form_data, allocator)
     case Show_Profile:
         delete(packet.xuid, allocator)
     case Remove_Objective:
         delete(packet.objective_name, allocator)
     case Filter_Text:
         delete(packet.text, allocator)
+    case Settings_Command:
+        delete(packet.command_line, allocator)
     case Toast_Request:
         delete(packet.title, allocator)
         delete(packet.message, allocator)

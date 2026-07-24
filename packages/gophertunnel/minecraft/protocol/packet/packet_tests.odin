@@ -794,3 +794,125 @@ text_packet_rejects_empty_message_and_cleans_truncation :: proc(
     }
     delete(data)
 }
+
+@(test)
+ui_packets_round_trip :: proc(t: ^testing.T) {
+    offer_id := protocol.UUID{
+        0x00,
+        0x11,
+        0x22,
+        0x33,
+        0x44,
+        0x55,
+        0x66,
+        0x77,
+        0x88,
+        0x99,
+        0xaa,
+        0xbb,
+        0xcc,
+        0xdd,
+        0xee,
+        0xff,
+    }
+    packets := [?]Packet{
+        Set_Title{
+            action_type = Title_Action_Set_Title,
+            text = "Welcome",
+            fade_in_duration = 10,
+            remain_duration = 70,
+            fade_out_duration = 20,
+            xuid = "2533274790395904",
+            platform_online_id = "1234",
+            filtered_message = "Filtered Welcome",
+        },
+        Show_Store_Offer{
+            offer_id = offer_id,
+            type = Store_Offer_Type_Dressing_Room,
+        },
+        Purchase_Receipt{receipts = []string{"receipt-one", "receipt-two"}},
+        Modal_Form_Response{
+            form_id = 42,
+            response_data = protocol.option([]u8{1, 2, 3}),
+            cancel_reason = protocol.option(
+                Modal_Form_Cancel_Reason_User_Busy,
+            ),
+        },
+        Server_Settings_Request{},
+        Server_Settings_Response{
+            form_id = 43,
+            form_data = []u8{4, 5, 6},
+        },
+        Settings_Command{
+            command_line = "gamerule showcoordinates true",
+            suppress_output = true,
+        },
+    }
+    ids := [?]u32{
+        IDSetTitle,
+        IDShowStoreOffer,
+        IDPurchaseReceipt,
+        IDModalFormResponse,
+        IDServerSettingsRequest,
+        IDServerSettingsResponse,
+        IDSettingsCommand,
+    }
+    for original, index in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, header, decode_err := decode_packet(data)
+        testing.expect(t, decode_err == nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+            delete(data)
+            continue
+        }
+        testing.expect_value(t, header.packet_id, ids[index])
+        reencoded, reencode_err := encode_packet(decoded)
+        testing.expect(t, reencode_err == nil)
+        if reencode_err == nil {
+            testing.expect(t, slice.equal(data, reencoded))
+            delete(reencoded)
+        } else {
+            mcpe_runtime.destroy_error(reencode_err)
+        }
+        destroy_packet(&decoded)
+        delete(data)
+    }
+}
+
+@(test)
+owned_ui_fields_are_cleaned_on_truncation :: proc(t: ^testing.T) {
+    packets := [?]Packet{
+        Set_Title{text = "title", filtered_message = "filtered"},
+        Purchase_Receipt{receipts = []string{"one", "two"}},
+        Modal_Form_Response{
+            form_id = 1,
+            response_data = protocol.option([]u8{1, 2, 3}),
+            cancel_reason = protocol.option(
+                Modal_Form_Cancel_Reason_User_Closed,
+            ),
+        },
+        Server_Settings_Response{form_id = 2, form_data = []u8{1, 2, 3}},
+        Settings_Command{command_line = "command", suppress_output = true},
+    }
+    for original in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, _, decode_err := decode_packet(data[:len(data) - 1])
+        testing.expect(t, decoded == nil)
+        testing.expect(t, decode_err != nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+        }
+        delete(data)
+    }
+}

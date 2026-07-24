@@ -294,6 +294,41 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Text"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetTitle"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Title"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ShowStoreOffer"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Show_Store_Offer"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PurchaseReceipt"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Purchase_Receipt"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ModalFormResponse"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Modal_Form_Response"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ServerSettingsRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Settings_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ServerSettingsResponse"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Settings_Response"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SettingsCommand"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Settings_Command"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

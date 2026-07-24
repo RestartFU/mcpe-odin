@@ -632,6 +632,74 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_set_title",
+		&packet.SetTitle{
+			ActionType:       packet.TitleActionSetTitle,
+			Text:             "Welcome",
+			FadeInDuration:   10,
+			RemainDuration:   70,
+			FadeOutDuration:  20,
+			XUID:             "2533274790395904",
+			PlatformOnlineID: "1234",
+			FilteredMessage:  "Filtered Welcome",
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_show_store_offer",
+		&packet.ShowStoreOffer{
+			OfferID: packUUID,
+			Type:    packet.StoreOfferTypeDressingRoom,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_purchase_receipt",
+		&packet.PurchaseReceipt{
+			Receipts: []string{"receipt-one", "receipt-two"},
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_modal_form_response",
+		&packet.ModalFormResponse{
+			FormID:       42,
+			ResponseData: protocol.Option([]byte{1, 2, 3}),
+			CancelReason: protocol.Option(
+				uint8(packet.ModalFormCancelReasonUserBusy),
+			),
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_server_settings_request",
+		&packet.ServerSettingsRequest{},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_server_settings_response",
+		&packet.ServerSettingsResponse{
+			FormID:   43,
+			FormData: []byte{4, 5, 6},
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_settings_command",
+		&packet.SettingsCommand{
+			CommandLine:    "gamerule showcoordinates true",
+			SuppressOutput: true,
+		},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

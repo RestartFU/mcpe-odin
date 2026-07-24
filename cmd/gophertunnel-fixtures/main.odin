@@ -641,6 +641,60 @@ main :: proc() {
             parameters = []string{"Steve", "hello"},
         },
     )
+    emit_packet(
+        "packet_set_title",
+        packet.Set_Title{
+            action_type = packet.Title_Action_Set_Title,
+            text = "Welcome",
+            fade_in_duration = 10,
+            remain_duration = 70,
+            fade_out_duration = 20,
+            xuid = "2533274790395904",
+            platform_online_id = "1234",
+            filtered_message = "Filtered Welcome",
+        },
+    )
+    emit_packet(
+        "packet_show_store_offer",
+        packet.Show_Store_Offer{
+            offer_id = pack_uuid,
+            type = packet.Store_Offer_Type_Dressing_Room,
+        },
+    )
+    emit_packet(
+        "packet_purchase_receipt",
+        packet.Purchase_Receipt{
+            receipts = []string{"receipt-one", "receipt-two"},
+        },
+    )
+    emit_packet(
+        "packet_modal_form_response",
+        packet.Modal_Form_Response{
+            form_id = 42,
+            response_data = protocol.option([]u8{1, 2, 3}),
+            cancel_reason = protocol.option(
+                packet.Modal_Form_Cancel_Reason_User_Busy,
+            ),
+        },
+    )
+    emit_packet(
+        "packet_server_settings_request",
+        packet.Server_Settings_Request{},
+    )
+    emit_packet(
+        "packet_server_settings_response",
+        packet.Server_Settings_Response{
+            form_id = 43,
+            form_data = []u8{4, 5, 6},
+        },
+    )
+    emit_packet(
+        "packet_settings_command",
+        packet.Settings_Command{
+            command_line = "gamerule showcoordinates true",
+            suppress_output = true,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

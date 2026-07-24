@@ -109,13 +109,20 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDResourcePackChunkRequest,
          IDTransfer,
          IDStopSound,
+         IDSetTitle,
+         IDShowStoreOffer,
+         IDPurchaseReceipt,
          IDSetLastHurtBy,
          IDModalFormRequest,
+         IDModalFormResponse,
+         IDServerSettingsRequest,
+         IDServerSettingsResponse,
          IDShowProfile,
          IDSetDefaultGameType,
          IDRemoveObjective,
          IDSetLocalPlayerAsInitialised,
          IDNetworkStackLatency,
+         IDSettingsCommand,
          IDNetworkSettings,
          IDUpdatePlayerGameType,
          IDFilterText,
@@ -340,9 +347,47 @@ write_payload :: proc(
         protocol.write_string(output, packet.sound_name)
         protocol.write_bool(output, packet.stop_all)
         protocol.write_bool(output, packet.stop_music_legacy)
+    case Set_Title:
+        protocol.write_varint32(output, packet.action_type)
+        protocol.write_string(output, packet.text)
+        protocol.write_varint32(output, packet.fade_in_duration)
+        protocol.write_varint32(output, packet.remain_duration)
+        protocol.write_varint32(output, packet.fade_out_duration)
+        protocol.write_string(output, packet.xuid)
+        protocol.write_string(output, packet.platform_online_id)
+        protocol.write_string(output, packet.filtered_message)
+    case Show_Store_Offer:
+        protocol.write_uuid(output, packet.offer_id)
+        protocol.write_u8(output, packet.type)
+    case Purchase_Receipt:
+        if len(packet.receipts) > protocol.MAX_COLLECTION_ELEMENTS {
+            return packet_error(
+                .Limit_Exceeded,
+                "gophertunnel.packet.write",
+                "receipt list exceeds entry limit",
+            )
+        }
+        protocol.write_varuint32(output, u32(len(packet.receipts)))
+        for receipt in packet.receipts {
+            protocol.write_string(output, receipt)
+        }
     case Set_Last_Hurt_By:
         protocol.write_varint32(output, packet.entity_type)
     case Modal_Form_Request:
+        protocol.write_varuint32(output, packet.form_id)
+        protocol.write_byte_slice(output, packet.form_data)
+    case Modal_Form_Response:
+        protocol.write_varuint32(output, packet.form_id)
+        protocol.write_bool(output, packet.response_data.set)
+        if packet.response_data.set {
+            protocol.write_byte_slice(output, packet.response_data.value)
+        }
+        protocol.write_bool(output, packet.cancel_reason.set)
+        if packet.cancel_reason.set {
+            protocol.write_u8(output, packet.cancel_reason.value)
+        }
+    case Server_Settings_Request:
+    case Server_Settings_Response:
         protocol.write_varuint32(output, packet.form_id)
         protocol.write_byte_slice(output, packet.form_data)
     case Show_Profile:
@@ -356,6 +401,9 @@ write_payload :: proc(
     case Network_Stack_Latency:
         protocol.write_i64(output, packet.timestamp)
         protocol.write_bool(output, packet.needs_response)
+    case Settings_Command:
+        protocol.write_string(output, packet.command_line)
+        protocol.write_bool(output, packet.suppress_output)
     case Network_Settings:
         protocol.write_u16(output, packet.compression_threshold)
         protocol.write_u16(output, packet.compression_algorithm)
@@ -594,6 +642,15 @@ decode_packet :: proc(
         value = read_transfer(&input) or_return
     case IDStopSound:
         value = read_stop_sound(&input) or_return
+    case IDSetTitle:
+        value = read_set_title(&input) or_return
+    case IDShowStoreOffer:
+        packet := Show_Store_Offer{}
+        packet.offer_id = protocol.read_uuid(&input) or_return
+        packet.type = protocol.read_u8(&input) or_return
+        value = packet
+    case IDPurchaseReceipt:
+        value = read_purchase_receipt(&input) or_return
     case IDSetLastHurtBy:
         packet := Set_Last_Hurt_By{}
         packet.entity_type = protocol.read_varint32(&input) or_return
@@ -603,6 +660,12 @@ decode_packet :: proc(
         packet.form_id = protocol.read_varuint32(&input) or_return
         packet.form_data = protocol.read_byte_slice(&input) or_return
         value = packet
+    case IDModalFormResponse:
+        value = read_modal_form_response(&input) or_return
+    case IDServerSettingsRequest:
+        value = Server_Settings_Request{}
+    case IDServerSettingsResponse:
+        value = read_server_settings_response(&input) or_return
     case IDShowProfile:
         packet := Show_Profile{}
         packet.xuid = protocol.read_string(&input) or_return
@@ -625,6 +688,8 @@ decode_packet :: proc(
         packet.timestamp = protocol.read_i64(&input) or_return
         packet.needs_response = protocol.read_bool(&input) or_return
         value = packet
+    case IDSettingsCommand:
+        value = read_settings_command(&input) or_return
     case IDNetworkSettings:
         packet := Network_Settings{}
         packet.compression_threshold = protocol.read_u16(&input) or_return

@@ -251,6 +251,48 @@ acknowledgements_are_bounded_and_batched :: proc(t: ^testing.T) {
 }
 
 @(test)
+malformed_acknowledgement_ranges_are_bounded :: proc(t: ^testing.T) {
+    descending := []u8{
+        0, 1,
+        ACK_RANGE,
+        10, 0, 0,
+        9, 0, 0,
+    }
+    ack := acknowledgement_init()
+    err := acknowledgement_read(&ack, descending)
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(err)
+    }
+    acknowledgement_destroy(&ack)
+
+    oversized := []u8{
+        0, 1,
+        ACK_RANGE,
+        0, 0, 0,
+        0xff, 0xff, 0xff,
+    }
+    ack = acknowledgement_init()
+    err = acknowledgement_read(&ack, oversized)
+    testing.expect(t, err != nil)
+    testing.expect_value(t, len(ack.packets), 0)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(err)
+    }
+    acknowledgement_destroy(&ack)
+}
+
+@(test)
 resend_map_tracks_rtt :: proc(t: ^testing.T) {
     resend := resend_map_init()
     defer resend_map_destroy(&resend)

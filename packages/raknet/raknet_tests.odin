@@ -394,6 +394,36 @@ ping_context_observes_cancellation_while_waiting :: proc(t: ^testing.T) {
 }
 
 @(test)
+ping_timeout_treats_linux_eagain_as_timeout :: proc(t: ^testing.T) {
+    sink, socket_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    testing.expect(t, socket_err == nil)
+    if socket_err != nil {
+        return
+    }
+    defer net.close(sink)
+    endpoint, endpoint_err := net.bound_endpoint(sink)
+    testing.expect(t, endpoint_err == nil)
+    if endpoint_err != nil {
+        return
+    }
+
+    started := time.now()
+    response, err := ping_timeout(
+        net.endpoint_to_string(endpoint),
+        250 * time.Millisecond,
+    )
+    elapsed := time.since(started)
+    testing.expect(t, response == nil)
+    testing.expect(t, err != nil)
+    testing.expect(t, elapsed >= 200 * time.Millisecond)
+    testing.expect(t, elapsed < time.Second)
+    if err != nil {
+        testing.expect_value(t, err.kind, mcpe_runtime.Error_Kind.Timeout)
+        mcpe_runtime.destroy_error(err)
+    }
+}
+
+@(test)
 listener_destroy_releases_unaccepted_connection :: proc(t: ^testing.T) {
     listener, listen_err := listen("127.0.0.1:0")
     testing.expect(t, listen_err == nil)

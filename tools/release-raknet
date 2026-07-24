@@ -23,7 +23,7 @@ lock_value() {
     ' "$file"
 }
 
-for command in git tar gzip sha256sum strip awk; do
+for command in git tar gzip sha256sum clang strip awk; do
     if ! command -v "$command" >/dev/null; then
         printf 'required command not found: %s\n' "$command" >&2
         exit 1
@@ -53,6 +53,26 @@ if [[ "$ACTUAL_ODIN_VERSION" != "$ODIN_REPORTED" ]]; then
     exit 1
 fi
 ODIN_BINARY_SHA=$(sha256sum "$ODIN_BINARY" | awk '{print $1}')
+
+CLANG_BINARY=$(command -v clang)
+CLANG_VERSION=$("$CLANG_BINARY" --version | awk 'NR == 1 { first=$0 } END { print first }')
+CLANG_BINARY_SHA=$(sha256sum "$CLANG_BINARY" | awk '{print $1}')
+LINKER_BINARY=$("$CLANG_BINARY" -print-prog-name=ld)
+if [[ "$LINKER_BINARY" != /* ]]; then
+    LINKER_BINARY=$(command -v "$LINKER_BINARY")
+fi
+case "$LINKER_BINARY" in
+    *[[:space:]]*)
+        printf 'linker path may not contain whitespace: %s\n' \
+            "$LINKER_BINARY" >&2
+        exit 1
+        ;;
+esac
+LINKER_VERSION=$("$LINKER_BINARY" --version | awk 'NR == 1 { first=$0 } END { print first }')
+LINKER_BINARY_SHA=$(sha256sum "$LINKER_BINARY" | awk '{print $1}')
+STRIP_BINARY=$(command -v strip)
+STRIP_VERSION=$("$STRIP_BINARY" --version | awk 'NR == 1 { first=$0 } END { print first }')
+STRIP_BINARY_SHA=$(sha256sum "$STRIP_BINARY" | awk '{print $1}')
 
 RAKNET_REPOSITORY=$(lock_value \
     "$ROOT_DIR/upstream.lock.toml" go_raknet repository)
@@ -94,10 +114,14 @@ build_binary() {
     local source=$1
     local name=$2
     SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" \
+        ODIN_CLANG_PATH="$CLANG_BINARY" \
         "$ROOT_DIR/tools/odinw" odin build "$ROOT_DIR/$source" \
             -o:speed \
+            -no-threaded-checker \
+            -thread-count:1 \
+            -extra-linker-flags:"-fuse-ld=$LINKER_BINARY" \
             -out:"$STAGE_DIR/bin/$name"
-    strip --strip-all "$STAGE_DIR/bin/$name"
+    "$STRIP_BINARY" --strip-all "$STAGE_DIR/bin/$name"
 }
 
 build_binary examples/raknet-echo-client raknet-echo-client
@@ -123,6 +147,16 @@ MANIFEST="$STAGE_DIR/release-manifest.toml"
     printf 'reported_version = "%s"\n' "$ODIN_REPORTED"
     printf 'archive_sha256 = "%s"\n' "$ODIN_ARCHIVE_SHA"
     printf 'binary_sha256 = "%s"\n' "$ODIN_BINARY_SHA"
+    printf 'build_flags = ["-o:speed", "-no-threaded-checker", "-thread-count:1"]\n'
+    printf '\n[build_tools.clang]\n'
+    printf 'version = "%s"\n' "$CLANG_VERSION"
+    printf 'binary_sha256 = "%s"\n' "$CLANG_BINARY_SHA"
+    printf '\n[build_tools.linker]\n'
+    printf 'version = "%s"\n' "$LINKER_VERSION"
+    printf 'binary_sha256 = "%s"\n' "$LINKER_BINARY_SHA"
+    printf '\n[build_tools.strip]\n'
+    printf 'version = "%s"\n' "$STRIP_VERSION"
+    printf 'binary_sha256 = "%s"\n' "$STRIP_BINARY_SHA"
     printf '\n[embedded_assets]\n'
     printf 'count = 0\n'
     printf '\n[native_dependencies]\n'

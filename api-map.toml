@@ -139,6 +139,31 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Default_Game_Type"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.Optional"
+odin = "mcpe:gophertunnel/minecraft/protocol.Optional"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.Option"
+odin = "mcpe:gophertunnel/minecraft/protocol.option"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.Optional.Value"
+odin = "mcpe:gophertunnel/minecraft/protocol.optional_value"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ChangeDimension"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Change_Dimension"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ServerBoundLoadingScreen"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Bound_Loading_Screen"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

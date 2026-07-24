@@ -62,6 +62,7 @@ Packet :: union {
     Player_Hot_Bar,
     Set_Commands_Enabled,
     Set_Difficulty,
+    Change_Dimension,
     Set_Player_Game_Type,
     Simple_Event,
     Spawn_Experience_Orb,
@@ -75,6 +76,7 @@ Packet :: union {
     Network_Stack_Latency,
     Network_Settings,
     Request_Network_Settings,
+    Server_Bound_Loading_Screen,
     Unknown_Packet,
 }
 
@@ -102,6 +104,7 @@ packet_id :: proc(value: Packet) -> (
     case Player_Hot_Bar:              id = IDPlayerHotBar
     case Set_Commands_Enabled:        id = IDSetCommandsEnabled
     case Set_Difficulty:              id = IDSetDifficulty
+    case Change_Dimension:            id = IDChangeDimension
     case Set_Player_Game_Type:        id = IDSetPlayerGameType
     case Simple_Event:                id = IDSimpleEvent
     case Spawn_Experience_Orb:        id = IDSpawnExperienceOrb
@@ -115,6 +118,7 @@ packet_id :: proc(value: Packet) -> (
     case Network_Stack_Latency:       id = IDNetworkStackLatency
     case Network_Settings:            id = IDNetworkSettings
     case Request_Network_Settings:    id = IDRequestNetworkSettings
+    case Server_Bound_Loading_Screen: id = IDServerBoundLoadingScreen
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(

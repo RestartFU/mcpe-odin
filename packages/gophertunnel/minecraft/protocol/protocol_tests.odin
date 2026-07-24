@@ -273,3 +273,16 @@ structured_protocol_values_round_trip :: proc(t: ^testing.T) {
         expected_colour,
     )
 }
+
+@(test)
+optional_values_preserve_presence :: proc(t: ^testing.T) {
+    present := option(u32(42))
+    value, set := optional_value(present)
+    testing.expect(t, set)
+    testing.expect_value(t, value, u32(42))
+
+    absent: Optional(u32)
+    value, set = optional_value(absent)
+    testing.expect(t, !set)
+    testing.expect_value(t, value, u32(0))
+}

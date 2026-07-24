@@ -2,6 +2,7 @@ package gt_packet
 
 import "core:slice"
 import "core:testing"
+import protocol "mcpe:gophertunnel/minecraft/protocol"
 import mcpe_runtime "mcpe:runtime"
 
 @(test)
@@ -199,6 +200,63 @@ game_state_packets_round_trip :: proc(t: ^testing.T) {
         IDStopSound,
         IDSetLastHurtBy,
         IDSetDefaultGameType,
+    }
+    for original, index in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, header, decode_err := decode_packet(data)
+        testing.expect(t, decode_err == nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+            delete(data)
+            continue
+        }
+        testing.expect_value(t, header.packet_id, ids[index])
+        reencoded, reencode_err := encode_packet(decoded)
+        testing.expect(t, reencode_err == nil)
+        if reencode_err == nil {
+            testing.expect(t, slice.equal(data, reencoded))
+            delete(reencoded)
+        } else {
+            mcpe_runtime.destroy_error(reencode_err)
+        }
+        destroy_packet(&decoded)
+        delete(data)
+    }
+}
+
+@(test)
+dimension_packets_round_trip_optional_loading_screen_id :: proc(
+    t: ^testing.T,
+) {
+    packets := [?]Packet{
+        Change_Dimension{
+            dimension = Dimension_Nether,
+            position = {8.5, 72.25, -3.75},
+            respawn = true,
+            loading_screen_id = protocol.option(u32(0x1234_5678)),
+        },
+        Change_Dimension{
+            dimension = Dimension_End,
+            position = {0, 80, 0},
+        },
+        Server_Bound_Loading_Screen{
+            type = Loading_Screen_Type_Start,
+            loading_screen_id = protocol.option(u32(0x1234_5678)),
+        },
+        Server_Bound_Loading_Screen{
+            type = Loading_Screen_Type_End,
+        },
+    }
+    ids := [?]u32{
+        IDChangeDimension,
+        IDChangeDimension,
+        IDServerBoundLoadingScreen,
+        IDServerBoundLoadingScreen,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)

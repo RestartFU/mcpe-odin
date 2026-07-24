@@ -87,6 +87,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDPlayerHotBar,
          IDSetCommandsEnabled,
          IDSetDifficulty,
+         IDChangeDimension,
          IDSetPlayerGameType,
          IDSimpleEvent,
          IDSpawnExperienceOrb,
@@ -99,7 +100,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDSetDefaultGameType,
          IDNetworkStackLatency,
          IDNetworkSettings,
-         IDRequestNetworkSettings:
+         IDRequestNetworkSettings,
+         IDServerBoundLoadingScreen:
         return true
     }
     return false
@@ -143,6 +145,11 @@ write_payload :: proc(
         protocol.write_bool(output, packet.enabled)
     case Set_Difficulty:
         protocol.write_varuint32(output, packet.difficulty)
+    case Change_Dimension:
+        protocol.write_varint32(output, packet.dimension)
+        protocol.write_vec3(output, packet.position)
+        protocol.write_bool(output, packet.respawn)
+        write_optional_u32(output, packet.loading_screen_id)
     case Set_Player_Game_Type:
         protocol.write_varint32(output, packet.game_type)
     case Simple_Event:
@@ -181,6 +188,9 @@ write_payload :: proc(
         protocol.write_f32(output, packet.client_throttle_scalar)
     case Request_Network_Settings:
         protocol.write_be_i32(output, packet.client_protocol)
+    case Server_Bound_Loading_Screen:
+        protocol.write_varint32(output, packet.type)
+        write_optional_u32(output, packet.loading_screen_id)
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -303,6 +313,13 @@ decode_packet :: proc(
         packet := Set_Difficulty{}
         packet.difficulty = protocol.read_varuint32(&input) or_return
         value = packet
+    case IDChangeDimension:
+        packet := Change_Dimension{}
+        packet.dimension = protocol.read_varint32(&input) or_return
+        packet.position = protocol.read_vec3(&input) or_return
+        packet.respawn = protocol.read_bool(&input) or_return
+        packet.loading_screen_id = read_optional_u32(&input) or_return
+        value = packet
     case IDSetPlayerGameType:
         packet := Set_Player_Game_Type{}
         packet.game_type = protocol.read_varint32(&input) or_return
@@ -362,6 +379,11 @@ decode_packet :: proc(
     case IDRequestNetworkSettings:
         packet := Request_Network_Settings{}
         packet.client_protocol = protocol.read_be_i32(&input) or_return
+        value = packet
+    case IDServerBoundLoadingScreen:
+        packet := Server_Bound_Loading_Screen{}
+        packet.type = protocol.read_varint32(&input) or_return
+        packet.loading_screen_id = read_optional_u32(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

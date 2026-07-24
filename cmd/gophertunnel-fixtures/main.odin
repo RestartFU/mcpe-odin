@@ -391,6 +391,35 @@ main :: proc() {
             game_type = packet.Game_Type_Creative,
         },
     )
+    emit_packet(
+        "packet_change_dimension",
+        packet.Change_Dimension{
+            dimension = packet.Dimension_Nether,
+            position = {8.5, 72.25, -3.75},
+            respawn = true,
+            loading_screen_id = protocol.option(u32(0x1234_5678)),
+        },
+    )
+    emit_packet(
+        "packet_change_dimension_without_loading_screen",
+        packet.Change_Dimension{
+            dimension = packet.Dimension_End,
+            position = {0, 80, 0},
+        },
+    )
+    emit_packet(
+        "packet_server_bound_loading_screen",
+        packet.Server_Bound_Loading_Screen{
+            type = packet.Loading_Screen_Type_Start,
+            loading_screen_id = protocol.option(u32(0x1234_5678)),
+        },
+    )
+    emit_packet(
+        "packet_server_bound_loading_screen_without_id",
+        packet.Server_Bound_Loading_Screen{
+            type = packet.Loading_Screen_Type_End,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

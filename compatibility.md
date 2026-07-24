@@ -64,6 +64,10 @@ gophertunnel protocol `read_string`, `read_string_utf`, and
 using the `Reader` allocator. `writer_bytes` is borrowed until the next writer
 mutation or `writer_destroy`.
 
+`protocol.Optional(T)`, `protocol.option`, and `protocol.optional_value` mirror
+upstream's generic optional value without conflating an absent field with its
+type's zero value.
+
 NBT uses tagged `nbt.Value` trees instead of Go reflection. `marshal` returns
 allocator-owned bytes. `unmarshal` returns an allocator-owned root pointer and
 root-name string; call `destroy_value`, then `free` the root, and `delete` the

@@ -7,6 +7,22 @@ RGBA :: struct {
     r, g, b, a: u8,
 }
 
+Optional :: struct($T: typeid) {
+    set:   bool,
+    value: T,
+}
+
+option :: proc(value: $T) -> Optional(T) {
+    return {set = true, value = value}
+}
+
+optional_value :: proc(optional: Optional($T)) -> (
+    value: T,
+    set: bool,
+) {
+    return optional.value, optional.set
+}
+
 Block_Pos :: [3]i32
 Chunk_Pos :: [2]i32
 Sub_Chunk_Pos :: [3]i32

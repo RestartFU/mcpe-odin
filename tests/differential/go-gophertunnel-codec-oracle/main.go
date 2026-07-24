@@ -342,6 +342,43 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_change_dimension",
+		&packet.ChangeDimension{
+			Dimension:       packet.DimensionNether,
+			Position:        mgl32.Vec3{8.5, 72.25, -3.75},
+			Respawn:         true,
+			LoadingScreenID: protocol.Option(uint32(0x1234_5678)),
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_change_dimension_without_loading_screen",
+		&packet.ChangeDimension{
+			Dimension: packet.DimensionEnd,
+			Position:  mgl32.Vec3{0, 80, 0},
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_server_bound_loading_screen",
+		&packet.ServerBoundLoadingScreen{
+			Type:            packet.LoadingScreenTypeStart,
+			LoadingScreenID: protocol.Option(uint32(0x1234_5678)),
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_server_bound_loading_screen_without_id",
+		&packet.ServerBoundLoadingScreen{
+			Type: packet.LoadingScreenTypeEnd,
+		},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

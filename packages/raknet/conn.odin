@@ -637,6 +637,28 @@ conn_accept_sequenced :: proc(
     conn: ^Conn,
     packet: ^Packet,
 ) -> (accepted: bool, err: mcpe_runtime.Error) {
+    if uint24_before(packet.order_index, conn.ordered.lowest) {
+        return false, nil
+    }
+    if uint24_forward_distance(
+        conn.ordered.lowest,
+        packet.order_index,
+    ) > u32(MAX_WINDOW_SIZE) {
+        return false, mcpe_runtime.make_error(
+            .Limit_Exceeded,
+            "raknet.receive_packet",
+            "sequenced order is outside ordered receive window",
+        )
+    }
+    if conn.sequenced_initialized &&
+       uint24_before(
+           conn.sequenced_order_index,
+           conn.ordered.lowest,
+       ) {
+        // Ordered delivery establishes a new lower bound for all sequencing
+        // state on the shared order channel.
+        conn.sequenced_initialized = false
+    }
     if !conn.sequenced_initialized {
         conn.sequenced_initialized = true
         conn.sequenced_order_index = packet.order_index

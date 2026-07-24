@@ -210,6 +210,20 @@ sequenced_packets_discard_stale_indices :: proc(t: ^testing.T) {
     accepted, err = conn_accept_sequenced(&conn, &next)
     testing.expect(t, err == nil)
     testing.expect(t, accepted)
+
+    conn.ordered.lowest = 21
+    delayed := next
+    delayed.sequence_index = 12
+    accepted, err = conn_accept_sequenced(&conn, &delayed)
+    testing.expect(t, err == nil)
+    testing.expect(t, !accepted)
+
+    current := next
+    current.order_index = 21
+    current.sequence_index = 0
+    accepted, err = conn_accept_sequenced(&conn, &current)
+    testing.expect(t, err == nil)
+    testing.expect(t, accepted)
 }
 
 @(test)

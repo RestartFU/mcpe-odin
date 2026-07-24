@@ -26,6 +26,7 @@ tracked explicitly in `api-map.toml`; package presence does not imply parity.
 MCPE_ODIN_ENFORCE_BENCHMARKS=1 ./tests/benchmarks/raknet-compare.sh
 ./tests/differential/raknet-messages.sh
 ./tests/differential/raknet-cross-runtime.sh
+./tools/api-audit/check.sh
 ./tools/odinw build dragonfly
 ./tools/odinw run dragonfly
 ```

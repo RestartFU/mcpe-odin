@@ -29,6 +29,11 @@ odin = "mcpe:raknet.Upstream_Dialer"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/go-raknet.UpstreamDialer.DialContext"
+odin = "mcpe:raknet.Upstream_Dialer_VTable.dial"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/go-raknet.Ping"
 odin = "mcpe:raknet.ping"
 status = "partial"
@@ -64,6 +69,26 @@ odin = "mcpe:raknet.Dialer"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.ErrorLog"
+odin = "mcpe:raknet.Dialer.error_log"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.UpstreamDialer"
+odin = "mcpe:raknet.Dialer.upstream_dialer"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.MaxTransientErrors"
+odin = "mcpe:raknet.Dialer.max_transient_errors"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.MaxMTU"
+odin = "mcpe:raknet.Dialer.max_mtu"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/go-raknet.Dialer.Ping"
 odin = "mcpe:raknet.dialer_ping"
 status = "partial"
@@ -80,17 +105,17 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Dialer.Dial"
-odin = "mcpe:raknet.dial_config"
+odin = "mcpe:raknet.dialer_dial"
 status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Dialer.DialTimeout"
-odin = "mcpe:raknet.dial_config"
+odin = "mcpe:raknet.dialer_dial_timeout"
 status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Dialer.DialContext"
-odin = "mcpe:raknet.dial_config"
+odin = "mcpe:raknet.dialer_dial_context"
 status = "partial"
 
 [[symbol]]
@@ -159,8 +184,38 @@ odin = "mcpe:raknet.Upstream_Packet_Listener"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/go-raknet.UpstreamPacketListener.ListenPacket"
+odin = "mcpe:raknet.Upstream_Packet_Listener_VTable.listen"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/go-raknet.ListenConfig"
 odin = "mcpe:raknet.Listen_Config"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ListenConfig.ErrorLog"
+odin = "mcpe:raknet.Listen_Config.error_log"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ListenConfig.UpstreamPacketListener"
+odin = "mcpe:raknet.Listen_Config.upstream_packet_listener"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ListenConfig.DisableCookies"
+odin = "mcpe:raknet.Listen_Config.disable_cookies"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ListenConfig.MaxMTU"
+odin = "mcpe:raknet.Listen_Config.max_mtu"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ListenConfig.BlockDuration"
+odin = "mcpe:raknet.Listen_Config.block_duration"
 status = "partial"
 
 [[symbol]]

@@ -264,6 +264,31 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Resource_Pack_Chunk_Request"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.TexturePackInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol.Texture_Pack_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.StackResourcePack"
+odin = "mcpe:gophertunnel/minecraft/protocol.Stack_Resource_Pack"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.ExperimentData"
+odin = "mcpe:gophertunnel/minecraft/protocol.Experiment_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ResourcePacksInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Resource_Packs_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ResourcePackStack"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Resource_Pack_Stack"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

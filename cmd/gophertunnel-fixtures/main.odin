@@ -552,6 +552,68 @@ main :: proc() {
             chunk_index = -1,
         },
     )
+    pack_uuid := protocol.UUID{
+        0x00,
+        0x11,
+        0x22,
+        0x33,
+        0x44,
+        0x55,
+        0x66,
+        0x77,
+        0x88,
+        0x99,
+        0xaa,
+        0xbb,
+        0xcc,
+        0xdd,
+        0xee,
+        0xff,
+    }
+    emit_packet(
+        "packet_resource_packs_info",
+        packet.Resource_Packs_Info{
+            texture_pack_required = true,
+            has_addons = true,
+            has_scripts = true,
+            force_disable_vibrant_visuals = true,
+            world_template_uuid = pack_uuid,
+            world_template_version = "1.0.0",
+            texture_packs = []protocol.Texture_Pack_Info{
+                {
+                    uuid = pack_uuid,
+                    version = "2.0.0",
+                    size = 15_500_000,
+                    content_key = "content-key",
+                    sub_pack_name = "sub-pack",
+                    content_identity = "identity",
+                    has_scripts = true,
+                    addon_pack = true,
+                    rtx_enabled = true,
+                    download_url = "https://example.org/pack.zip",
+                },
+            },
+        },
+    )
+    emit_packet(
+        "packet_resource_pack_stack",
+        packet.Resource_Pack_Stack{
+            texture_pack_required = true,
+            texture_packs = []protocol.Stack_Resource_Pack{
+                {
+                    uuid = "00112233-4455-6677-8899-aabbccddeeff",
+                    version = "2.0.0",
+                    sub_pack_name = "sub-pack",
+                },
+            },
+            base_game_version = "1.26.30",
+            experiments = []protocol.Experiment_Data{
+                {name = "experiment", enabled = true},
+            },
+            experiments_previously_toggled = true,
+            include_editor_packs = true,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

@@ -24,6 +24,25 @@ Login :: struct {
     connection_request: []u8,
 }
 
+Resource_Packs_Info :: struct {
+    texture_pack_required:          bool,
+    has_addons:                     bool,
+    has_scripts:                    bool,
+    force_disable_vibrant_visuals:  bool,
+    world_template_uuid:            protocol.UUID,
+    world_template_version:         string,
+    texture_packs:                  []protocol.Texture_Pack_Info,
+}
+
+Resource_Pack_Stack :: struct {
+    texture_pack_required:           bool,
+    texture_packs:                   []protocol.Stack_Resource_Pack,
+    base_game_version:               string,
+    experiments:                     []protocol.Experiment_Data,
+    experiments_previously_toggled:  bool,
+    include_editor_packs:            bool,
+}
+
 Resource_Pack_Client_Response :: struct {
     response:          u8,
     packs_to_download: []string,
@@ -49,6 +68,132 @@ Resource_Pack_Chunk_Data :: struct {
 Resource_Pack_Chunk_Request :: struct {
     uuid:        string,
     chunk_index: i32,
+}
+
+destroy_resource_packs_info_value :: proc(
+    packet: Resource_Packs_Info,
+    allocator := context.allocator,
+) {
+    delete(packet.world_template_version, allocator)
+    for pack in packet.texture_packs {
+        owned_pack := pack
+        protocol.destroy_texture_pack_info(&owned_pack, allocator)
+    }
+    delete(packet.texture_packs, allocator)
+}
+
+destroy_resource_packs_info_fields :: proc(
+    packet: ^Resource_Packs_Info,
+    allocator := context.allocator,
+) {
+    destroy_resource_packs_info_value(packet^, allocator)
+    packet^ = {}
+}
+
+destroy_resource_pack_stack_value :: proc(
+    packet: Resource_Pack_Stack,
+    allocator := context.allocator,
+) {
+    for pack in packet.texture_packs {
+        owned_pack := pack
+        protocol.destroy_stack_resource_pack(&owned_pack, allocator)
+    }
+    delete(packet.texture_packs, allocator)
+    delete(packet.base_game_version, allocator)
+    for experiment in packet.experiments {
+        owned_experiment := experiment
+        protocol.destroy_experiment_data(&owned_experiment, allocator)
+    }
+    delete(packet.experiments, allocator)
+}
+
+destroy_resource_pack_stack_fields :: proc(
+    packet: ^Resource_Pack_Stack,
+    allocator := context.allocator,
+) {
+    destroy_resource_pack_stack_value(packet^, allocator)
+    packet^ = {}
+}
+
+read_resource_packs_info :: proc(
+    input: ^protocol.Reader,
+) -> (packet: Resource_Packs_Info, err: mcpe_runtime.Error) {
+    defer if err != nil {
+        destroy_resource_packs_info_fields(&packet, input.allocator)
+    }
+    packet.texture_pack_required = protocol.read_bool(input) or_return
+    packet.has_addons = protocol.read_bool(input) or_return
+    packet.has_scripts = protocol.read_bool(input) or_return
+    packet.force_disable_vibrant_visuals =
+        protocol.read_bool(input) or_return
+    packet.world_template_uuid = protocol.read_uuid(input) or_return
+    packet.world_template_version = protocol.read_string(input) or_return
+    count := protocol.read_u16(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        err = packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_resource_packs_info",
+            "texture pack list exceeds entry limit",
+        )
+        return
+    }
+    packet.texture_packs = make(
+        []protocol.Texture_Pack_Info,
+        int(count),
+        input.allocator,
+    )
+    for &pack in packet.texture_packs {
+        pack = protocol.read_texture_pack_info(input) or_return
+    }
+    return
+}
+
+read_resource_pack_stack :: proc(
+    input: ^protocol.Reader,
+) -> (packet: Resource_Pack_Stack, err: mcpe_runtime.Error) {
+    defer if err != nil {
+        destroy_resource_pack_stack_fields(&packet, input.allocator)
+    }
+    packet.texture_pack_required = protocol.read_bool(input) or_return
+    pack_count := protocol.read_varuint32(input) or_return
+    if pack_count > protocol.MAX_COLLECTION_ELEMENTS {
+        err = packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_resource_pack_stack",
+            "resource pack stack exceeds entry limit",
+        )
+        return
+    }
+    packet.texture_packs = make(
+        []protocol.Stack_Resource_Pack,
+        int(pack_count),
+        input.allocator,
+    )
+    for &pack in packet.texture_packs {
+        pack = protocol.read_stack_resource_pack(input) or_return
+    }
+    packet.base_game_version = protocol.read_string(input) or_return
+    experiment_count := protocol.read_u32(input) or_return
+    if experiment_count > protocol.MAX_COLLECTION_ELEMENTS {
+        err = packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_resource_pack_stack",
+            "experiment list exceeds entry limit",
+        )
+        return
+    }
+    packet.experiments = make(
+        []protocol.Experiment_Data,
+        int(experiment_count),
+        input.allocator,
+    )
+    for &experiment in packet.experiments {
+        experiment = protocol.read_experiment_data(input) or_return
+    }
+    packet.experiments_previously_toggled =
+        protocol.read_bool(input) or_return
+    packet.include_editor_packs = protocol.read_bool(input) or_return
+    return
 }
 
 read_resource_pack_client_response :: proc(

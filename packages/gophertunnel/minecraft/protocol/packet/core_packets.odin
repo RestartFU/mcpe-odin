@@ -81,6 +81,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDServerToClientHandshake,
          IDClientToServerHandshake,
          IDDisconnect,
+         IDResourcePacksInfo,
+         IDResourcePackStack,
          IDResourcePackClientResponse,
          IDSetTime,
          IDRemoveActor,
@@ -147,6 +149,48 @@ write_payload :: proc(
             protocol.write_string(output, packet.message)
             protocol.write_string(output, packet.filtered_message)
         }
+    case Resource_Packs_Info:
+        if len(packet.texture_packs) > protocol.MAX_COLLECTION_ELEMENTS {
+            return packet_error(
+                .Limit_Exceeded,
+                "gophertunnel.packet.write",
+                "texture pack list exceeds entry limit",
+            )
+        }
+        protocol.write_bool(output, packet.texture_pack_required)
+        protocol.write_bool(output, packet.has_addons)
+        protocol.write_bool(output, packet.has_scripts)
+        protocol.write_bool(output, packet.force_disable_vibrant_visuals)
+        protocol.write_uuid(output, packet.world_template_uuid)
+        protocol.write_string(output, packet.world_template_version)
+        protocol.write_u16(output, u16(len(packet.texture_packs)))
+        for pack in packet.texture_packs {
+            protocol.write_texture_pack_info(output, pack)
+        }
+    case Resource_Pack_Stack:
+        if len(packet.texture_packs) > protocol.MAX_COLLECTION_ELEMENTS ||
+           len(packet.experiments) > protocol.MAX_COLLECTION_ELEMENTS {
+            return packet_error(
+                .Limit_Exceeded,
+                "gophertunnel.packet.write",
+                "resource pack stack exceeds entry limit",
+            )
+        }
+        protocol.write_bool(output, packet.texture_pack_required)
+        protocol.write_varuint32(output, u32(len(packet.texture_packs)))
+        for pack in packet.texture_packs {
+            protocol.write_stack_resource_pack(output, pack)
+        }
+        protocol.write_string(output, packet.base_game_version)
+        protocol.write_u32(output, u32(len(packet.experiments)))
+        for experiment in packet.experiments {
+            protocol.write_experiment_data(output, experiment)
+        }
+        protocol.write_bool(
+            output,
+            packet.experiments_previously_toggled,
+        )
+        protocol.write_bool(output, packet.include_editor_packs)
     case Resource_Pack_Client_Response:
         if len(packet.packs_to_download) >
            MAX_RESOURCE_PACK_RESPONSE_ENTRIES {
@@ -376,6 +420,10 @@ decode_packet :: proc(
         value = Client_To_Server_Handshake{}
     case IDDisconnect:
         value = read_disconnect(&input) or_return
+    case IDResourcePacksInfo:
+        value = read_resource_packs_info(&input) or_return
+    case IDResourcePackStack:
+        value = read_resource_pack_stack(&input) or_return
     case IDResourcePackClientResponse:
         value = read_resource_pack_client_response(&input) or_return
     case IDSetTime:

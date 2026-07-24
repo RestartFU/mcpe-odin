@@ -56,6 +56,8 @@ Packet :: union {
     Server_To_Client_Handshake,
     Client_To_Server_Handshake,
     Disconnect,
+    Resource_Packs_Info,
+    Resource_Pack_Stack,
     Resource_Pack_Client_Response,
     Set_Time,
     Remove_Actor,
@@ -118,6 +120,8 @@ packet_id :: proc(value: Packet) -> (
     case Server_To_Client_Handshake:  id = IDServerToClientHandshake
     case Client_To_Server_Handshake:  id = IDClientToServerHandshake
     case Disconnect:                  id = IDDisconnect
+    case Resource_Packs_Info:         id = IDResourcePacksInfo
+    case Resource_Pack_Stack:         id = IDResourcePackStack
     case Resource_Pack_Client_Response:
         id = IDResourcePackClientResponse
     case Set_Time:                    id = IDSetTime
@@ -189,6 +193,10 @@ destroy_packet :: proc(
     #partial switch packet in value^ {
     case Login:
         delete(packet.connection_request, allocator)
+    case Resource_Packs_Info:
+        destroy_resource_packs_info_value(packet, allocator)
+    case Resource_Pack_Stack:
+        destroy_resource_pack_stack_value(packet, allocator)
     case Server_To_Client_Handshake:
         delete(packet.jwt, allocator)
     case Disconnect:

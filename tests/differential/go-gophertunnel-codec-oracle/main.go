@@ -550,6 +550,55 @@ func main() {
 		0,
 		0,
 	)
+	packUUID := uuid.MustParse("00112233-4455-6677-8899-aabbccddeeff")
+	emitPacket(
+		"packet_resource_packs_info",
+		&packet.ResourcePacksInfo{
+			TexturePackRequired:         true,
+			HasAddons:                    true,
+			HasScripts:                   true,
+			ForceDisableVibrantVisuals:   true,
+			WorldTemplateUUID:            packUUID,
+			WorldTemplateVersion:         "1.0.0",
+			TexturePacks: []protocol.TexturePackInfo{
+				{
+					UUID:            packUUID,
+					Version:         "2.0.0",
+					Size:            15_500_000,
+					ContentKey:      "content-key",
+					SubPackName:     "sub-pack",
+					ContentIdentity: "identity",
+					HasScripts:      true,
+					AddonPack:       true,
+					RTXEnabled:      true,
+					DownloadURL:     "https://example.org/pack.zip",
+				},
+			},
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_resource_pack_stack",
+		&packet.ResourcePackStack{
+			TexturePackRequired: true,
+			TexturePacks: []protocol.StackResourcePack{
+				{
+					UUID:        "00112233-4455-6677-8899-aabbccddeeff",
+					Version:     "2.0.0",
+					SubPackName: "sub-pack",
+				},
+			},
+			BaseGameVersion: "1.26.30",
+			Experiments: []protocol.ExperimentData{
+				{Name: "experiment", Enabled: true},
+			},
+			ExperimentsPreviouslyToggled: true,
+			IncludeEditorPacks:           true,
+		},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

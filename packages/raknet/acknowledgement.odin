@@ -48,34 +48,31 @@ acknowledgement_write :: proc(ack: ^Acknowledgement, w: ^Writer, mtu: u16) -> in
     }
 
     slice.sort(ack.packets[:])
+    first, last: UInt24
     records: u16
     consumed := 0
 
-    index := 0
-    for index < len(ack.packets) {
-        first := ack.packets[index]
-        last := first
-        end_index := index + 1
-        for end_index < len(ack.packets) {
-            packet := ack.packets[end_index]
-            if packet == last {
-                end_index += 1
-                continue
-            }
-            if u32(last) == UINT24_MASK || packet != uint24_next(last) {
-                break
-            }
-            last = packet
-            end_index += 1
-        }
-        record_size := 4 if first == last else 7
-        if len(w.data) + record_size > int(mtu) {
+    for packet, index in ack.packets {
+        // Pinned go-raknet reserves enough room for the largest record before
+        // consuming another sequence number.
+        if len(w.data) >= int(mtu) - 7 {
             break
         }
+        consumed += 1
+        if index == 0 {
+            first = packet
+            last = packet
+            continue
+        }
+        if u32(packet) == u32(last) + 1 {
+            last = packet
+            continue
+        }
         acknowledgement_write_record(w, first, last, &records)
-        consumed += end_index - index
-        index = end_index
+        first = packet
+        last = packet
     }
+    acknowledgement_write_record(w, first, last, &records)
     store_u16_be(w.data[length_offset:length_offset + 2], records)
     return consumed
 }

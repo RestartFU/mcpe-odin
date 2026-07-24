@@ -98,6 +98,25 @@ acknowledgement_range_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+acknowledgement_write_preserves_duplicate_records :: proc(t: ^testing.T) {
+    ack := acknowledgement_init()
+    defer acknowledgement_destroy(&ack)
+    acknowledgement_add(&ack, 1)
+    acknowledgement_add(&ack, 1)
+
+    writer := writer()
+    defer writer_destroy(&writer)
+    consumed := acknowledgement_write(&ack, &writer, 1400)
+    expected := []u8{
+        0, 2,
+        ACK_SINGLE, 1, 0, 0,
+        ACK_SINGLE, 1, 0, 0,
+    }
+    testing.expect_value(t, consumed, 2)
+    testing.expect(t, slice.equal(writer.data[:], expected))
+}
+
+@(test)
 ordered_packet_queue :: proc(t: ^testing.T) {
     queue := packet_queue_init()
     defer packet_queue_destroy(&queue)

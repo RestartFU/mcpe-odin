@@ -7,6 +7,12 @@ LOCKED_COMMIT=$(awk '
     $0 == "[go_raknet]" { found=1; next }
     found && /^commit = / { gsub(/^commit = "|".*$/, ""); print; exit }
 ' "$ROOT_DIR/upstream.lock.toml")
+WARM_RUNS=0
+MEASURED_RUNS=3
+if [[ ${MCPE_ODIN_RELEASE_BENCHMARKS:-0} == 1 ]]; then
+    WARM_RUNS=5
+    MEASURED_RUNS=10
+fi
 
 if [[ ! -d "$UPSTREAM_DIR/.git" ]]; then
     mkdir -p "$(dirname "$UPSTREAM_DIR")"
@@ -26,21 +32,44 @@ cleanup() {
 trap cleanup EXIT
 cp "$ROOT_DIR/tests/benchmarks/go-raknet-benchmark_test.go" "$GO_BENCHMARK"
 
+if (( WARM_RUNS > 0 )); then
+    (
+        cd "$UPSTREAM_DIR"
+        go test -run '^$' \
+            -bench 'Benchmark(PacketDecode1KiB|Fragment64KiB)$' \
+            -benchtime=500ms \
+            -count="$WARM_RUNS" >/dev/null
+    )
+    for ((run = 0; run < WARM_RUNS; run++)); do
+        "$ROOT_DIR/tools/odinw" benchmark -o:speed >/dev/null
+    done
+fi
+
 GO_OUTPUT=$(
     cd "$UPSTREAM_DIR"
     go test -run '^$' \
         -bench 'Benchmark(PacketDecode1KiB|Fragment64KiB)$' \
         -benchtime=500ms \
-        -count=3
+        -count="$MEASURED_RUNS"
 )
 ODIN_OUTPUT=$(
-    for _ in 1 2 3; do
+    for ((run = 0; run < MEASURED_RUNS; run++)); do
         "$ROOT_DIR/tools/odinw" benchmark -o:speed
     done
 )
 
 median() {
-    sort -n | sed -n '2p'
+    sort -n | awk '
+        { values[NR] = $1 }
+        END {
+            if (NR == 0) exit 1
+            if (NR % 2 == 1) {
+                print values[(NR + 1) / 2]
+            } else {
+                print (values[NR / 2] + values[NR / 2 + 1]) / 2
+            }
+        }
+    '
 }
 
 GO_DECODE=$(
@@ -82,7 +111,8 @@ compare() {
     printf '%s: Go %.2f MiB/s, Odin %.2f MiB/s, %.2f%%\n' \
         "$name" "$go_rate" "$odin_rate" "$ratio"
     if ! awk -v ratio="$ratio" 'BEGIN { exit !(ratio >= 90) }'; then
-        if [[ ${MCPE_ODIN_ENFORCE_BENCHMARKS:-0} == 1 ]]; then
+        if [[ ${MCPE_ODIN_ENFORCE_BENCHMARKS:-0} == 1 ||
+              ${MCPE_ODIN_RELEASE_BENCHMARKS:-0} == 1 ]]; then
             return 1
         fi
         printf 'warning: %s is below release threshold on this host\n' "$name"
@@ -91,4 +121,6 @@ compare() {
 
 compare "packet decode 1 KiB" "$GO_DECODE" "$ODIN_DECODE"
 compare "fragment 64 KiB" "$GO_FRAGMENT" "$ODIN_FRAGMENT"
+printf 'benchmark runs: %d warm, %d measured\n' \
+    "$WARM_RUNS" "$MEASURED_RUNS"
 printf 'RakNet throughput comparison matches %s\n' "$LOCKED_COMMIT"

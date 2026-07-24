@@ -25,12 +25,33 @@ tracked explicitly in `api-map.toml`; package presence does not imply parity.
 ./tests/benchmarks/raknet-compare.sh
 MCPE_ODIN_ENFORCE_BENCHMARKS=1 ./tests/benchmarks/raknet-compare.sh
 ./tests/benchmarks/raknet-network-compare.sh
+MCPE_ODIN_RELEASE_BENCHMARKS=1 ./tests/benchmarks/raknet-compare.sh
+MCPE_ODIN_RELEASE_BENCHMARKS=1 ./tests/benchmarks/raknet-network-compare.sh
 ./tests/differential/raknet-messages.sh
 ./tests/differential/raknet-cross-runtime.sh
 ./tools/api-audit/check.sh
 ./tools/odinw build dragonfly
 ./tools/odinw run dragonfly
 ```
+
+## RakNet benchmarks
+
+Latest release-gate run on 2026-07-24 used five warm runs and ten measured
+runs. Results compare this Odin port against pinned go-raknet
+`0d1fd09e2cf6d50dbc7c0764731109196ed9e248`.
+
+| Benchmark | Go | Odin | Odin / Go |
+| --- | ---: | ---: | ---: |
+| Packet decode, 1 KiB | 6,287.40 MiB/s | 81,186.40 MiB/s | 1,291.26% |
+| Fragment, 64 KiB | 291,482.00 MiB/s | 393,493.00 MiB/s | 135.00% |
+| Network p95 latency | 33,450 ns | 31,500 ns | 94.17% |
+| Peak server RSS | 8,728 KiB | 4,028 KiB | 46.15% |
+
+Host: AMD Ryzen 9 7950X, 16 cores/32 threads, NixOS 26.05, Linux 6.18.39,
+Go 1.26.5, Odin `dev-2026-07-nightly:819fdc7`. Network and RSS rows report
+the median of each measured run's p95 latency and peak RSS. Results vary by
+host; release gates require at least 90% Go throughput, at most 110% Go p95
+latency, and at most 115% Go peak RSS.
 
 RakNet examples:
 

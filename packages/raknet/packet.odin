@@ -138,11 +138,11 @@ split_content :: proc(data: []u8, mtu: u16) -> (
     }
 
     fragment_count := (len(data) + max_size - 1) / max_size
-    fragments = make([dynamic][]u8, 0, fragment_count)
+    fragments = make([dynamic][]u8, fragment_count)
     offset := 0
-    for offset < len(data) {
+    for index in 0..<fragment_count {
         end := min(offset + max_size, len(data))
-        append(&fragments, data[offset:end])
+        fragments[index] = data[offset:end]
         offset = end
     }
     return

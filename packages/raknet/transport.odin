@@ -26,15 +26,29 @@ Packet_Transport_Local_Endpoint_Proc :: proc "odin" (
     user_data: rawptr,
 ) -> (endpoint: net.Endpoint, err: mcpe_runtime.Error)
 
+Packet_Transport_Set_Deadline_Proc :: proc "odin" (
+    user_data: rawptr,
+    deadline_ns: i64,
+) -> mcpe_runtime.Error
+
 Packet_Transport_VTable :: struct {
     read:           Packet_Transport_Read_Proc,
     write:          Packet_Transport_Write_Proc,
     close:          Packet_Transport_Close_Proc,
     local_endpoint: Packet_Transport_Local_Endpoint_Proc,
+    set_deadline:   Packet_Transport_Set_Deadline_Proc,
 }
 
 // Packet_Transport represents the packet-oriented operations used by RakNet.
 // Procedures must be safe for concurrent reads and writes.
+//
+// Connected transports may return a zero remote endpoint from read. Dialer
+// substitutes the connected_remote supplied by Upstream_Dial_Proc.
+//
+// set_deadline receives absolute runtime.system_now_ns deadlines. Handshake
+// reads use deadlines no more than 100 ms away so packet retransmission and
+// cancellation remain responsive. Zero clears the deadline after a successful
+// RakNet handshake. RakNet closes an accepted transport exactly once.
 //
 // Write errors with kind Closed are terminal. All other write errors are
 // logged and treated as recoverable, matching pinned go-raknet's writeTo
@@ -60,6 +74,19 @@ packet_transport_validate :: proc(
             .Invalid_Argument,
             operation,
             "packet transport vtable is incomplete",
+        )
+    }
+    return nil
+}
+
+packet_transport_set_deadline :: proc(
+    transport: Packet_Transport,
+    deadline_ns: i64,
+) -> mcpe_runtime.Error {
+    if transport.vtable != nil && transport.vtable.set_deadline != nil {
+        return transport.vtable.set_deadline(
+            transport.user_data,
+            deadline_ns,
         )
     }
     return nil

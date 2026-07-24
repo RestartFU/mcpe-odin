@@ -108,29 +108,40 @@ ping_timeout_internal :: proc(
     }
     deadline_ns := mcpe_runtime.system_now_ns(nil) + i64(timeout)
     endpoint := resolve_endpoint(address) or_return
-    socket := dialer_make_socket(
+    connection := dialer_make_transport(
         dialer,
         endpoint,
         token,
         deadline_ns,
     ) or_return
-    defer net.close(socket)
+    defer if close_err := packet_transport_close(
+        connection.transport,
+        connection.socket,
+    ); close_err != nil {
+        mcpe_runtime.destroy_error(close_err)
+    }
 
-    if option_err := net.set_option(
-        socket,
-        .Receive_Timeout,
-        min(timeout, 100 * time.Millisecond),
-    ); option_err != nil {
-        err = network_error("raknet.ping.deadline")
-        return
+    if connection.transport.vtable == nil {
+        if option_err := net.set_option(
+            connection.socket,
+            .Receive_Timeout,
+            min(timeout, 100 * time.Millisecond),
+        ); option_err != nil {
+            err = network_error("raknet.ping.deadline")
+            return
+        }
     }
 
     request := message.marshal_unconnected_ping({
         ping_time = timestamp(),
         client_guid = next_dialer_id(),
     })
-    if _, send_err := net.send_udp(socket, request[:], endpoint); send_err != nil {
-        err = network_error("raknet.ping.send")
+    if send_err := dialer_send(
+        connection,
+        request[:],
+        deadline_ns,
+    ); send_err != nil {
+        err = send_err
         return
     }
 
@@ -140,19 +151,25 @@ ping_timeout_internal :: proc(
             err = mcpe_runtime.make_error(.Cancelled, "raknet.ping")
             return
         }
-        received, remote, receive_err := net.recv_udp(socket, buffer[:])
+        received, remote, receive_err := dialer_receive(
+            connection,
+            buffer[:],
+            deadline_ns,
+        )
         if receive_err != nil {
-            if receive_err == .Timeout || receive_err == .Would_Block {
+            if receive_err.kind == .Timeout {
+                mcpe_runtime.destroy_error(receive_err)
                 continue
             }
             if mcpe_runtime.is_cancelled(token) {
+                mcpe_runtime.destroy_error(receive_err)
                 err = mcpe_runtime.make_error(.Cancelled, "raknet.ping")
                 return
             }
-            err = network_error("raknet.ping.receive")
+            err = receive_err
             return
         }
-        if remote != endpoint {
+        if remote != connection.remote {
             continue
         }
         return ping_decode_response(buffer[:received])

@@ -29,6 +29,8 @@ Test_Upstream_Dial_State :: struct {
     called:      bool,
     token:       ^mcpe_runtime.Cancel_Token,
     deadline_ns: i64,
+    transport:   Test_Packet_Transport_State,
+    incomplete:  bool,
 }
 
 test_upstream_dial :: proc "odin" (
@@ -36,8 +38,11 @@ test_upstream_dial :: proc "odin" (
     token: ^mcpe_runtime.Cancel_Token,
     deadline_ns: i64,
     remote: net.Endpoint,
-) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error) {
-    _ = remote
+) -> (
+    transport: Packet_Transport,
+    connected_remote: net.Endpoint,
+    err: mcpe_runtime.Error,
+) {
     state := (^Test_Upstream_Dial_State)(user_data)
     state.called = true
     state.token = token
@@ -47,7 +52,17 @@ test_upstream_dial :: proc "odin" (
         err = network_error("raknet.test_upstream_dial")
         return
     }
-    return native_socket, nil
+    state.transport.socket = native_socket
+    vtable := &TEST_PACKET_TRANSPORT_VTABLE
+    if state.incomplete {
+        vtable = &TEST_INCOMPLETE_PACKET_TRANSPORT_VTABLE
+    }
+    transport = {
+        user_data = &state.transport,
+        vtable = vtable,
+    }
+    connected_remote = remote
+    return
 }
 
 TEST_UPSTREAM_DIALER_VTABLE := Upstream_Dialer_VTable{
@@ -75,11 +90,14 @@ TEST_UPSTREAM_LISTENER_VTABLE := Upstream_Packet_Listener_VTable{
 }
 
 Test_Packet_Transport_State :: struct {
-    socket:      net.UDP_Socket,
-    read_calls:  int,
-    write_calls: int,
-    close_calls: int,
-    read_closed: bool,
+    socket:             net.UDP_Socket,
+    read_calls:         int,
+    write_calls:        int,
+    close_calls:        int,
+    deadline_calls:     int,
+    last_deadline_ns:   i64,
+    saw_poll_deadline:  bool,
+    read_closed:        bool,
 }
 
 test_packet_transport_read :: proc "odin" (
@@ -144,11 +162,44 @@ test_packet_transport_local_endpoint :: proc "odin" (
     return
 }
 
+test_packet_transport_set_deadline :: proc "odin" (
+    user_data: rawptr,
+    deadline_ns: i64,
+) -> mcpe_runtime.Error {
+    state := (^Test_Packet_Transport_State)(user_data)
+    state.deadline_calls += 1
+    state.last_deadline_ns = deadline_ns
+    remaining_ns := deadline_ns - mcpe_runtime.system_now_ns(nil)
+    if remaining_ns > 0 && remaining_ns <= i64(150 * time.Millisecond) {
+        state.saw_poll_deadline = true
+    }
+    return nil
+}
+
 TEST_PACKET_TRANSPORT_VTABLE := Packet_Transport_VTable{
     read = test_packet_transport_read,
     write = test_packet_transport_write,
     close = test_packet_transport_close,
     local_endpoint = test_packet_transport_local_endpoint,
+    set_deadline = test_packet_transport_set_deadline,
+}
+
+TEST_INCOMPLETE_PACKET_TRANSPORT_VTABLE := Packet_Transport_VTable{
+    read = test_packet_transport_read,
+    write = test_packet_transport_write,
+    close = test_packet_transport_close,
+    local_endpoint = test_packet_transport_local_endpoint,
+}
+
+@(test)
+packet_transport_deadline_is_dial_only :: proc(t: ^testing.T) {
+    err := packet_transport_validate(
+        {
+            vtable = &TEST_INCOMPLETE_PACKET_TRANSPORT_VTABLE,
+        },
+        "raknet.test.transport",
+    )
+    testing.expect(t, err == nil)
 }
 
 Test_OVH_Workaround_State :: struct {
@@ -329,8 +380,10 @@ invalid_reply_1_triggers_ovh_request_2_workaround :: proc(t: ^testing.T) {
     transient_errors := 0
     mtu, _, _, discover_err := dialer_discover_mtu(
         {},
-        client,
-        remote,
+        {
+            socket = client,
+            remote = remote,
+        },
         -5,
         nil,
         mcpe_runtime.system_now_ns(nil) + i64(2 * time.Second),
@@ -561,12 +614,85 @@ custom_upstream_dialer_connects :: proc(t: ^testing.T) {
     if dial_err != nil {
         return
     }
-    defer conn_destroy(client)
     server, accept_err := accept(listener)
     testing.expect(t, accept_err == nil)
     if accept_err == nil {
         conn_destroy(server)
     }
+    conn_destroy(client)
+    testing.expect(t, state.transport.read_calls > 0)
+    testing.expect(t, state.transport.write_calls > 0)
+    testing.expect(t, state.transport.deadline_calls > 2)
+    testing.expect_value(t, state.transport.last_deadline_ns, i64(0))
+    testing.expect(t, state.transport.saw_poll_deadline)
+    testing.expect_value(t, state.transport.close_calls, 1)
+}
+
+@(test)
+rejected_upstream_transport_is_closed :: proc(t: ^testing.T) {
+    state := Test_Upstream_Dial_State{incomplete = true}
+    remote := net.Endpoint{
+        address = net.IP4_Loopback,
+        port = 19132,
+    }
+    _, dial_err := dialer_make_transport(
+        {
+            upstream_dialer = {
+                user_data = &state,
+                vtable = &TEST_UPSTREAM_DIALER_VTABLE,
+            },
+        },
+        remote,
+    )
+    testing.expect(t, dial_err != nil)
+    if dial_err != nil {
+        testing.expect_value(
+            t,
+            dial_err.kind,
+            mcpe_runtime.Error_Kind.Invalid_Argument,
+        )
+        mcpe_runtime.destroy_error(dial_err)
+    }
+    testing.expect_value(t, state.transport.close_calls, 1)
+}
+
+@(test)
+custom_upstream_dialer_pings :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    expected := transmute([]u8)string("MCPE;custom-transport")
+    set_pong_data(listener, expected)
+    state: Test_Upstream_Dial_State
+    dialer := Dialer{
+        upstream_dialer = {
+            user_data = &state,
+            vtable = &TEST_UPSTREAM_DIALER_VTABLE,
+        },
+    }
+    address := net.endpoint_to_string(listener_address(listener))
+    actual, ping_err := dialer_ping_timeout(
+        dialer,
+        address,
+        time.Second,
+    )
+    testing.expect(t, ping_err == nil)
+    if ping_err != nil {
+        mcpe_runtime.destroy_error(ping_err)
+        return
+    }
+    defer delete(actual)
+    testing.expect(t, slice.equal(actual, expected))
+    testing.expect(t, state.transport.deadline_calls > 1)
+    testing.expect(t, state.transport.last_deadline_ns > 0)
+    testing.expect(t, state.transport.saw_poll_deadline)
+    testing.expect(t, state.transport.read_calls > 0)
+    testing.expect_value(t, state.transport.write_calls, 1)
+    testing.expect_value(t, state.transport.close_calls, 1)
 }
 
 @(test)

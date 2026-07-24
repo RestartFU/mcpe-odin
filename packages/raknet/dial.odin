@@ -7,12 +7,19 @@ import "core:time"
 import message "mcpe:raknet/message"
 import mcpe_runtime "mcpe:runtime"
 
+// Upstream_Dial_Proc is the Odin equivalent of UpstreamDialer.DialContext.
+// On success it transfers ownership of a connected packet transport to
+// RakNet. connected_remote is the transport's RemoteAddr equivalent.
 Upstream_Dial_Proc :: proc "odin" (
     user_data: rawptr,
     token: ^mcpe_runtime.Cancel_Token,
     deadline_ns: i64,
     remote: net.Endpoint,
-) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error)
+) -> (
+    transport: Packet_Transport,
+    connected_remote: net.Endpoint,
+    err: mcpe_runtime.Error,
+)
 
 Upstream_Dialer_VTable :: struct {
     dial: Upstream_Dial_Proc,
@@ -32,6 +39,12 @@ Dialer :: struct {
 
 MIN_SUPPORTED_MTU :: u16(576)
 
+Dial_Transport :: struct {
+    socket:    net.UDP_Socket,
+    transport: Packet_Transport,
+    remote:    net.Endpoint,
+}
+
 handshake_wait_error :: proc(
     token: ^mcpe_runtime.Cancel_Token,
     deadline_ns: i64,
@@ -47,7 +60,7 @@ handshake_wait_error :: proc(
 }
 
 dialer_receive :: proc(
-    socket: net.UDP_Socket,
+    connection: Dial_Transport,
     buffer: []u8,
     deadline_ns: i64,
 ) -> (
@@ -60,25 +73,62 @@ dialer_receive :: proc(
         err = mcpe_runtime.make_error(.Timeout, "raknet.dial.receive")
         return
     }
-    receive_timeout := min(time.Duration(remaining_ns), 100 * time.Millisecond)
-    if option_err := net.set_option(
-        socket,
-        .Receive_Timeout,
-        receive_timeout,
-    ); option_err != nil {
-        err = network_error("raknet.dial.receive.deadline")
-        return
-    }
-    receive_err: net.UDP_Recv_Error
-    count, remote, receive_err = net.recv_udp(socket, buffer)
-    if receive_err != nil {
-        kind := mcpe_runtime.Error_Kind.Network
-        if receive_err == .Timeout || receive_err == .Would_Block {
-            kind = .Timeout
+    if connection.transport.vtable == nil {
+        receive_timeout := min(time.Duration(remaining_ns), 100 * time.Millisecond)
+        if option_err := net.set_option(
+            connection.socket,
+            .Receive_Timeout,
+            receive_timeout,
+        ); option_err != nil {
+            err = network_error("raknet.dial.receive.deadline")
+            return
         }
-        err = network_error("raknet.dial.receive", kind)
+    } else {
+        poll_deadline_ns := min(
+            deadline_ns,
+            mcpe_runtime.system_now_ns(nil) + i64(100 * time.Millisecond),
+        )
+        if deadline_err := packet_transport_set_deadline(
+            connection.transport,
+            poll_deadline_ns,
+        ); deadline_err != nil {
+            err = deadline_err
+            return
+        }
+    }
+    count, remote, err = packet_transport_read(
+        connection.transport,
+        connection.socket,
+        buffer,
+    )
+    // A connected transport has no source address on Read. Its RemoteAddr
+    // equivalent is captured when the upstream dial procedure returns.
+    if err == nil && remote.address == nil {
+        remote = connection.remote
     }
     return
+}
+
+dialer_send :: proc(
+    connection: Dial_Transport,
+    data: []u8,
+    deadline_ns: i64,
+) -> mcpe_runtime.Error {
+    if connection.transport.vtable != nil {
+        if deadline_err := packet_transport_set_deadline(
+            connection.transport,
+            deadline_ns,
+        ); deadline_err != nil {
+            return deadline_err
+        }
+    }
+    _, _, err := packet_transport_write(
+        connection.transport,
+        connection.socket,
+        data,
+        connection.remote,
+    )
+    return err
 }
 
 dialer_retry_receive_error :: proc(
@@ -105,12 +155,12 @@ dialer_retry_receive_error :: proc(
     return false, receive_err
 }
 
-dialer_make_socket :: proc(
+dialer_make_transport :: proc(
     dialer: Dialer,
     remote: net.Endpoint,
     token: ^mcpe_runtime.Cancel_Token = nil,
     deadline_ns: i64 = 0,
-) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error) {
+) -> (connection: Dial_Transport, err: mcpe_runtime.Error) {
     if dialer.upstream_dialer.vtable != nil {
         if dialer.upstream_dialer.vtable.dial == nil {
             err = mcpe_runtime.make_error(
@@ -120,12 +170,77 @@ dialer_make_socket :: proc(
             )
             return
         }
-        return dialer.upstream_dialer.vtable.dial(
+        transport, connected_remote, dial_err := dialer.upstream_dialer.vtable.dial(
             dialer.upstream_dialer.user_data,
             token,
             deadline_ns,
             remote,
         )
+        if dial_err != nil {
+            err = dial_err
+            return
+        }
+        if transport.vtable == nil {
+            err = mcpe_runtime.make_error(
+                .Invalid_Argument,
+                "raknet.dial.transport",
+                "upstream dialer returned no packet transport",
+            )
+            return
+        }
+        if transport_err := packet_transport_validate(
+            transport,
+            "raknet.dial.transport",
+        ); transport_err != nil {
+            if transport.vtable.close != nil {
+                if close_err := transport.vtable.close(
+                    transport.user_data,
+                ); close_err != nil {
+                    mcpe_runtime.destroy_error(close_err)
+                }
+            }
+            err = transport_err
+            return
+        }
+        if transport.vtable.set_deadline == nil {
+            if close_err := transport.vtable.close(
+                transport.user_data,
+            ); close_err != nil {
+                mcpe_runtime.destroy_error(close_err)
+            }
+            err = mcpe_runtime.make_error(
+                .Invalid_Argument,
+                "raknet.dial.transport",
+                "upstream dial transport has no deadline procedure",
+            )
+            return
+        }
+        if connected_remote.address == nil {
+            if close_err := packet_transport_close(transport, {}); close_err != nil {
+                mcpe_runtime.destroy_error(close_err)
+            }
+            err = mcpe_runtime.make_error(
+                .Invalid_Argument,
+                "raknet.dial.transport",
+                "upstream dialer returned no remote endpoint",
+            )
+            return
+        }
+        if deadline_err := packet_transport_set_deadline(
+            transport,
+            deadline_ns,
+        ); deadline_err != nil {
+            if close_err := packet_transport_close(transport, {}); close_err != nil {
+                mcpe_runtime.destroy_error(close_err)
+            }
+            err = deadline_err
+            return
+        }
+        connection = {
+            transport = transport,
+            remote = connected_remote,
+        }
+        return
     }
     native_socket, socket_err := net.make_unbound_udp_socket(
         net.family_from_address(remote.address),
@@ -134,13 +249,16 @@ dialer_make_socket :: proc(
         err = network_error("raknet.dial.socket")
         return
     }
-    return native_socket, nil
+    connection = {
+        socket = native_socket,
+        remote = remote,
+    }
+    return
 }
 
 dialer_discover_mtu :: proc(
     dialer: Dialer,
-    socket: net.UDP_Socket,
-    remote: net.Endpoint,
+    connection: Dial_Transport,
     client_id: i64,
     token: ^mcpe_runtime.Cancel_Token,
     deadline_ns: i64,
@@ -178,7 +296,14 @@ dialer_discover_mtu :: proc(
             if request_err != nil {
                 return 0, false, 0, request_err
             }
-            if _, send_err := net.send_udp(socket, request.data[:], remote); send_err != nil {
+            // Pinned go-raknet's request1 discards every net.Conn.Write
+            // error. The read side observes a closed transport and exits.
+            if send_err := dialer_send(
+                connection,
+                request.data[:],
+                deadline_ns,
+            ); send_err != nil {
+                mcpe_runtime.destroy_error(send_err)
                 writer_destroy(&request)
                 continue
             }
@@ -190,7 +315,7 @@ dialer_discover_mtu :: proc(
             )
             for mcpe_runtime.system_now_ns(nil) < retry_deadline {
                 count, packet_remote, receive_err := dialer_receive(
-                    socket,
+                    connection,
                     buffer[:],
                     deadline_ns,
                 )
@@ -215,7 +340,7 @@ dialer_discover_mtu :: proc(
                 if count == 0 {
                     continue
                 }
-                if packet_remote != remote {
+                if packet_remote != connection.remote {
                     continue
                 }
                 switch buffer[0] {
@@ -228,17 +353,19 @@ dialer_discover_mtu :: proc(
                         // Reply1. OVH protection can require that packet before
                         // allowing the next valid Reply1 through.
                         workaround := message.marshal_open_connection_request_2({
-                            server_address = message_address_from_endpoint(remote),
+                            server_address = message_address_from_endpoint(connection.remote),
                             mtu = reply.mtu,
                             client_guid = client_id,
                             server_has_security = reply.server_has_security,
                             cookie = reply.cookie,
                         })
-                        _, _ = net.send_udp(
-                            socket,
+                        if workaround_err := dialer_send(
+                            connection,
                             workaround.data[:],
-                            remote,
-                        )
+                            deadline_ns,
+                        ); workaround_err != nil {
+                            mcpe_runtime.destroy_error(workaround_err)
+                        }
                         writer_destroy(&workaround)
                         continue
                     }
@@ -260,8 +387,7 @@ dialer_discover_mtu :: proc(
 
 dialer_open_connection :: proc(
     dialer: Dialer,
-    socket: net.UDP_Socket,
-    remote: net.Endpoint,
+    connection: Dial_Transport,
     client_id: i64,
     mtu: u16,
     server_security: bool,
@@ -276,13 +402,20 @@ dialer_open_connection :: proc(
             return 0, wait_err
         }
         request := message.marshal_open_connection_request_2({
-            server_address = message_address_from_endpoint(remote),
+            server_address = message_address_from_endpoint(connection.remote),
             mtu = mtu,
             client_guid = client_id,
             server_has_security = server_security,
             cookie = cookie,
         })
-        if _, send_err := net.send_udp(socket, request.data[:], remote); send_err != nil {
+        // Pinned go-raknet's openConnectionRequest2 likewise discards every
+        // net.Conn.Write error. Preserve that offline-handshake quirk.
+        if send_err := dialer_send(
+            connection,
+            request.data[:],
+            deadline_ns,
+        ); send_err != nil {
+            mcpe_runtime.destroy_error(send_err)
             writer_destroy(&request)
             continue
         }
@@ -294,7 +427,7 @@ dialer_open_connection :: proc(
         )
         for mcpe_runtime.system_now_ns(nil) < retry_deadline {
             count, packet_remote, receive_err := dialer_receive(
-                socket,
+                connection,
                 buffer[:],
                 deadline_ns,
             )
@@ -319,7 +452,7 @@ dialer_open_connection :: proc(
             if count == 0 || buffer[0] != message.ID_OPEN_CONNECTION_REPLY_2 {
                 continue
             }
-            if packet_remote != remote {
+            if packet_remote != connection.remote {
                 continue
             }
             reply := message.unmarshal_open_connection_reply_2(buffer[1:count]) or_return
@@ -349,22 +482,26 @@ dial_config :: proc(
         return
     }
     remote := resolve_endpoint(address) or_return
-    socket := dialer_make_socket(
+    connection := dialer_make_transport(
         configured_dialer,
         remote,
         token,
         deadline_ns,
     ) or_return
-    keep_socket := false
-    defer if !keep_socket {
-        net.close(socket)
+    keep_transport := false
+    defer if !keep_transport {
+        if close_err := packet_transport_close(
+            connection.transport,
+            connection.socket,
+        ); close_err != nil {
+            mcpe_runtime.destroy_error(close_err)
+        }
     }
     client_id := next_dialer_id()
     transient_error_count := 0
     mtu, security, cookie := dialer_discover_mtu(
         configured_dialer,
-        socket,
-        remote,
+        connection,
         client_id,
         token,
         deadline_ns,
@@ -372,8 +509,7 @@ dial_config :: proc(
     ) or_return
     mtu = dialer_open_connection(
         configured_dialer,
-        socket,
-        remote,
+        connection,
         client_id,
         mtu,
         security,
@@ -382,9 +518,17 @@ dial_config :: proc(
         deadline_ns,
         &transient_error_count,
     ) or_return
-    conn = conn_create(socket, remote, mtu, .Client, true) or_return
+    conn = conn_create(
+        connection.socket,
+        connection.remote,
+        mtu,
+        .Client,
+        true,
+        context.allocator,
+        connection.transport,
+    ) or_return
     conn.error_log = configured_dialer.error_log
-    keep_socket = true
+    keep_transport = true
     conn_start_threads(conn, false)
 
     request := message.marshal_connection_request({
@@ -408,7 +552,7 @@ dial_config :: proc(
             return
         }
         count, packet_remote, receive_err := dialer_receive(
-            socket,
+            connection,
             buffer[:],
             deadline_ns,
         )
@@ -420,7 +564,7 @@ dial_config :: proc(
             conn_log_receive_error(conn, receive_err)
             continue
         }
-        if packet_remote != remote {
+        if packet_remote != connection.remote {
             continue
         }
         if process_err := conn_receive(conn, buffer[:count]); process_err != nil {
@@ -430,7 +574,21 @@ dial_config :: proc(
         _, connected = channel.try_recv(conn.connected_event)
     }
 
-    _ = net.set_option(socket, .Receive_Timeout, 100 * time.Millisecond)
+    if connection.transport.vtable == nil {
+        _ = net.set_option(
+            connection.socket,
+            .Receive_Timeout,
+            100 * time.Millisecond,
+        )
+    } else if deadline_err := packet_transport_set_deadline(
+        connection.transport,
+        0,
+    ); deadline_err != nil {
+        conn_destroy(conn)
+        conn = nil
+        err = deadline_err
+        return
+    }
     conn_start_threads(conn, true)
     return
 }

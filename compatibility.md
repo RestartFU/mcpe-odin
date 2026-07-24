@@ -26,6 +26,15 @@ successful `read` or `read_packet` call on that connection invalidates them.
 `clone_packet` creates an allocator-owned copy when data must outlive that
 window.
 
+`Upstream_Dialer_VTable.dial` is the `DialContext` mapping. It returns an
+owned `Packet_Transport` plus its connected remote endpoint. RakNet applies
+the absolute handshake deadline through `set_deadline`, caps individual
+handshake reads at 100 ms for retransmission and cancellation, clears the
+deadline with zero after connecting, and closes the transport exactly once.
+Connected transports may return a zero remote endpoint from `read`; RakNet
+substitutes the remote endpoint returned by `dial`. `set_deadline` is required
+for dial transports only; packet-listener transports may omit it.
+
 `close` is overloaded for `Conn` and `Listener`. Closing starts shutdown;
 `conn_destroy` and `destroy_listener` additionally release Odin-owned storage.
 

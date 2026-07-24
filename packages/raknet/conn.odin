@@ -709,6 +709,13 @@ conn_handle_control :: proc(conn: ^Conn, data: []u8) -> (
             return true, mcpe_runtime.make_error(.Protocol, "raknet.handle_packet", "unexpected connection request accepted")
         }
         accepted := message.unmarshal_connection_request_accepted(data[1:]) or_return
+        if sync.atomic_load(&conn.connected) {
+            return true, mcpe_runtime.make_error(
+                .Protocol,
+                "raknet.handle_packet",
+                "additional connection request accepted",
+            )
+        }
         response := message.marshal_new_incoming_connection({
             server_address = message_address_from_endpoint(conn.remote),
             ping_time = accepted.pong_time,
@@ -727,7 +734,15 @@ conn_handle_control :: proc(conn: ^Conn, data: []u8) -> (
             return true, mcpe_runtime.make_error(.Protocol, "raknet.handle_packet", "unexpected new incoming connection")
         }
         // Pinned go-raknet deliberately neither decodes this packet nor tracks
-        // a preceding ConnectionRequest. Preserve that observable handshake quirk.
+        // a preceding ConnectionRequest, but rejects additional packets after
+        // connection. Preserve both observable handshake quirks.
+        if sync.atomic_load(&conn.connected) {
+            return true, mcpe_runtime.make_error(
+                .Protocol,
+                "raknet.handle_packet",
+                "additional new incoming connection",
+            )
+        }
         conn_mark_connected(conn)
         return true, nil
 

@@ -7,6 +7,7 @@ import channel "core:sync/chan"
 import "core:testing"
 import "core:thread"
 import "core:time"
+import message "mcpe:raknet/message"
 import mcpe_runtime "mcpe:runtime"
 
 cancel_after_delay :: proc(worker: ^thread.Thread) {
@@ -423,6 +424,50 @@ dialer_logs_malformed_packets_without_closing :: proc(t: ^testing.T) {
     }
     testing.expect_value(t, count, len(expected))
     testing.expect(t, slice.equal(response[:count], expected))
+}
+
+@(test)
+duplicate_handshake_completion_is_rejected :: proc(t: ^testing.T) {
+    server := Conn{
+        mode = .Server,
+        connected = true,
+    }
+    handled, server_err := conn_handle_control(
+        &server,
+        []u8{message.ID_NEW_INCOMING_CONNECTION},
+    )
+    testing.expect(t, handled)
+    testing.expect(t, server_err != nil)
+    if server_err != nil {
+        testing.expect_value(
+            t,
+            server_err.kind,
+            mcpe_runtime.Error_Kind.Protocol,
+        )
+        mcpe_runtime.destroy_error(server_err)
+    }
+
+    accepted := message.marshal_connection_request_accepted({})
+    defer writer_destroy(&accepted)
+    client := Conn{
+        mode = .Client,
+        connected = true,
+    }
+    client_err: mcpe_runtime.Error
+    handled, client_err = conn_handle_control(
+        &client,
+        accepted.data[:],
+    )
+    testing.expect(t, handled)
+    testing.expect(t, client_err != nil)
+    if client_err != nil {
+        testing.expect_value(
+            t,
+            client_err.kind,
+            mcpe_runtime.Error_Kind.Protocol,
+        )
+        mcpe_runtime.destroy_error(client_err)
+    }
 }
 
 @(test)

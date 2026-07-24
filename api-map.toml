@@ -329,6 +329,16 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Settings_Command"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.IdentityData"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.Identity_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.IdentityData.Validate"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.validate_identity_data"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

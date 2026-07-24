@@ -115,6 +115,9 @@ Chat support includes all upstream `Text` variants, category framing,
 translation parameters, platform identifiers, and optional filtered messages.
 UI coverage includes titles, store offers and receipts, modal responses,
 server-settings forms, and settings-issued commands.
+The `mcpe:gophertunnel/minecraft/protocol/login` package now exposes
+`Identity_Data` and byte-compatible upstream identity validation, including
+the legacy username-regex quirks used by authenticated and offline clients.
 Raw DEFLATE compression is interoperable in both directions: Odin decodes Go
 level-6 streams and emits standards-compliant stored blocks. Compressed batch
 framing supports upstream's per-batch algorithm byte, threshold no-op marker,

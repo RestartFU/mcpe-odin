@@ -68,6 +68,13 @@ mutation or `writer_destroy`.
 upstream's generic optional value without conflating an absent field with its
 type's zero value.
 
+Login `validate_identity_data` intentionally preserves upstream's unanchored
+username regular expressions: an online name needs at least one ASCII
+letter/digit/space, and an offline name needs at least one Unicode letter or
+space. Other bytes are not rejected by those two checks.
+Identity UUID validation also accepts the raw hexadecimal, case-folded URN,
+and unchecked 38-byte wrapper forms accepted by `google/uuid.Parse`.
+
 NBT uses tagged `nbt.Value` trees instead of Go reflection. `marshal` returns
 allocator-owned bytes. `unmarshal` returns an allocator-owned root pointer and
 root-name string; call `destroy_value`, then `free` the root, and `delete` the

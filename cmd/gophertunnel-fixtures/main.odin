@@ -3,7 +3,9 @@ package gophertunnel_fixtures
 import "core:fmt"
 import nbt "mcpe:gophertunnel/minecraft/nbt"
 import protocol "mcpe:gophertunnel/minecraft/protocol"
+import login "mcpe:gophertunnel/minecraft/protocol/login"
 import packet "mcpe:gophertunnel/minecraft/protocol/packet"
+import mcpe_runtime "mcpe:runtime"
 
 emit :: proc(name: string, data: []u8) {
     fmt.printf("%s ", name)
@@ -21,6 +23,19 @@ emit_dump :: proc(name: string, root: ^nbt.Value) {
     assert(dump_err == nil)
     defer delete(text)
     emit(name, transmute([]u8)text)
+}
+
+emit_identity_validation :: proc(
+    name: string,
+    data: login.Identity_Data,
+) {
+    err := login.validate_identity_data(data)
+    valid := u8(1)
+    if err != nil {
+        valid = 0
+        mcpe_runtime.destroy_error(err)
+    }
+    emit(name, []u8{valid})
 }
 
 emit_packet :: proc(
@@ -110,6 +125,41 @@ nbt_fixture :: proc() -> nbt.Value {
 }
 
 main :: proc() {
+    identity := login.Identity_Data{
+        xuid = "2533274790395904",
+        identity = "00112233-4455-6677-8899-aabbccddeeff",
+        display_name = "Steve",
+    }
+    emit_identity_validation("login_identity_valid", identity)
+    identity.display_name = "A#"
+    emit_identity_validation("login_identity_online_regex_quirk", identity)
+    identity.xuid = ""
+    identity.display_name = "É#"
+    emit_identity_validation("login_identity_offline_unicode", identity)
+    identity.display_name = "###"
+    emit_identity_validation("login_identity_invalid_name", identity)
+    identity.display_name = "Steve"
+    identity.identity = "00000000-0000-0000-0000-000000000000"
+    emit_identity_validation("login_identity_nil_uuid", identity)
+    identity.identity = "00112233-4455-6677-8899-aabbccddeeff"
+    identity.xuid = "not-a-number"
+    emit_identity_validation("login_identity_invalid_xuid", identity)
+    identity.xuid = "2533274790395904"
+    identity.identity = "00112233445566778899aabbccddeeff"
+    emit_identity_validation("login_identity_raw_uuid", identity)
+    identity.identity = "URN:UUID:00112233-4455-6677-8899-aabbccddeeff"
+    emit_identity_validation("login_identity_urn_uuid", identity)
+    identity.identity = "!00112233-4455-6677-8899-aabbccddeeff?"
+    emit_identity_validation("login_identity_wrapped_uuid", identity)
+    identity.identity = "00112233-4455-6677-8899-aabbccddeeff"
+    identity.display_name = "Steve Alex"
+    emit_identity_validation("login_identity_single_space", identity)
+    identity.display_name = "Steve"
+    identity.xuid = "1_2"
+    emit_identity_validation("login_identity_xuid_underscore", identity)
+    identity.xuid = "+1"
+    emit_identity_validation("login_identity_xuid_plus", identity)
+
     output := protocol.writer()
     defer protocol.writer_destroy(&output)
 

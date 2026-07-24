@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	login "github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
@@ -78,7 +79,50 @@ func emitPacket(name string, pk packet.Packet, sender, target byte) {
 	fmt.Printf("%s %s\n", name, hex.EncodeToString(data))
 }
 
+func emitIdentityValidation(name string, data login.IdentityData) {
+	valid := byte(0)
+	if data.Validate() == nil {
+		valid = 1
+	}
+	fmt.Printf("%s %02x\n", name, valid)
+}
+
 func main() {
+	identity := login.IdentityData{
+		XUID:        "2533274790395904",
+		Identity:    "00112233-4455-6677-8899-aabbccddeeff",
+		DisplayName: "Steve",
+	}
+	emitIdentityValidation("login_identity_valid", identity)
+	identity.DisplayName = "A#"
+	emitIdentityValidation("login_identity_online_regex_quirk", identity)
+	identity.XUID = ""
+	identity.DisplayName = "É#"
+	emitIdentityValidation("login_identity_offline_unicode", identity)
+	identity.DisplayName = "###"
+	emitIdentityValidation("login_identity_invalid_name", identity)
+	identity.DisplayName = "Steve"
+	identity.Identity = "00000000-0000-0000-0000-000000000000"
+	emitIdentityValidation("login_identity_nil_uuid", identity)
+	identity.Identity = "00112233-4455-6677-8899-aabbccddeeff"
+	identity.XUID = "not-a-number"
+	emitIdentityValidation("login_identity_invalid_xuid", identity)
+	identity.XUID = "2533274790395904"
+	identity.Identity = "00112233445566778899aabbccddeeff"
+	emitIdentityValidation("login_identity_raw_uuid", identity)
+	identity.Identity = "URN:UUID:00112233-4455-6677-8899-aabbccddeeff"
+	emitIdentityValidation("login_identity_urn_uuid", identity)
+	identity.Identity = "!00112233-4455-6677-8899-aabbccddeeff?"
+	emitIdentityValidation("login_identity_wrapped_uuid", identity)
+	identity.Identity = "00112233-4455-6677-8899-aabbccddeeff"
+	identity.DisplayName = "Steve Alex"
+	emitIdentityValidation("login_identity_single_space", identity)
+	identity.DisplayName = "Steve"
+	identity.XUID = "1_2"
+	emitIdentityValidation("login_identity_xuid_underscore", identity)
+	identity.XUID = "+1"
+	emitIdentityValidation("login_identity_xuid_plus", identity)
+
 	var buffer bytes.Buffer
 	writer := protocol.NewWriter(&buffer, 0)
 

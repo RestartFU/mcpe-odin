@@ -111,4 +111,50 @@ kill "$PROXY_PID"
 wait "$PROXY_PID" 2>/dev/null || true
 PROXY_PID=
 
+stdbuf -oL "$WORK_DIR/go-oracle" serve-echo \
+    >"$WORK_DIR/go-chaos-server.txt" 2>"$WORK_DIR/go-chaos-server.err" &
+GO_SERVER_PID=$!
+for _ in $(seq 1 100); do
+    [[ -s "$WORK_DIR/go-chaos-server.txt" ]] && break
+    sleep 0.02
+done
+GO_CHAOS_ADDRESS=$(head -n 1 "$WORK_DIR/go-chaos-server.txt")
+stdbuf -oL "$WORK_DIR/go-oracle" udp-proxy "$GO_CHAOS_ADDRESS" 0 chaos \
+    >"$WORK_DIR/go-chaos-proxy.txt" 2>"$WORK_DIR/go-chaos-proxy.err" &
+PROXY_PID=$!
+for _ in $(seq 1 100); do
+    [[ -s "$WORK_DIR/go-chaos-proxy.txt" ]] && break
+    sleep 0.02
+done
+GO_CHAOS_PROXY=$(head -n 1 "$WORK_DIR/go-chaos-proxy.txt")
+timeout 20 "$WORK_DIR/odin-cross" dial-echo "$GO_CHAOS_PROXY" 65536
+wait "$GO_SERVER_PID"
+GO_SERVER_PID=
+kill "$PROXY_PID"
+wait "$PROXY_PID" 2>/dev/null || true
+PROXY_PID=
+
+stdbuf -oL "$WORK_DIR/odin-cross" serve-echo \
+    >"$WORK_DIR/odin-chaos-server.txt" 2>"$WORK_DIR/odin-chaos-server.err" &
+ODIN_SERVER_PID=$!
+for _ in $(seq 1 100); do
+    [[ -s "$WORK_DIR/odin-chaos-server.txt" ]] && break
+    sleep 0.02
+done
+ODIN_CHAOS_ADDRESS=$(head -n 1 "$WORK_DIR/odin-chaos-server.txt")
+stdbuf -oL "$WORK_DIR/go-oracle" udp-proxy "$ODIN_CHAOS_ADDRESS" 0 chaos \
+    >"$WORK_DIR/odin-chaos-proxy.txt" 2>"$WORK_DIR/odin-chaos-proxy.err" &
+PROXY_PID=$!
+for _ in $(seq 1 100); do
+    [[ -s "$WORK_DIR/odin-chaos-proxy.txt" ]] && break
+    sleep 0.02
+done
+ODIN_CHAOS_PROXY=$(head -n 1 "$WORK_DIR/odin-chaos-proxy.txt")
+timeout 20 "$WORK_DIR/go-oracle" dial-echo "$ODIN_CHAOS_PROXY" 65536
+wait "$ODIN_SERVER_PID"
+ODIN_SERVER_PID=
+kill "$PROXY_PID"
+wait "$PROXY_PID" 2>/dev/null || true
+PROXY_PID=
+
 printf 'RakNet cross-runtime echo matches %s\n' "$LOCKED_COMMIT"

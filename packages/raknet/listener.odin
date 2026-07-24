@@ -145,7 +145,7 @@ listener_on_connected :: proc "odin" (user_data: rawptr, conn: ^Conn) {
         listener.half_open_count = max(0, listener.half_open_count - 1)
     }
     if !channel.try_send(listener.incoming, conn) {
-        close(conn)
+        conn_destroy(conn)
     }
 }
 
@@ -373,7 +373,7 @@ destroy_listener :: proc(listener: ^Listener) {
         if !ok {
             break
         }
-        close(conn)
+        conn_destroy(conn)
     }
 
     owned := make([dynamic]^Conn, 0, len(listener.owned))

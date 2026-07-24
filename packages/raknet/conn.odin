@@ -41,10 +41,12 @@ Conn :: struct {
     connected:      bool,
     app_reference:  bool,
     app_released:   bool,
+    closing_reference: bool,
     limits_enabled: bool,
     reference_count: i64,
     created_at:      i64,
     closing_at_ns:  i64,
+    closing_acks_left: int,
     last_activity:  i64,
     rtt_ns:         i64,
     incoming_bytes: i64,
@@ -265,8 +267,43 @@ conn_release :: proc(conn: ^Conn) {
     sync.atomic_store(&conn.release_finished, true)
 }
 
+conn_finalize_detached :: proc(data: rawptr) {
+    conn_finalize((^Conn)(data))
+}
+
+conn_release_async :: proc(conn: ^Conn) {
+    previous := sync.atomic_add(&conn.reference_count, -1)
+    assert(previous > 0)
+    if previous != 1 {
+        return
+    }
+    if conn_invoke_callback(conn, .Released) {
+        sync.atomic_store(&conn.release_finished, true)
+        return
+    }
+    thread.run_with_data(conn, conn_finalize_detached)
+}
+
+conn_release_app_reference :: proc(conn: ^Conn) {
+    release_app := false
+    if sync.mutex_guard(&conn.mutex) {
+        if conn.app_reference && !conn.app_released {
+            conn.app_released = true
+            release_app = true
+        }
+    }
+    if release_app {
+        conn_release(conn)
+    }
+}
+
 conn_destroy :: proc(conn: ^Conn) {
-    _ = close(conn)
+    if conn == nil {
+        return
+    }
+    conn_send_disconnect_notification(conn)
+    _ = conn_close_internal(conn)
+    conn_release_app_reference(conn)
 }
 
 conn_mark_connected :: proc(conn: ^Conn) {
@@ -497,42 +534,59 @@ conn_close_internal :: proc(conn: ^Conn) -> mcpe_runtime.Error {
     }
 
     conn_finish_close(conn)
+    release_closing := false
+    if sync.mutex_guard(&conn.mutex) {
+        if conn.closing_reference {
+            conn.closing_reference = false
+            release_closing = true
+        }
+    }
+    if release_closing {
+        // This may be called by a Conn worker. Finalize on a detached helper
+        // if the closing reference is the final one.
+        conn_release_async(conn)
+    }
     return nil
+}
+
+conn_send_disconnect_notification :: proc(conn: ^Conn) {
+    if conn == nil {
+        return
+    }
+    if sync.atomic_load(&conn.closed) {
+        return
+    }
+    notification := []u8{message.ID_DISCONNECT_NOTIFICATION}
+    if _, notify_err := conn_write_reliability(
+        conn,
+        notification,
+        .Reliable_Ordered,
+    ); notify_err != nil {
+        mcpe_runtime.destroy_error(notify_err)
+    }
 }
 
 close :: proc(conn: ^Conn) -> mcpe_runtime.Error {
     if conn == nil {
         return nil
     }
-    send_disconnect := false
+    begin_close := false
     if sync.mutex_guard(&conn.mutex) {
         if !conn.closed && conn.closing_at_ns == 0 {
-            conn.closing_at_ns = mcpe_runtime.system_now_ns(nil)
-            send_disconnect = conn.connected
+            sync.atomic_store(
+                &conn.closing_at_ns,
+                mcpe_runtime.system_now_ns(nil),
+            )
+            if conn_try_retain(conn) {
+                conn.closing_reference = true
+            }
+            begin_close = true
         }
     }
-    if send_disconnect {
-        notification := []u8{message.ID_DISCONNECT_NOTIFICATION}
-        if _, notify_err := conn_write_reliability(
-            conn,
-            notification,
-            .Reliable_Ordered,
-        ); notify_err != nil {
-            mcpe_runtime.destroy_error(notify_err)
-        }
+    if begin_close || sync.atomic_load(&conn.closed) {
+        conn_release_app_reference(conn)
     }
-    close_err := conn_close_internal(conn)
-    release_app := false
-    if sync.mutex_guard(&conn.mutex) {
-        if conn.app_reference && !conn.app_released {
-            conn.app_released = true
-            release_app = true
-        }
-    }
-    if release_app {
-        conn_release(conn)
-    }
-    return close_err
+    return nil
 }
 
 conn_send_acknowledgement :: proc(conn: ^Conn, packets: []UInt24, flag: u8) -> mcpe_runtime.Error {
@@ -682,6 +736,7 @@ conn_handle_control :: proc(conn: ^Conn, data: []u8) -> (
         return true, nil
 
     case message.ID_DISCONNECT_NOTIFICATION:
+        conn_send_disconnect_notification(conn)
         conn_close_internal(conn)
         return true, nil
 
@@ -1054,6 +1109,24 @@ conn_tick_thread :: proc(worker: ^thread.Thread) {
                 }
                 delete(resend_sequences)
             }
+        }
+        closing_at_ns := sync.atomic_load(&conn.closing_at_ns)
+        if closing_at_ns != 0 {
+            unacknowledged := 0
+            if sync.mutex_guard(&conn.mutex) {
+                unacknowledged = len(conn.resend.unacknowledged)
+            }
+            drained := conn.closing_acks_left != 0 && unacknowledged == 0
+            conn.closing_acks_left = unacknowledged
+            elapsed := now - closing_at_ns
+            if drained ||
+               (unacknowledged == 0 && elapsed > i64(time.Second)) ||
+               elapsed > i64(5 * time.Second) {
+                conn_send_disconnect_notification(conn)
+                conn_close_internal(conn)
+                return
+            }
+            continue
         }
         if ticks % 5 == 0 && sync.atomic_load(&conn.connected) {
             ping := message.marshal_connected_ping({ping_time = timestamp()})

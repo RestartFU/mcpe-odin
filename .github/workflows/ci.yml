@@ -12,8 +12,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
       - name: Check
         run: ./tools/odinw check
       - name: Test
         run: ./tools/odinw test -define:ODIN_TEST_FANCY=false
-
+      - name: RakNet differential fixtures
+        run: ./tests/differential/raknet-messages.sh

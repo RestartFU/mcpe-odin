@@ -21,6 +21,7 @@ tracked explicitly in `api-map.toml`; package presence does not imply parity.
 ```sh
 ./tools/odinw test
 ./tools/odinw check
+./tests/differential/raknet-messages.sh
 ./tools/odinw build dragonfly
 ./tools/odinw run dragonfly
 ```
@@ -43,4 +44,3 @@ tuples, explicit ownership, and context allocators. See `compatibility.md`.
 
 This project is not affiliated with Mojang Studios, Microsoft, Sandertv, or
 Dragonfly contributors.
-

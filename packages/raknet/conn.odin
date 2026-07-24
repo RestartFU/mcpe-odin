@@ -29,6 +29,7 @@ MAX_PENDING_ACKS   :: 8192
 Conn :: struct {
     allocator:   mem.Allocator,
     socket:      net.UDP_Socket,
+    transport:   Packet_Transport,
     remote:      net.Endpoint,
     local:       net.Endpoint,
     owns_socket: bool,
@@ -108,10 +109,19 @@ conn_create :: proc(
     mode: Connection_Mode,
     owns_socket: bool,
     allocator: mem.Allocator = context.allocator,
+    transport: Packet_Transport = {},
 ) -> (conn: ^Conn, err: mcpe_runtime.Error) {
+    if transport_err := packet_transport_validate(
+        transport,
+        "raknet.conn_create",
+    ); transport_err != nil {
+        return nil, transport_err
+    }
+    local := packet_transport_local_endpoint(transport, socket) or_return
     conn = new(Conn, allocator)
     conn.allocator = allocator
     conn.socket = socket
+    conn.transport = transport
     conn.remote = remote
     conn.owns_socket = owns_socket
     conn.mode = mode
@@ -148,7 +158,7 @@ conn_create :: proc(
         return
     }
     conn.connected_event = connected_event
-    conn.local, _ = net.bound_endpoint(socket)
+    conn.local = local
     return
 }
 
@@ -173,13 +183,27 @@ conn_free_packet :: proc(conn: ^Conn, packet: ^Packet) {
     free(packet, conn.allocator)
 }
 
-conn_report_send_error :: proc(
+conn_write_transport :: proc(
     conn: ^Conn,
+    data: []u8,
     operation: string,
 ) -> mcpe_runtime.Error {
-    err := network_error(operation)
+    _, terminal, err := packet_transport_write(
+        conn.transport,
+        conn.socket,
+        data,
+        conn.remote,
+    )
+    if err == nil {
+        return nil
+    }
+    err.operation = operation
     mcpe_runtime.report_error(conn.error_log, err)
-    return err
+    if terminal {
+        return err
+    }
+    mcpe_runtime.destroy_error(err)
+    return nil
 }
 
 conn_send_error_is_terminal :: proc(err: net.UDP_Send_Error) -> bool {
@@ -360,17 +384,11 @@ conn_send_datagram_locked :: proc(conn: ^Conn, packet: ^Packet) -> mcpe_runtime.
             )
         }
     }
-    if _, send_err := net.send_udp(conn.socket, w.data[:], conn.remote); send_err != nil {
-        send_error := conn_report_send_error(conn, "raknet.write")
-        if !conn_send_error_is_terminal(send_err) {
-            // Pinned go-raknet reports recoverable connected-send errors but
-            // relies on ACK/NACK recovery instead of failing Write.
-            mcpe_runtime.destroy_error(send_error)
-            if !reliability_is_reliable(packet.reliability) {
-                conn_free_packet(conn, packet)
-            }
-            return nil
-        }
+    if send_error := conn_write_transport(
+        conn,
+        w.data[:],
+        "raknet.write",
+    ); send_error != nil {
         if !reliability_is_reliable(packet.reliability) {
             conn_free_packet(conn, packet)
         }
@@ -597,7 +615,13 @@ conn_finish_close :: proc(conn: ^Conn) {
     channel.close(conn.incoming)
     channel.close(conn.connected_event)
     if conn.owns_socket {
-        net.close(conn.socket)
+        if close_err := packet_transport_close(
+            conn.transport,
+            conn.socket,
+        ); close_err != nil {
+            mcpe_runtime.report_error(conn.error_log, close_err)
+            mcpe_runtime.destroy_error(close_err)
+        }
     }
     _ = conn_invoke_callback(conn, .Closed)
     sync.atomic_store(&conn.close_finished, true)
@@ -694,18 +718,13 @@ conn_send_acknowledgement :: proc(conn: ^Conn, packets: []UInt24, flag: u8) -> m
             writer_destroy(&w)
             return mcpe_runtime.make_error(.Internal, "raknet.send_acknowledgement", "zero acknowledgement progress")
         }
-        if _, send_err := net.send_udp(conn.socket, w.data[:], conn.remote); send_err != nil {
-            send_error := conn_report_send_error(
-                conn,
-                "raknet.send_acknowledgement",
-            )
+        if send_error := conn_write_transport(
+            conn,
+            w.data[:],
+            "raknet.send_acknowledgement",
+        ); send_error != nil {
             writer_destroy(&w)
-            if conn_send_error_is_terminal(send_err) {
-                return send_error
-            }
-            mcpe_runtime.destroy_error(send_error)
-            offset += consumed
-            continue
+            return send_error
         }
         writer_destroy(&w)
         offset += consumed
@@ -1055,16 +1074,27 @@ conn_receive_thread :: proc(worker: ^thread.Thread) {
     conn := (^Conn)(worker.data)
     buffer: [1500]u8
     for !sync.atomic_load(&conn.closed) {
-        count, remote, receive_err := net.recv_udp(conn.socket, buffer[:])
+        count, remote, receive_err := packet_transport_read(
+            conn.transport,
+            conn.socket,
+            buffer[:],
+        )
         if receive_err != nil {
             if sync.atomic_load(&conn.closed) {
+                mcpe_runtime.destroy_error(receive_err)
                 return
             }
-            if receive_err == .Timeout || receive_err == .Would_Block {
+            if receive_err.kind == .Timeout {
+                mcpe_runtime.destroy_error(receive_err)
                 continue
             }
-            err := network_error("raknet.receive")
-            conn_log_receive_error(conn, err)
+            if receive_err.kind == .Closed {
+                mcpe_runtime.destroy_error(receive_err)
+                _ = conn_close_internal(conn)
+                return
+            }
+            receive_err.operation = "raknet.receive"
+            conn_log_receive_error(conn, receive_err)
             continue
         }
         if count == 0 || remote != conn.remote {

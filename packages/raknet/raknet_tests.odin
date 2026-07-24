@@ -74,6 +74,83 @@ TEST_UPSTREAM_LISTENER_VTABLE := Upstream_Packet_Listener_VTable{
     listen = test_upstream_listen,
 }
 
+Test_Packet_Transport_State :: struct {
+    socket:      net.UDP_Socket,
+    read_calls:  int,
+    write_calls: int,
+    close_calls: int,
+    read_closed: bool,
+}
+
+test_packet_transport_read :: proc "odin" (
+    user_data: rawptr,
+    buffer: []u8,
+) -> (
+    count: int,
+    remote: net.Endpoint,
+    err: mcpe_runtime.Error,
+) {
+    state := (^Test_Packet_Transport_State)(user_data)
+    state.read_calls += 1
+    if state.read_closed {
+        err = mcpe_runtime.make_error(
+            .Closed,
+            "raknet.test_transport.read",
+        )
+        return
+    }
+    receive_err: net.UDP_Recv_Error
+    count, remote, receive_err = net.recv_udp(state.socket, buffer)
+    if receive_err != nil {
+        err = network_error("raknet.test_transport.read")
+    }
+    return
+}
+
+test_packet_transport_write :: proc "odin" (
+    user_data: rawptr,
+    data: []u8,
+    remote: net.Endpoint,
+) -> (written: int, err: mcpe_runtime.Error) {
+    state := (^Test_Packet_Transport_State)(user_data)
+    state.write_calls += 1
+    send_err: net.UDP_Send_Error
+    written, send_err = net.send_udp(state.socket, data, remote)
+    if send_err != nil {
+        err = network_error("raknet.test_transport.write")
+    }
+    return
+}
+
+test_packet_transport_close :: proc "odin" (
+    user_data: rawptr,
+) -> mcpe_runtime.Error {
+    state := (^Test_Packet_Transport_State)(user_data)
+    state.close_calls += 1
+    net.close(state.socket)
+    return nil
+}
+
+test_packet_transport_local_endpoint :: proc "odin" (
+    user_data: rawptr,
+) -> (endpoint: net.Endpoint, err: mcpe_runtime.Error) {
+    state := (^Test_Packet_Transport_State)(user_data)
+    native_endpoint, endpoint_err := net.bound_endpoint(state.socket)
+    if endpoint_err != nil {
+        err = network_error("raknet.test_transport.local_endpoint")
+        return
+    }
+    endpoint = native_endpoint
+    return
+}
+
+TEST_PACKET_TRANSPORT_VTABLE := Packet_Transport_VTable{
+    read = test_packet_transport_read,
+    write = test_packet_transport_write,
+    close = test_packet_transport_close,
+    local_endpoint = test_packet_transport_local_endpoint,
+}
+
 Test_OVH_Workaround_State :: struct {
     socket:     net.UDP_Socket,
     saw_request_2: bool,
@@ -1136,4 +1213,120 @@ read_packet_borrows_until_next_read :: proc(t: ^testing.T) {
     testing.expect(t, client.borrowed_packet == nil)
     testing.expect(t, slice.equal(first_clone, first_payload))
     testing.expect(t, slice.equal(output[:], third_payload))
+}
+
+@(test)
+connection_uses_packet_transport_vtable :: proc(t: ^testing.T) {
+    sender, sender_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    testing.expect(t, sender_err == nil)
+    if sender_err != nil {
+        return
+    }
+    receiver, receiver_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    testing.expect(t, receiver_err == nil)
+    if receiver_err != nil {
+        net.close(sender)
+        return
+    }
+    defer net.close(receiver)
+    remote, remote_err := net.bound_endpoint(receiver)
+    testing.expect(t, remote_err == nil)
+    if remote_err != nil {
+        net.close(sender)
+        return
+    }
+
+    state := Test_Packet_Transport_State{socket = sender}
+    transport := Packet_Transport{
+        user_data = &state,
+        vtable = &TEST_PACKET_TRANSPORT_VTABLE,
+    }
+    conn, create_err := conn_create(
+        {},
+        remote,
+        1200,
+        .Client,
+        true,
+        context.allocator,
+        transport,
+    )
+    testing.expect(t, create_err == nil)
+    if create_err != nil {
+        mcpe_runtime.destroy_error(create_err)
+        net.close(sender)
+        return
+    }
+
+    payload := []u8{0xfe, 1, 2, 3}
+    written, write_err := write(conn, payload)
+    testing.expect(t, write_err == nil)
+    if write_err != nil {
+        mcpe_runtime.destroy_error(write_err)
+    }
+    testing.expect_value(t, written, len(payload))
+    testing.expect_value(t, state.write_calls, 1)
+
+    buffer: [MAX_MTU_SIZE]u8
+    count, _, receive_err := net.recv_udp(receiver, buffer[:])
+    testing.expect(t, receive_err == nil)
+    testing.expect(t, count > 4)
+    if receive_err == nil && count > 4 {
+        testing.expect(t, buffer[0] & BIT_FLAG_DATAGRAM != 0)
+        packet, _, packet_err := decode_packet(buffer[4:count])
+        testing.expect(t, packet_err == nil)
+        if packet_err == nil {
+            testing.expect(t, slice.equal(packet.content, payload))
+        } else {
+            mcpe_runtime.destroy_error(packet_err)
+        }
+    }
+
+    conn_destroy(conn)
+    testing.expect_value(t, state.close_calls, 1)
+}
+
+@(test)
+closed_packet_transport_stops_connection :: proc(t: ^testing.T) {
+    socket, socket_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    testing.expect(t, socket_err == nil)
+    if socket_err != nil {
+        return
+    }
+    remote := net.Endpoint{
+        address = net.IP4_Loopback,
+        port = 19133,
+    }
+    state := Test_Packet_Transport_State{
+        socket = socket,
+        read_closed = true,
+    }
+    transport := Packet_Transport{
+        user_data = &state,
+        vtable = &TEST_PACKET_TRANSPORT_VTABLE,
+    }
+    conn, create_err := conn_create(
+        {},
+        remote,
+        1200,
+        .Client,
+        true,
+        context.allocator,
+        transport,
+    )
+    testing.expect(t, create_err == nil)
+    if create_err != nil {
+        mcpe_runtime.destroy_error(create_err)
+        net.close(socket)
+        return
+    }
+    conn_start_threads(conn, true)
+    started := time.now()
+    for !sync.atomic_load(&conn.close_finished) &&
+        time.since(started) < time.Second {
+        time.sleep(time.Millisecond)
+    }
+    testing.expect(t, sync.atomic_load(&conn.close_finished))
+    testing.expect_value(t, state.read_calls, 1)
+    testing.expect_value(t, state.close_calls, 1)
+    conn_destroy(conn)
 }

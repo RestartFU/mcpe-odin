@@ -50,6 +50,40 @@ packet_accepts_reserved_reliability_like_upstream :: proc(t: ^testing.T) {
 }
 
 @(test)
+packet_rejects_truncated_fields :: proc(t: ^testing.T) {
+    cases := [][]u8{
+        {},
+        {0},
+        {0, 0},
+        {
+            u8(Reliability.Reliable_Ordered) << 5,
+            0,
+            8,
+        },
+        {
+            u8(Reliability.Reliable_Ordered) << 5 | SPLIT_FLAG,
+            0,
+            8,
+            0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0,
+        },
+    }
+    for data in cases {
+        _, _, err := decode_packet(data)
+        testing.expect(t, err != nil)
+        if err != nil {
+            testing.expect_value(
+                t,
+                err.kind,
+                mcpe_runtime.Error_Kind.Unexpected_EOF,
+            )
+            mcpe_runtime.destroy_error(err)
+        }
+    }
+}
+
+@(test)
 packet_split_respects_mtu :: proc(t: ^testing.T) {
     data: [4096]u8
     fragments, err := split_content(data[:], 1400)
@@ -114,6 +148,30 @@ acknowledgement_write_preserves_duplicate_records :: proc(t: ^testing.T) {
     }
     testing.expect_value(t, consumed, 2)
     testing.expect(t, slice.equal(writer.data[:], expected))
+}
+
+@(test)
+acknowledgement_unknown_record_keeps_upstream_preflight :: proc(t: ^testing.T) {
+    truncated := []u8{0, 1, 2}
+    ack := acknowledgement_init()
+    err := acknowledgement_read(&ack, truncated)
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Unexpected_EOF,
+        )
+        mcpe_runtime.destroy_error(err)
+    }
+    acknowledgement_destroy(&ack)
+
+    padded := []u8{0, 1, 2, 0, 0, 0}
+    ack = acknowledgement_init()
+    err = acknowledgement_read(&ack, padded)
+    testing.expect(t, err == nil)
+    testing.expect_value(t, len(ack.packets), 0)
+    acknowledgement_destroy(&ack)
 }
 
 @(test)

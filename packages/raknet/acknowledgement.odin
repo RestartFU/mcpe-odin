@@ -84,6 +84,14 @@ acknowledgement_read :: proc(ack: ^Acknowledgement, data: []u8) -> mcpe_runtime.
     r := reader(data)
     record_count := read_u16_be(&r) or_return
     for _ in 0..<int(record_count) {
+        // Pinned go-raknet performs this minimum-record preflight before
+        // switching on the kind, including for ignored unknown kinds.
+        if remaining(&r) < 4 {
+            return mcpe_runtime.make_error(
+                .Unexpected_EOF,
+                "raknet.acknowledgement_read",
+            )
+        }
         kind := read_u8(&r) or_return
         switch kind {
         case ACK_RANGE:

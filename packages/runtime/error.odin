@@ -15,6 +15,7 @@ Error_Kind :: enum u16 {
     Authentication,
     Storage,
     Native,
+    Not_Supported,
     Internal,
 }
 

@@ -20,8 +20,8 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.ErrNotSupported"
-odin = ""
-status = "missing"
+odin = "mcpe:runtime.Error_Kind.Not_Supported"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.UpstreamDialer"
@@ -65,18 +65,18 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Dialer.Ping"
-odin = ""
-status = "missing"
+odin = "mcpe:raknet.dialer_ping"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Dialer.PingTimeout"
-odin = ""
-status = "missing"
+odin = "mcpe:raknet.dialer_ping_timeout"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Dialer.PingContext"
-odin = ""
-status = "missing"
+odin = "mcpe:raknet.dialer_ping_context"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Dialer.Dial"
@@ -110,7 +110,7 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Conn.ReadPacket"
-odin = "mcpe:raknet.read_packet_owned"
+odin = "mcpe:raknet.read_packet"
 status = "partial"
 
 [[symbol]]
@@ -135,18 +135,18 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Conn.SetReadDeadline"
-odin = ""
-status = "missing"
+odin = "mcpe:raknet.set_read_deadline"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Conn.SetWriteDeadline"
-odin = ""
-status = "missing"
+odin = "mcpe:raknet.set_write_deadline"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Conn.SetDeadline"
-odin = ""
-status = "missing"
+odin = "mcpe:raknet.set_deadline"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Conn.Latency"
@@ -210,7 +210,7 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Listener.PongDataFunc"
-odin = "mcpe:raknet.Listen_Config.pong_data_proc"
+odin = "mcpe:raknet.set_pong_data_proc"
 status = "partial"
 
 [[symbol]]

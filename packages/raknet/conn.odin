@@ -387,6 +387,12 @@ read_packet_owned :: proc(conn: ^Conn) -> (data: []u8, err: mcpe_runtime.Error) 
     return
 }
 
+// read_packet returns an owned packet. The caller must delete it with the
+// connection's construction allocator after use.
+read_packet :: proc(conn: ^Conn) -> (data: []u8, err: mcpe_runtime.Error) {
+    return read_packet_owned(conn)
+}
+
 read :: proc(conn: ^Conn, output: []u8) -> (read_count: int, err: mcpe_runtime.Error) {
     data := read_packet_owned(conn) or_return
     defer delete(data, conn.allocator)
@@ -408,6 +414,45 @@ local_address :: proc(conn: ^Conn) -> net.Endpoint {
 
 latency :: proc(conn: ^Conn) -> time.Duration {
     return time.Duration(sync.atomic_load(&conn.rtt_ns) / 2)
+}
+
+set_read_deadline :: proc(
+    conn: ^Conn,
+    deadline: time.Time,
+) -> mcpe_runtime.Error {
+    _ = conn
+    _ = deadline
+    return mcpe_runtime.make_error(
+        .Not_Supported,
+        "raknet.set_read_deadline",
+        "feature not supported",
+    )
+}
+
+set_write_deadline :: proc(
+    conn: ^Conn,
+    deadline: time.Time,
+) -> mcpe_runtime.Error {
+    _ = conn
+    _ = deadline
+    return mcpe_runtime.make_error(
+        .Not_Supported,
+        "raknet.set_write_deadline",
+        "feature not supported",
+    )
+}
+
+set_deadline :: proc(
+    conn: ^Conn,
+    deadline: time.Time,
+) -> mcpe_runtime.Error {
+    _ = conn
+    _ = deadline
+    return mcpe_runtime.make_error(
+        .Not_Supported,
+        "raknet.set_deadline",
+        "feature not supported",
+    )
 }
 
 conn_finish_close :: proc(conn: ^Conn) {
@@ -866,7 +911,7 @@ conn_receive_datagram :: proc(conn: ^Conn, data: []u8) -> mcpe_runtime.Error {
     }
     offset := 3
     for offset < len(data) {
-        packet, consumed, read_err := read_packet(data[offset:])
+        packet, consumed, read_err := decode_packet(data[offset:])
         if read_err != nil {
             return read_err
         }

@@ -13,6 +13,15 @@ cancel_after_delay :: proc(worker: ^thread.Thread) {
     mcpe_runtime.cancel((^mcpe_runtime.Cancel_Token)(worker.data))
 }
 
+test_pong_data_proc :: proc "odin" (
+    user_data: rawptr,
+    remote: net.Endpoint,
+) -> []u8 {
+    _ = user_data
+    _ = remote
+    return transmute([]u8)string("MCPE;dynamic;1001;1.26.30")
+}
+
 @(test)
 uint24_round_trip :: proc(t: ^testing.T) {
     values := [?]UInt24{0, 1, 0xff, 0xffff, 0xff_ffff}
@@ -143,6 +152,47 @@ listener_ping_round_trip :: proc(t: ^testing.T) {
     }
     defer delete(actual)
     testing.expect(t, slice.equal(actual, expected))
+}
+
+@(test)
+listener_dynamic_pong_provider :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    set_pong_data_proc(listener, test_pong_data_proc)
+    expected := test_pong_data_proc(nil, {})
+    address := net.endpoint_to_string(listener_address(listener))
+    actual, ping_err := ping_timeout(address, time.Second)
+    testing.expect(t, ping_err == nil)
+    if ping_err != nil {
+        return
+    }
+    defer delete(actual)
+    testing.expect(t, slice.equal(actual, expected))
+}
+
+@(test)
+deadline_methods_match_upstream_not_supported :: proc(t: ^testing.T) {
+    errors := [?]mcpe_runtime.Error{
+        set_read_deadline(nil, {}),
+        set_write_deadline(nil, {}),
+        set_deadline(nil, {}),
+    }
+    for err in errors {
+        testing.expect(t, err != nil)
+        if err != nil {
+            testing.expect_value(
+                t,
+                err.kind,
+                mcpe_runtime.Error_Kind.Not_Supported,
+            )
+            mcpe_runtime.destroy_error(err)
+        }
+    }
 }
 
 @(test)

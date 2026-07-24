@@ -292,6 +292,17 @@ set_pong_data :: proc(listener: ^Listener, data: []u8) -> mcpe_runtime.Error {
     return nil
 }
 
+set_pong_data_proc :: proc(
+    listener: ^Listener,
+    pong_proc: Pong_Data_Proc,
+    user_data: rawptr = nil,
+) {
+    if sync.mutex_guard(&listener.mutex) {
+        listener.config.pong_data_proc = pong_proc
+        listener.config.pong_user_data = user_data
+    }
+}
+
 close_listener :: proc(listener: ^Listener) -> mcpe_runtime.Error {
     if listener == nil {
         return nil
@@ -398,10 +409,16 @@ listener_handle_unconnected :: proc(
         // Pinned go-raknet treats both ping IDs identically, including while
         // its accept backlog is full. Preserve discovery behavior exactly.
         ping := message.unmarshal_unconnected_ping(data[1:]) or_return
+        pong_data_proc: Pong_Data_Proc
+        pong_user_data: rawptr
+        if sync.mutex_guard(&listener.mutex) {
+            pong_data_proc = listener.config.pong_data_proc
+            pong_user_data = listener.config.pong_user_data
+        }
         pong_data: []u8
         owned_pong_data: []u8
-        if listener.config.pong_data_proc != nil {
-            pong_data = listener.config.pong_data_proc(listener.config.pong_user_data, remote)
+        if pong_data_proc != nil {
+            pong_data = pong_data_proc(pong_user_data, remote)
         } else if sync.mutex_guard(&listener.mutex) {
             owned_pong_data = make([]u8, len(listener.pong_data), listener.allocator)
             copy(owned_pong_data, listener.pong_data)

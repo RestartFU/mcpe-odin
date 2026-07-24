@@ -383,3 +383,27 @@ dial_context :: proc(
     }
     return dial_config({}, address, timeout, token)
 }
+
+dialer_dial :: proc(
+    dialer: Dialer,
+    address: string,
+) -> (conn: ^Conn, err: mcpe_runtime.Error) {
+    return dial_config(dialer, address)
+}
+
+dialer_dial_timeout :: proc(
+    dialer: Dialer,
+    address: string,
+    timeout: time.Duration,
+) -> (conn: ^Conn, err: mcpe_runtime.Error) {
+    return dial_config(dialer, address, timeout)
+}
+
+dialer_dial_context :: proc(
+    dialer: Dialer,
+    token: ^mcpe_runtime.Cancel_Token,
+    address: string,
+    timeout: time.Duration = 10 * time.Second,
+) -> (conn: ^Conn, err: mcpe_runtime.Error) {
+    return dial_config(dialer, address, timeout, token)
+}

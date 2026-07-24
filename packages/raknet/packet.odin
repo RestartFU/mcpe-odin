@@ -69,7 +69,7 @@ write_packet :: proc(w: ^Writer, packet: ^Packet) {
     write_bytes(w, packet.content)
 }
 
-read_packet :: proc(data: []u8) -> (
+decode_packet :: proc(data: []u8) -> (
     packet: Packet,
     consumed: int,
     err: mcpe_runtime.Error,

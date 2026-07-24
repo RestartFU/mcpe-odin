@@ -142,3 +142,30 @@ ping_timeout_internal :: proc(
     }
     return
 }
+
+dialer_ping :: proc(
+    dialer: Dialer,
+    address: string,
+) -> (response: []u8, err: mcpe_runtime.Error) {
+    _ = dialer
+    return ping(address)
+}
+
+dialer_ping_timeout :: proc(
+    dialer: Dialer,
+    address: string,
+    timeout: time.Duration,
+) -> (response: []u8, err: mcpe_runtime.Error) {
+    _ = dialer
+    return ping_timeout(address, timeout)
+}
+
+dialer_ping_context :: proc(
+    dialer: Dialer,
+    token: ^mcpe_runtime.Cancel_Token,
+    address: string,
+    timeout: time.Duration = 5 * time.Second,
+) -> (response: []u8, err: mcpe_runtime.Error) {
+    _ = dialer
+    return ping_context(token, address, timeout)
+}

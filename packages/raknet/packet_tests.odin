@@ -19,7 +19,7 @@ packet_round_trip :: proc(t: ^testing.T) {
     w := writer()
     defer writer_destroy(&w)
     write_packet(&w, &expected)
-    actual, consumed, err := read_packet(w.data[:])
+    actual, consumed, err := decode_packet(w.data[:])
     testing.expect(t, err == nil)
     testing.expect_value(t, consumed, len(w.data))
     testing.expect_value(t, actual.reliability, expected.reliability)

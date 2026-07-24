@@ -1,0 +1,279 @@
+package raknet
+
+import "core:net"
+import "core:slice"
+import channel "core:sync/chan"
+import "core:testing"
+import "core:thread"
+import "core:time"
+import mcpe_runtime "mcpe:runtime"
+
+cancel_after_delay :: proc(worker: ^thread.Thread) {
+    time.sleep(50 * time.Millisecond)
+    mcpe_runtime.cancel((^mcpe_runtime.Cancel_Token)(worker.data))
+}
+
+@(test)
+uint24_round_trip :: proc(t: ^testing.T) {
+    values := [?]UInt24{0, 1, 0xff, 0xffff, 0xff_ffff}
+    for expected in values {
+        bytes: [3]u8
+        store_u24_le(bytes[:], expected)
+        testing.expect_value(t, load_u24_le(bytes[:]), expected)
+    }
+}
+
+@(test)
+uint24_wraps_at_wire_width :: proc(t: ^testing.T) {
+    value := UInt24(UINT24_MASK)
+    testing.expect_value(t, uint24_inc(&value), UInt24(UINT24_MASK))
+    testing.expect_value(t, value, UInt24(0))
+    testing.expect(t, uint24_before(UInt24(UINT24_MASK), UInt24(0)))
+    testing.expect_value(
+        t,
+        uint24_forward_distance(UInt24(UINT24_MASK - 1), UInt24(1)),
+        u32(3),
+    )
+}
+
+@(test)
+binary_endian_round_trip :: proc(t: ^testing.T) {
+    w := writer()
+    defer writer_destroy(&w)
+    write_u16_be(&w, 0x1234)
+    write_u32_be(&w, 0x5678_9abc)
+    write_u64_be(&w, 0xdef0_1234_5678_9abc)
+
+    r := reader(w.data[:])
+    a, a_err := read_u16_be(&r)
+    b, b_err := read_u32_be(&r)
+    c, c_err := read_u64_be(&r)
+    testing.expect(t, a_err == nil)
+    testing.expect(t, b_err == nil)
+    testing.expect(t, c_err == nil)
+    testing.expect_value(t, a, 0x1234)
+    testing.expect_value(t, b, 0x5678_9abc)
+    testing.expect_value(t, c, 0xdef0_1234_5678_9abc)
+}
+
+@(test)
+connection_reliable_echo :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    address := net.endpoint_to_string(listener_address(listener))
+    client, dial_err := dial_timeout(address, 3 * time.Second)
+    testing.expect(t, dial_err == nil)
+    if dial_err != nil {
+        return
+    }
+    defer conn_destroy(client)
+
+    server, accept_err := accept(listener)
+    testing.expect(t, accept_err == nil)
+    if accept_err != nil {
+        return
+    }
+    defer conn_destroy(server)
+
+    expected := make([]u8, 4096)
+    defer delete(expected)
+    for &value, index in expected {
+        value = u8(index + 0x80)
+    }
+
+    written, write_err := write(client, expected)
+    testing.expect(t, write_err == nil)
+    testing.expect_value(t, written, len(expected))
+    if write_err != nil {
+        return
+    }
+
+    received := make([]u8, len(expected))
+    defer delete(received)
+    read_count, read_err := read(server, received)
+    testing.expect(t, read_err == nil)
+    testing.expect_value(t, read_count, len(expected))
+    testing.expect(t, slice.equal(received, expected))
+    if read_err != nil {
+        return
+    }
+
+    written, write_err = write(server, received)
+    testing.expect(t, write_err == nil)
+    testing.expect_value(t, written, len(expected))
+    if write_err != nil {
+        return
+    }
+
+    for &value in received {
+        value = 0
+    }
+    read_count, read_err = read(client, received)
+    testing.expect(t, read_err == nil)
+    testing.expect_value(t, read_count, len(expected))
+    testing.expect(t, slice.equal(received, expected))
+}
+
+@(test)
+listener_ping_round_trip :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    expected := transmute([]u8)string("MCPE;mcpe-odin;1001;1.26.30")
+    pong_err := set_pong_data(listener, expected)
+    testing.expect(t, pong_err == nil)
+    if pong_err != nil {
+        return
+    }
+
+    address := net.endpoint_to_string(listener_address(listener))
+    actual, ping_err := ping_timeout(address, time.Second)
+    testing.expect(t, ping_err == nil)
+    if ping_err != nil {
+        return
+    }
+    defer delete(actual)
+    testing.expect(t, slice.equal(actual, expected))
+}
+
+@(test)
+dial_context_observes_pre_cancelled_token :: proc(t: ^testing.T) {
+    token: mcpe_runtime.Cancel_Token
+    mcpe_runtime.cancel(&token)
+    conn, err := dial_context(&token, "127.0.0.1:1", time.Second)
+    testing.expect(t, conn == nil)
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(t, err.kind, mcpe_runtime.Error_Kind.Cancelled)
+        mcpe_runtime.destroy_error(err)
+    }
+}
+
+@(test)
+dial_timeout_honours_deadline :: proc(t: ^testing.T) {
+    started := time.now()
+    conn, err := dial_timeout("127.0.0.1:1", 250 * time.Millisecond)
+    elapsed := time.since(started)
+    testing.expect(t, conn == nil)
+    testing.expect(t, err != nil)
+    testing.expect(t, elapsed < time.Second)
+    if err != nil {
+        testing.expect_value(t, err.kind, mcpe_runtime.Error_Kind.Timeout)
+        mcpe_runtime.destroy_error(err)
+    }
+}
+
+@(test)
+ping_context_observes_cancellation_while_waiting :: proc(t: ^testing.T) {
+    sink, socket_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    testing.expect(t, socket_err == nil)
+    if socket_err != nil {
+        return
+    }
+    defer net.close(sink)
+    endpoint, endpoint_err := net.bound_endpoint(sink)
+    testing.expect(t, endpoint_err == nil)
+    if endpoint_err != nil {
+        return
+    }
+
+    token: mcpe_runtime.Cancel_Token
+    worker := thread.create(cancel_after_delay)
+    worker.data = &token
+    thread.start(worker)
+    started := time.now()
+    response, err := ping_context(
+        &token,
+        net.endpoint_to_string(endpoint),
+        time.Second,
+    )
+    elapsed := time.since(started)
+    thread.join(worker)
+    thread.destroy(worker)
+
+    testing.expect(t, response == nil)
+    testing.expect(t, err != nil)
+    testing.expect(t, elapsed < 500 * time.Millisecond)
+    if err != nil {
+        testing.expect_value(t, err.kind, mcpe_runtime.Error_Kind.Cancelled)
+        mcpe_runtime.destroy_error(err)
+    }
+}
+
+@(test)
+listener_destroy_releases_unaccepted_connection :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+
+    address := net.endpoint_to_string(listener_address(listener))
+    client, dial_err := dial_timeout(address, 3 * time.Second)
+    testing.expect(t, dial_err == nil)
+    if dial_err != nil {
+        destroy_listener(listener)
+        return
+    }
+
+    started := time.now()
+    for channel.len(listener.incoming) == 0 &&
+        time.since(started) < 500 * time.Millisecond {
+        time.sleep(time.Millisecond)
+    }
+    testing.expect(t, channel.len(listener.incoming) == 1)
+    destroy_listener(listener)
+    conn_destroy(client)
+}
+
+@(test)
+write_rejects_more_splits_than_receiver_accepts :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    address := net.endpoint_to_string(listener_address(listener))
+    client, dial_err := dial_timeout(address, 3 * time.Second)
+    testing.expect(t, dial_err == nil)
+    if dial_err != nil {
+        return
+    }
+    defer conn_destroy(client)
+
+    server, accept_err := accept(listener)
+    testing.expect(t, accept_err == nil)
+    if accept_err != nil {
+        return
+    }
+    defer conn_destroy(server)
+
+    split_payload_size :=
+        int(effective_mtu(client)) -
+        PACKET_ADDITIONAL_SIZE -
+        SPLIT_ADDITIONAL_SIZE
+    payload := make([]u8, split_payload_size * MAX_SPLIT_COUNT + 1)
+    defer delete(payload)
+    written, write_err := write(client, payload)
+    testing.expect_value(t, written, 0)
+    testing.expect(t, write_err != nil)
+    if write_err != nil {
+        testing.expect_value(
+            t,
+            write_err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(write_err)
+    }
+}

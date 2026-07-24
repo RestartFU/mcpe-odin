@@ -1,0 +1,219 @@
+format = 1
+
+[summary]
+go_raknet = "partial"
+gophertunnel = "missing"
+dragonfly = "missing"
+
+# "partial" means source exists but the RakNet release gate has not passed.
+# "missing" records an intentionally visible gap; no stable API is implied.
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ErrBufferTooSmall"
+odin = "mcpe:runtime.Error_Kind.Limit_Exceeded"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ErrListenerClosed"
+odin = "mcpe:runtime.Error_Kind.Closed"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ErrNotSupported"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.UpstreamDialer"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Ping"
+odin = "mcpe:raknet.ping"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.PingTimeout"
+odin = "mcpe:raknet.ping_timeout"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.PingContext"
+odin = "mcpe:raknet.ping_context"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dial"
+odin = "mcpe:raknet.dial"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.DialTimeout"
+odin = "mcpe:raknet.dial_timeout"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.DialContext"
+odin = "mcpe:raknet.dial_context"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer"
+odin = "mcpe:raknet.Dialer"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.Ping"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.PingTimeout"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.PingContext"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.Dial"
+odin = "mcpe:raknet.dial_config"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.DialTimeout"
+odin = "mcpe:raknet.dial_config"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Dialer.DialContext"
+odin = "mcpe:raknet.dial_config"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn"
+odin = "mcpe:raknet.Conn"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.Write"
+odin = "mcpe:raknet.write"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.Read"
+odin = "mcpe:raknet.read"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.ReadPacket"
+odin = "mcpe:raknet.read_packet_owned"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.Close"
+odin = "mcpe:raknet.close"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.Context"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.RemoteAddr"
+odin = "mcpe:raknet.remote_address"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.LocalAddr"
+odin = "mcpe:raknet.local_address"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.SetReadDeadline"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.SetWriteDeadline"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.SetDeadline"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Conn.Latency"
+odin = "mcpe:raknet.latency"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.UpstreamPacketListener"
+odin = ""
+status = "missing"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ListenConfig"
+odin = "mcpe:raknet.Listen_Config"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.ListenConfig.Listen"
+odin = "mcpe:raknet.listen_config"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listener"
+odin = "mcpe:raknet.Listener"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listen"
+odin = "mcpe:raknet.listen"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listener.Accept"
+odin = "mcpe:raknet.accept"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listener.Addr"
+odin = "mcpe:raknet.listener_address"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listener.Block"
+odin = "mcpe:raknet.block"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listener.BlockFor"
+odin = "mcpe:raknet.block_for"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listener.Close"
+odin = "mcpe:raknet.close_listener"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listener.PongData"
+odin = "mcpe:raknet.set_pong_data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listener.PongDataFunc"
+odin = "mcpe:raknet.Listen_Config.pong_data_proc"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/go-raknet.Listener.ID"
+odin = "mcpe:raknet.listener_id"
+status = "partial"

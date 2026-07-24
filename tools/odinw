@@ -51,6 +51,9 @@ case "$command" in
         ;;
     check)
         mkdir -p "$ROOT_DIR/tests/.tmp"
+        while IFS= read -r example; do
+            "$ODIN_BIN" check "$example" "$COLLECTION"
+        done < <(find "$ROOT_DIR/examples" -mindepth 1 -maxdepth 1 -type d -print | sort)
         "$ODIN_BIN" build "$ROOT_DIR/tests" \
             -build-mode:test \
             -all-packages \

@@ -49,7 +49,7 @@ for _ in $(seq 1 100); do
     sleep 0.02
 done
 GO_ADDRESS=$(head -n 1 "$WORK_DIR/go-server.txt")
-timeout 5 "$WORK_DIR/odin-cross" dial-echo "$GO_ADDRESS"
+timeout 10 "$WORK_DIR/odin-cross" dial-echo "$GO_ADDRESS" 65536
 wait "$GO_SERVER_PID"
 GO_SERVER_PID=
 
@@ -61,7 +61,7 @@ for _ in $(seq 1 100); do
     sleep 0.02
 done
 ODIN_ADDRESS=$(head -n 1 "$WORK_DIR/odin-server.txt")
-timeout 5 "$WORK_DIR/go-oracle" dial-echo "$ODIN_ADDRESS"
+timeout 10 "$WORK_DIR/go-oracle" dial-echo "$ODIN_ADDRESS" 65536
 wait "$ODIN_SERVER_PID"
 ODIN_SERVER_PID=
 
@@ -81,7 +81,7 @@ for _ in $(seq 1 100); do
     sleep 0.02
 done
 GO_PROXY_ADDRESS=$(head -n 1 "$WORK_DIR/go-loss-proxy.txt")
-timeout 12 "$WORK_DIR/odin-cross" dial-echo "$GO_PROXY_ADDRESS"
+timeout 20 "$WORK_DIR/odin-cross" dial-echo "$GO_PROXY_ADDRESS" 65536
 wait "$GO_SERVER_PID"
 GO_SERVER_PID=
 kill "$PROXY_PID"
@@ -104,7 +104,7 @@ for _ in $(seq 1 100); do
     sleep 0.02
 done
 ODIN_PROXY_ADDRESS=$(head -n 1 "$WORK_DIR/odin-loss-proxy.txt")
-timeout 12 "$WORK_DIR/go-oracle" dial-echo "$ODIN_PROXY_ADDRESS"
+timeout 20 "$WORK_DIR/go-oracle" dial-echo "$ODIN_PROXY_ADDRESS" 65536
 wait "$ODIN_SERVER_PID"
 ODIN_SERVER_PID=
 kill "$PROXY_PID"

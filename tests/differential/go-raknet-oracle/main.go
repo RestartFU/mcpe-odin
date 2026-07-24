@@ -14,7 +14,13 @@ import (
 	"github.com/sandertv/go-raknet/internal/message"
 )
 
-var crossRuntimePayload = []byte("mcpe-odin-cross-runtime")
+func crossRuntimePayload(size int) []byte {
+	payload := make([]byte, size)
+	for index := range payload {
+		payload[index] = byte(index*31 + 7)
+	}
+	return payload
+}
 
 func emit(name string, data []byte, err error) {
 	if err != nil {
@@ -123,12 +129,12 @@ func serveEcho() {
 	if err != nil {
 		panic(err)
 	}
-	buffer := make([]byte, 1500)
+	buffer := make([]byte, 65536)
 	count, err := conn.Read(buffer)
 	if err != nil {
 		panic(err)
 	}
-	if !bytes.Equal(buffer[:count], crossRuntimePayload) {
+	if !bytes.Equal(buffer[:count], crossRuntimePayload(count)) {
 		panic("unexpected Odin payload")
 	}
 	if _, err = conn.Write(buffer[:count]); err != nil {
@@ -138,21 +144,22 @@ func serveEcho() {
 	time.Sleep(1500 * time.Millisecond)
 }
 
-func dialEcho(address string) {
+func dialEcho(address string, payloadSize int) {
 	conn, err := raknet.DialTimeout(address, 3*time.Second)
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
-	if _, err = conn.Write(crossRuntimePayload); err != nil {
+	payload := crossRuntimePayload(payloadSize)
+	if _, err = conn.Write(payload); err != nil {
 		panic(err)
 	}
-	buffer := make([]byte, 1500)
+	buffer := make([]byte, 65536)
 	count, err := conn.Read(buffer)
 	if err != nil {
 		panic(err)
 	}
-	if !bytes.Equal(buffer[:count], crossRuntimePayload) {
+	if !bytes.Equal(buffer[:count], payload) {
 		panic("unexpected Odin echo")
 	}
 	fmt.Println("go-client-ok")
@@ -208,10 +215,18 @@ func main() {
 	case "serve-echo":
 		serveEcho()
 	case "dial-echo":
-		if len(os.Args) != 3 {
-			panic("usage: go-oracle dial-echo <address>")
+		if len(os.Args) != 3 && len(os.Args) != 4 {
+			panic("usage: go-oracle dial-echo <address> [payload-size]")
 		}
-		dialEcho(os.Args[2])
+		payloadSize := len("mcpe-odin-cross-runtime")
+		if len(os.Args) == 4 {
+			var err error
+			payloadSize, err = strconv.Atoi(os.Args[3])
+			if err != nil || payloadSize < 1 || payloadSize > 65536 {
+				panic("invalid payload-size")
+			}
+		}
+		dialEcho(os.Args[2], payloadSize)
 	case "udp-proxy":
 		if len(os.Args) != 4 {
 			panic("usage: go-oracle udp-proxy <target> <drop-every>")

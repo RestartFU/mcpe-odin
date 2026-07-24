@@ -8,7 +8,23 @@ import "core:time"
 import raknet "mcpe:raknet"
 import mcpe_runtime "mcpe:runtime"
 
-CROSS_RUNTIME_PAYLOAD: string = "mcpe-odin-cross-runtime"
+DEFAULT_PAYLOAD_SIZE :: len("mcpe-odin-cross-runtime")
+MAX_PAYLOAD_SIZE     :: 65536
+
+fill_payload :: proc(payload: []u8) {
+    for &value, index in payload {
+        value = u8(index * 31 + 7)
+    }
+}
+
+payload_matches :: proc(payload: []u8) -> bool {
+    for value, index in payload {
+        if value != u8(index * 31 + 7) {
+            return false
+        }
+    }
+    return true
+}
 
 fail :: proc(operation: string, err: mcpe_runtime.Error) {
     if err != nil {
@@ -33,13 +49,12 @@ serve_echo :: proc() {
         fail("accept", accept_err)
     }
     defer raknet.conn_destroy(conn)
-    buffer: [1500]u8
+    buffer: [MAX_PAYLOAD_SIZE]u8
     count, read_err := raknet.read(conn, buffer[:])
     if read_err != nil {
         fail("read", read_err)
     }
-    expected := transmute([]u8)CROSS_RUNTIME_PAYLOAD
-    if !slice.equal(buffer[:count], expected) {
+    if !payload_matches(buffer[:count]) {
         fail("unexpected Go payload", nil)
     }
     if _, write_err := raknet.write(conn, buffer[:count]); write_err != nil {
@@ -50,17 +65,19 @@ serve_echo :: proc() {
     time.sleep(1500 * time.Millisecond)
 }
 
-dial_echo :: proc(address: string) {
+dial_echo :: proc(address: string, payload_size: int) {
     conn, dial_err := raknet.dial_timeout(address, 3 * time.Second)
     if dial_err != nil {
         fail("dial", dial_err)
     }
     defer raknet.conn_destroy(conn)
-    expected := transmute([]u8)CROSS_RUNTIME_PAYLOAD
+    expected := make([]u8, payload_size)
+    defer delete(expected)
+    fill_payload(expected)
     if _, write_err := raknet.write(conn, expected); write_err != nil {
         fail("write", write_err)
     }
-    buffer: [1500]u8
+    buffer: [MAX_PAYLOAD_SIZE]u8
     count, read_err := raknet.read(conn, buffer[:])
     if read_err != nil {
         fail("read", read_err)
@@ -79,10 +96,17 @@ main :: proc() {
     case "serve-echo":
         serve_echo()
     case "dial-echo":
-        if len(os.args) != 3 {
-            fail("usage: raknet-cross dial-echo <address>", nil)
+        if len(os.args) != 3 && len(os.args) != 4 {
+            fail("usage: raknet-cross dial-echo <address> [payload-size]", nil)
         }
-        dial_echo(os.args[2])
+        payload_size := DEFAULT_PAYLOAD_SIZE
+        if len(os.args) == 4 {
+            if os.args[3] != "65536" {
+                fail("supported payload-size is 65536", nil)
+            }
+            payload_size = MAX_PAYLOAD_SIZE
+        }
+        dial_echo(os.args[2], payload_size)
     case:
         fail("unknown operation", nil)
     }

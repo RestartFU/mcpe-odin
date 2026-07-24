@@ -55,10 +55,17 @@ host; release gates require at least 90% Go throughput, at most 110% Go p95
 latency, and at most 115% Go peak RSS.
 
 `./tools/release-raknet [output-directory]` requires a clean Git tree and
-creates a deterministic Linux x86-64 source/binary archive, detached SHA-256,
-and provenance manifest. The manifest records exact source, upstream, Odin
-archive, Odin binary, embedded-asset, native-dependency, and packaged-file
-hashes.
+creates a provenance-complete Linux x86-64 source/binary archive, detached
+SHA-256, and manifest. The manifest records exact source, upstream, Odin
+archive, Odin binary, build tools, embedded assets, native dependencies, and
+packaged-file hashes.
+
+Pinned Odin `dev-2026-07a` currently emits different valid code/type-info
+orderings across identical builds, even with its threaded checker disabled.
+Archive metadata is normalized, but binary bundles are not yet claimed to be
+byte-for-byte reproducible. Each produced bundle remains internally
+checksummed and exactly attributable; this known gap keeps the stable RakNet
+release gate partial.
 
 RakNet examples:
 

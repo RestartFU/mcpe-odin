@@ -157,6 +157,11 @@ MANIFEST="$STAGE_DIR/release-manifest.toml"
     printf '\n[build_tools.strip]\n'
     printf 'version = "%s"\n' "$STRIP_VERSION"
     printf 'binary_sha256 = "%s"\n' "$STRIP_BINARY_SHA"
+    printf '\n[reproducibility]\n'
+    printf 'source_inputs_pinned = true\n'
+    printf 'archive_metadata_normalized = true\n'
+    printf 'byte_for_byte = false\n'
+    printf 'reason = "Pinned Odin emits nondeterministic code and type-info ordering."\n'
     printf '\n[embedded_assets]\n'
     printf 'count = 0\n'
     printf '\n[native_dependencies]\n'

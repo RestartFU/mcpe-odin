@@ -1,8 +1,11 @@
 package raknet_fixtures
 
+import "core:encoding/hex"
 import "core:fmt"
+import "core:os"
 import message "mcpe:raknet/message"
 import wire "mcpe:raknet/wire"
+import mcpe_runtime "mcpe:runtime"
 
 emit :: proc(name: string, data: []u8) {
     fmt.printf("%s ", name)
@@ -12,7 +15,7 @@ emit :: proc(name: string, data: []u8) {
     fmt.println()
 }
 
-main :: proc() {
+fixtures :: proc() {
     address := message.address_v4(127, 0, 0, 1, 19132)
 
     connected_ping := message.marshal_connected_ping({
@@ -105,4 +108,103 @@ main :: proc() {
     })
     emit("new_incoming_connection", incoming.data[:])
     wire.writer_destroy(&incoming)
+}
+
+round_trip :: proc(name: string, data: []u8) -> mcpe_runtime.Error {
+    if len(data) == 0 {
+        return mcpe_runtime.make_error(
+            .Unexpected_EOF,
+            "raknet-fixtures.round_trip",
+        )
+    }
+    payload := data[1:]
+    switch name {
+    case "connected_ping":
+        packet := message.unmarshal_connected_ping(payload) or_return
+        encoded := message.marshal_connected_ping(packet)
+        emit(name, encoded[:])
+    case "connected_pong":
+        packet := message.unmarshal_connected_pong(payload) or_return
+        encoded := message.marshal_connected_pong(packet)
+        emit(name, encoded[:])
+    case "connection_request":
+        packet := message.unmarshal_connection_request(payload) or_return
+        encoded := message.marshal_connection_request(packet)
+        emit(name, encoded[:])
+    case "unconnected_ping":
+        packet := message.unmarshal_unconnected_ping(payload) or_return
+        encoded := message.marshal_unconnected_ping(packet)
+        emit(name, encoded[:])
+    case "unconnected_pong":
+        packet := message.unmarshal_unconnected_pong(payload) or_return
+        encoded := message.marshal_unconnected_pong(packet)
+        defer wire.writer_destroy(&encoded)
+        emit(name, encoded.data[:])
+    case "incompatible_protocol":
+        packet := message.unmarshal_incompatible_protocol_version(payload) or_return
+        encoded := message.marshal_incompatible_protocol_version(packet)
+        emit(name, encoded[:])
+    case "open_connection_reply_1":
+        packet := message.unmarshal_open_connection_reply_1(payload) or_return
+        encoded := message.marshal_open_connection_reply_1(packet)
+        defer wire.writer_destroy(&encoded)
+        emit(name, encoded.data[:])
+    case "open_connection_request_1":
+        packet := message.unmarshal_open_connection_request_1(payload) or_return
+        encoded := message.marshal_open_connection_request_1(packet) or_return
+        defer wire.writer_destroy(&encoded)
+        emit(name, encoded.data[:])
+    case "open_connection_request_2":
+        packet := message.unmarshal_open_connection_request_2(
+            payload,
+            true,
+        ) or_return
+        encoded := message.marshal_open_connection_request_2(packet)
+        defer wire.writer_destroy(&encoded)
+        emit(name, encoded.data[:])
+    case "open_connection_reply_2":
+        packet := message.unmarshal_open_connection_reply_2(payload) or_return
+        encoded := message.marshal_open_connection_reply_2(packet)
+        defer wire.writer_destroy(&encoded)
+        emit(name, encoded.data[:])
+    case "connection_request_accepted":
+        packet := message.unmarshal_connection_request_accepted(payload) or_return
+        encoded := message.marshal_connection_request_accepted(packet)
+        defer wire.writer_destroy(&encoded)
+        emit(name, encoded.data[:])
+    case "new_incoming_connection":
+        packet := message.unmarshal_new_incoming_connection(payload) or_return
+        encoded := message.marshal_new_incoming_connection(packet)
+        defer wire.writer_destroy(&encoded)
+        emit(name, encoded.data[:])
+    case:
+        return mcpe_runtime.make_error(
+            .Invalid_Argument,
+            "raknet-fixtures.round_trip",
+            "unknown fixture",
+        )
+    }
+    return nil
+}
+
+main :: proc() {
+    if len(os.args) == 1 {
+        fixtures()
+        return
+    }
+    if len(os.args) != 4 || os.args[1] != "round-trip" {
+        fmt.eprintln("usage: raknet-fixtures [round-trip <name> <hex>]")
+        os.exit(2)
+    }
+    data, ok := hex.decode(transmute([]u8)os.args[3])
+    if !ok {
+        fmt.eprintln("invalid hex")
+        os.exit(2)
+    }
+    defer delete(data)
+    if err := round_trip(os.args[2], data); err != nil {
+        fmt.eprintf("%s: %s\n", err.operation, err.message)
+        mcpe_runtime.destroy_error(err)
+        os.exit(1)
+    }
 }

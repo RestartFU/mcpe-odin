@@ -37,4 +37,8 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 "$WORK_DIR/go-oracle" >"$WORK_DIR/go.txt"
 "$WORK_DIR/odin-oracle" >"$WORK_DIR/odin.txt"
 diff -u "$WORK_DIR/go.txt" "$WORK_DIR/odin.txt"
+while read -r name encoded; do
+    "$WORK_DIR/odin-oracle" round-trip "$name" "$encoded"
+done <"$WORK_DIR/go.txt" >"$WORK_DIR/odin-round-trip.txt"
+diff -u "$WORK_DIR/go.txt" "$WORK_DIR/odin-round-trip.txt"
 printf 'RakNet message differential fixtures match %s\n' "$LOCKED_COMMIT"

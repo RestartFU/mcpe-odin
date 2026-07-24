@@ -1,5 +1,6 @@
 package raknet
 
+import "core:net"
 import "core:slice"
 import "core:testing"
 import mcpe_runtime "mcpe:runtime"
@@ -255,70 +256,77 @@ ordered_packet_queue_rejects_far_indices :: proc(t: ^testing.T) {
 }
 
 @(test)
-reliable_window_deduplicates_and_wraps :: proc(t: ^testing.T) {
-    window := reliable_window_init()
-    defer reliable_window_destroy(&window)
-
-    testing.expect_value(
-        t,
-        reliable_window_add(&window, UInt24(UINT24_MASK)),
-        Reliable_Window_Result.Added,
-    )
-    testing.expect_value(
-        t,
-        reliable_window_add(&window, UInt24(0)),
-        Reliable_Window_Result.Added,
-    )
-    testing.expect_value(
-        t,
-        reliable_window_add(&window, UInt24(UINT24_MASK)),
-        Reliable_Window_Result.Duplicate,
-    )
-    far := uint24_add(UInt24(0), u32(MAX_WINDOW_SIZE) + 1)
-    testing.expect_value(
-        t,
-        reliable_window_add(&window, far),
-        Reliable_Window_Result.Out_Of_Window,
-    )
-}
-
-@(test)
-sequenced_packets_discard_stale_indices :: proc(t: ^testing.T) {
-    conn: Conn
-    first := Packet{
-        reliability = .Reliable_Sequenced,
-        sequence_index = 10,
-        order_index = 20,
+non_ordered_indices_are_ignored_like_go :: proc(t: ^testing.T) {
+    socket, socket_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    testing.expect(t, socket_err == nil)
+    if socket_err != nil {
+        return
     }
-    accepted, err := conn_accept_sequenced(&conn, &first)
-    testing.expect(t, err == nil)
-    testing.expect(t, accepted)
+    defer net.close(socket)
+    endpoint, endpoint_err := net.bound_endpoint(socket)
+    testing.expect(t, endpoint_err == nil)
+    if endpoint_err != nil {
+        return
+    }
+    conn, create_err := conn_create(
+        socket,
+        endpoint,
+        MAX_MTU_SIZE,
+        .Client,
+        false,
+    )
+    testing.expect(t, create_err == nil)
+    if create_err != nil {
+        mcpe_runtime.destroy_error(create_err)
+        return
+    }
+    defer conn_finalize(conn)
 
-    stale := first
-    stale.sequence_index = 9
-    accepted, err = conn_accept_sequenced(&conn, &stale)
-    testing.expect(t, err == nil)
-    testing.expect(t, !accepted)
-
-    next := first
-    next.sequence_index = 11
-    accepted, err = conn_accept_sequenced(&conn, &next)
-    testing.expect(t, err == nil)
-    testing.expect(t, accepted)
-
-    conn.ordered.lowest = 21
-    delayed := next
-    delayed.sequence_index = 12
-    accepted, err = conn_accept_sequenced(&conn, &delayed)
-    testing.expect(t, err == nil)
-    testing.expect(t, !accepted)
-
-    current := next
-    current.order_index = 21
-    current.sequence_index = 0
-    accepted, err = conn_accept_sequenced(&conn, &current)
-    testing.expect(t, err == nil)
-    testing.expect(t, accepted)
+    packets := [?]Packet{
+        {
+            reliability = .Reliable,
+            message_index = 7,
+            content = []u8{0xa0},
+        },
+        {
+            reliability = .Reliable,
+            message_index = 7,
+            content = []u8{0xa1},
+        },
+        {
+            reliability = .Reliable_Sequenced,
+            message_index = 8,
+            sequence_index = 10,
+            order_index = 20,
+            content = []u8{0xa2},
+        },
+        {
+            reliability = .Reliable_Sequenced,
+            message_index = 8,
+            sequence_index = 9,
+            order_index = 20,
+            content = []u8{0xa3},
+        },
+    }
+    for &packet in packets {
+        receive_err := conn_receive_packet(conn, &packet)
+        testing.expect(t, receive_err == nil)
+        if receive_err != nil {
+            mcpe_runtime.destroy_error(receive_err)
+            return
+        }
+    }
+    for expected: u8 = 0xa0; expected <= 0xa3; expected += 1 {
+        content, read_err := read_packet_owned(conn)
+        testing.expect(t, read_err == nil)
+        if read_err != nil {
+            mcpe_runtime.destroy_error(read_err)
+            return
+        }
+        testing.expect_value(t, len(content), 1)
+        testing.expect_value(t, content[0], expected)
+        delete(content, conn.allocator)
+    }
 }
 
 @(test)

@@ -22,6 +22,7 @@ tracked explicitly in `api-map.toml`; package presence does not imply parity.
 ./tools/odinw test
 ./tools/odinw check
 ./tests/differential/raknet-messages.sh
+./tests/differential/raknet-cross-runtime.sh
 ./tools/odinw build dragonfly
 ./tools/odinw run dragonfly
 ```

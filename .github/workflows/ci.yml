@@ -21,3 +21,5 @@ jobs:
         run: ./tools/odinw test -define:ODIN_TEST_FANCY=false
       - name: RakNet differential fixtures
         run: ./tests/differential/raknet-messages.sh
+      - name: RakNet cross-runtime echo
+        run: ./tests/differential/raknet-cross-runtime.sh

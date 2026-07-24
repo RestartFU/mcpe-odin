@@ -545,6 +545,7 @@ listener_handle_unconnected :: proc(
             conn.on_connected = listener_on_connected
             conn.on_closed = listener_on_conn_closed
             conn.on_released = listener_on_conn_released
+            conn.error_log = listener.config.error_log
             listener.connections[remote] = conn
             listener.owned[conn] = true
             listener.half_open_count += 1

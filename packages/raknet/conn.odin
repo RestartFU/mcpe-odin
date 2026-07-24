@@ -177,6 +177,15 @@ conn_free_packet :: proc(conn: ^Conn, packet: ^Packet) {
     free(packet, conn.allocator)
 }
 
+conn_report_send_error :: proc(
+    conn: ^Conn,
+    operation: string,
+) -> mcpe_runtime.Error {
+    err := network_error(operation)
+    mcpe_runtime.report_error(conn.error_log, err)
+    return err
+}
+
 conn_finalize :: proc(conn: ^Conn) {
     if conn == nil {
         return
@@ -347,10 +356,20 @@ conn_send_datagram_locked :: proc(conn: ^Conn, packet: ^Packet) -> mcpe_runtime.
         }
     }
     if _, send_err := net.send_udp(conn.socket, w.data[:], conn.remote); send_err != nil {
+        send_error := conn_report_send_error(conn, "raknet.write")
+        if send_err != .Invalid_Argument {
+            // Pinned go-raknet reports recoverable connected-send errors but
+            // relies on ACK/NACK recovery instead of failing Write.
+            mcpe_runtime.destroy_error(send_error)
+            if !reliability_is_reliable(packet.reliability) {
+                conn_free_packet(conn, packet)
+            }
+            return nil
+        }
         if !reliability_is_reliable(packet.reliability) {
             conn_free_packet(conn, packet)
         }
-        return network_error("raknet.write")
+        return send_error
     }
     if !reliability_is_reliable(packet.reliability) {
         conn_free_packet(conn, packet)

@@ -80,6 +80,7 @@ Conn :: struct {
     on_connected:          Connection_Callback,
     on_closed:             Connection_Callback,
     on_released:           Connection_Callback,
+    error_log:             mcpe_runtime.Error_Logger,
 }
 
 clamp_mtu :: proc(mtu, minimum: u16) -> u16 {
@@ -1063,6 +1064,7 @@ conn_receive_thread :: proc(worker: ^thread.Thread) {
             continue
         }
         if receive_error := conn_receive(conn, buffer[:count]); receive_error != nil {
+            mcpe_runtime.report_error(conn.error_log, receive_error)
             mcpe_runtime.destroy_error(receive_error)
             conn_close_internal(conn)
             return

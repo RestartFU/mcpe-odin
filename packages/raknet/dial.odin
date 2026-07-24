@@ -24,6 +24,7 @@ Dialer :: struct {
     max_transient_errors: int,
     max_mtu:              u16,
     upstream_dialer:      Upstream_Dialer,
+    error_log:            mcpe_runtime.Error_Logger,
 }
 
 MIN_SUPPORTED_MTU :: u16(576)
@@ -346,6 +347,7 @@ dial_config :: proc(
         &transient_error_count,
     ) or_return
     conn = conn_create(socket, remote, mtu, .Client, true) or_return
+    conn.error_log = configured_dialer.error_log
     keep_socket = true
     conn_start_threads(conn, false)
 

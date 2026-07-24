@@ -10,6 +10,7 @@ game semantics.
 | `(*T).Method(args)` | `package.method(t, args)` |
 | `(T, error)` | `(T, Error)` with `nil` success |
 | `context.Context` | `runtime.Cancel_Token` plus deadline |
+| `*slog.Logger` error sink | `runtime.Error_Logger` callback record |
 | interface | `{user_data: rawptr, vtable: ^VTable}` |
 | goroutine | reactor task or bounded worker-pool job |
 | channel | bounded queue with explicit close |
@@ -23,6 +24,9 @@ data is valid only for the documented operation window.
 `Error` is a nil-able pointer to rich `Error_Detail`, allowing Odin
 `or_return`. A non-nil terminal error must eventually be released with
 `runtime.destroy_error`.
+
+Error-logger callbacks borrow their `Error` only for the callback. Default
+zero-value loggers discard errors, matching upstream's disabled default.
 
 ## Naming
 

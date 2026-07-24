@@ -38,6 +38,7 @@ Listen_Config :: struct {
     disable_cookies: bool,
     max_mtu:         u16,
     block_duration:  time.Duration,
+    error_log:       mcpe_runtime.Error_Logger,
     pong_data:       []u8,
     pong_data_proc:  Pong_Data_Proc,
     pong_user_data:  rawptr,
@@ -595,12 +596,14 @@ listener_thread :: proc(worker: ^thread.Thread) {
         if conn != nil {
             receive_error := conn_receive(conn, buffer[:count])
             if receive_error != nil {
+                mcpe_runtime.report_error(listener.config.error_log, receive_error)
                 mcpe_runtime.destroy_error(receive_error)
                 conn_close_internal(conn)
             }
             continue
         }
         if handle_err := listener_handle_unconnected(listener, buffer[:count], remote); handle_err != nil {
+            mcpe_runtime.report_error(listener.config.error_log, handle_err)
             mcpe_runtime.destroy_error(handle_err)
             // Pinned go-raknet blocks malformed unconnected senders before
             // authentication. Preserve observable BlockDuration behaviour.

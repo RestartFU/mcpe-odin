@@ -61,6 +61,20 @@ TEST_UPSTREAM_LISTENER_VTABLE := Upstream_Packet_Listener_VTable{
     listen = test_upstream_listen,
 }
 
+Test_Error_Log :: struct {
+    count: i64,
+    kind:  mcpe_runtime.Error_Kind,
+}
+
+test_error_report :: proc "odin" (
+    user_data: rawptr,
+    err: mcpe_runtime.Error,
+) {
+    log := (^Test_Error_Log)(user_data)
+    log.kind = err.kind
+    _ = sync.atomic_add(&log.count, 1)
+}
+
 @(test)
 uint24_round_trip :: proc(t: ^testing.T) {
     values := [?]UInt24{0, 1, 0xff, 0xffff, 0xff_ffff}
@@ -290,6 +304,51 @@ custom_upstream_packet_listener_binds :: proc(t: ^testing.T) {
     if ping_err == nil {
         delete(response)
     }
+}
+
+@(test)
+listener_reports_decode_errors :: proc(t: ^testing.T) {
+    log: Test_Error_Log
+    listener, listen_err := listen_config(
+        {
+            block_duration = -1,
+            error_log = {
+                user_data = &log,
+                report = test_error_report,
+            },
+        },
+        "127.0.0.1:0",
+    )
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    sender, socket_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    testing.expect(t, socket_err == nil)
+    if socket_err != nil {
+        return
+    }
+    defer net.close(sender)
+    _, send_err := net.send_udp(
+        sender,
+        []u8{0x7f},
+        listener_address(listener),
+    )
+    testing.expect(t, send_err == nil)
+    if send_err != nil {
+        return
+    }
+
+    for _ in 0..<100 {
+        if sync.atomic_load(&log.count) != 0 {
+            break
+        }
+        time.sleep(5 * time.Millisecond)
+    }
+    testing.expect_value(t, sync.atomic_load(&log.count), i64(1))
+    testing.expect_value(t, log.kind, mcpe_runtime.Error_Kind.Protocol)
 }
 
 @(test)

@@ -580,6 +580,12 @@ listener_thread :: proc(worker: ^thread.Thread) {
             if sync.atomic_load(&listener.closed) {
                 break
             }
+            if receive_err == .Timeout || receive_err == .Would_Block {
+                continue
+            }
+            err := network_error("raknet.listener.receive")
+            mcpe_runtime.report_error(listener.config.error_log, err)
+            mcpe_runtime.destroy_error(err)
             continue
         }
         if count == 0 {

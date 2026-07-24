@@ -999,6 +999,9 @@ conn_receive_thread :: proc(worker: ^thread.Thread) {
             if sync.atomic_load(&conn.closed) {
                 return
             }
+            if receive_err == .Timeout || receive_err == .Would_Block {
+                continue
+            }
             err := network_error("raknet.receive")
             conn_log_receive_error(conn, err)
             continue

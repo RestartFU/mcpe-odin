@@ -519,6 +519,49 @@ dialer_logs_malformed_packets_without_closing :: proc(t: ^testing.T) {
 }
 
 @(test)
+poll_timeouts_are_not_reported_as_network_errors :: proc(t: ^testing.T) {
+    listener_log, dialer_log: Test_Error_Log
+    listener, listen_err := listen_config(
+        {
+            error_log = {
+                user_data = &listener_log,
+                report = test_error_report,
+            },
+        },
+        "127.0.0.1:0",
+    )
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    dialer := Dialer{
+        error_log = {
+            user_data = &dialer_log,
+            report = test_error_report,
+        },
+    }
+    address := net.endpoint_to_string(listener_address(listener))
+    client, dial_err := dialer_dial_timeout(dialer, address, 3 * time.Second)
+    testing.expect(t, dial_err == nil)
+    if dial_err != nil {
+        return
+    }
+    defer conn_destroy(client)
+    server, accept_err := accept(listener)
+    testing.expect(t, accept_err == nil)
+    if accept_err != nil {
+        return
+    }
+    defer conn_destroy(server)
+
+    time.sleep(250 * time.Millisecond)
+    testing.expect_value(t, sync.atomic_load(&listener_log.count), i64(0))
+    testing.expect_value(t, sync.atomic_load(&dialer_log.count), i64(0))
+}
+
+@(test)
 duplicate_handshake_completion_is_rejected :: proc(t: ^testing.T) {
     server := Conn{
         mode = .Server,

@@ -185,8 +185,23 @@ func udpProxy(targetAddress string, dropEvery int, chaos bool) {
 	var heldDestination *net.UDPAddr
 	packetIndex := 0
 	for {
+		if heldPacket != nil {
+			if err = socket.SetReadDeadline(time.Now().Add(10 * time.Millisecond)); err != nil {
+				panic(err)
+			}
+		} else if err = socket.SetReadDeadline(time.Time{}); err != nil {
+			panic(err)
+		}
 		count, source, readErr := socket.ReadFromUDP(buffer)
 		if readErr != nil {
+			if timeout, ok := readErr.(net.Error); ok && timeout.Timeout() && heldPacket != nil {
+				if _, err = socket.WriteToUDP(heldPacket, heldDestination); err != nil {
+					panic(err)
+				}
+				heldPacket = nil
+				heldDestination = nil
+				continue
+			}
 			panic(readErr)
 		}
 		packetIndex++

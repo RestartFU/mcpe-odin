@@ -70,6 +70,7 @@ ping_timeout_internal :: proc(
     address: string,
     timeout: time.Duration,
     token: ^mcpe_runtime.Cancel_Token,
+    dialer: Dialer = {},
 ) -> (response: []u8, err: mcpe_runtime.Error) {
     if timeout <= 0 {
         err = mcpe_runtime.make_error(.Invalid_Argument, "raknet.ping", "timeout must be positive")
@@ -80,11 +81,7 @@ ping_timeout_internal :: proc(
         return
     }
     endpoint := resolve_endpoint(address) or_return
-    socket, socket_err := net.make_unbound_udp_socket(net.family_from_address(endpoint.address))
-    if socket_err != nil {
-        err = network_error("raknet.ping.socket")
-        return
-    }
+    socket := dialer_make_socket(dialer, endpoint) or_return
     defer net.close(socket)
 
     if option_err := net.set_option(
@@ -147,8 +144,7 @@ dialer_ping :: proc(
     dialer: Dialer,
     address: string,
 ) -> (response: []u8, err: mcpe_runtime.Error) {
-    _ = dialer
-    return ping(address)
+    return ping_timeout_internal(address, 5 * time.Second, nil, dialer)
 }
 
 dialer_ping_timeout :: proc(
@@ -156,8 +152,7 @@ dialer_ping_timeout :: proc(
     address: string,
     timeout: time.Duration,
 ) -> (response: []u8, err: mcpe_runtime.Error) {
-    _ = dialer
-    return ping_timeout(address, timeout)
+    return ping_timeout_internal(address, timeout, nil, dialer)
 }
 
 dialer_ping_context :: proc(
@@ -166,6 +161,5 @@ dialer_ping_context :: proc(
     address: string,
     timeout: time.Duration = 5 * time.Second,
 ) -> (response: []u8, err: mcpe_runtime.Error) {
-    _ = dialer
-    return ping_context(token, address, timeout)
+    return ping_timeout_internal(address, timeout, token, dialer)
 }

@@ -16,6 +16,20 @@ Pong_Data_Proc :: proc "odin" (
     remote: net.Endpoint,
 ) -> []u8
 
+Upstream_Listen_Proc :: proc "odin" (
+    user_data: rawptr,
+    endpoint: net.Endpoint,
+) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error)
+
+Upstream_Packet_Listener_VTable :: struct {
+    listen: Upstream_Listen_Proc,
+}
+
+Upstream_Packet_Listener :: struct {
+    user_data: rawptr,
+    vtable:    ^Upstream_Packet_Listener_VTable,
+}
+
 MAX_BLOCK_ENTRIES         :: 4096
 MAX_HALF_OPEN_CONNECTIONS :: 128
 MAX_LISTENER_CONNECTIONS  :: 4096
@@ -27,6 +41,7 @@ Listen_Config :: struct {
     pong_data:       []u8,
     pong_data_proc:  Pong_Data_Proc,
     pong_user_data:  rawptr,
+    upstream_packet_listener: Upstream_Packet_Listener,
 }
 
 Listener :: struct {
@@ -197,10 +212,30 @@ listen_config :: proc(config: Listen_Config, address: string) -> (
     err: mcpe_runtime.Error,
 ) {
     endpoint := listen_endpoint(address) or_return
-    socket, socket_err := net.make_bound_udp_socket(endpoint.address, endpoint.port)
-    if socket_err != nil {
-        err = network_error("raknet.listen")
-        return
+    socket: net.UDP_Socket
+    if config.upstream_packet_listener.vtable != nil {
+        if config.upstream_packet_listener.vtable.listen == nil {
+            err = mcpe_runtime.make_error(
+                .Invalid_Argument,
+                "raknet.listen",
+                "upstream packet listener has no listen procedure",
+            )
+            return
+        }
+        socket = config.upstream_packet_listener.vtable.listen(
+            config.upstream_packet_listener.user_data,
+            endpoint,
+        ) or_return
+    } else {
+        native_socket, socket_err := net.make_bound_udp_socket(
+            endpoint.address,
+            endpoint.port,
+        )
+        if socket_err != nil {
+            err = network_error("raknet.listen")
+            return
+        }
+        socket = native_socket
     }
     bound, bound_err := net.bound_endpoint(socket)
     if bound_err != nil {

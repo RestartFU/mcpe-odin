@@ -22,6 +22,44 @@ test_pong_data_proc :: proc "odin" (
     return transmute([]u8)string("MCPE;dynamic;1001;1.26.30")
 }
 
+test_upstream_dial :: proc "odin" (
+    user_data: rawptr,
+    remote: net.Endpoint,
+) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error) {
+    _ = remote
+    (^bool)(user_data)^ = true
+    native_socket, socket_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    if socket_err != nil {
+        err = network_error("raknet.test_upstream_dial")
+        return
+    }
+    return native_socket, nil
+}
+
+TEST_UPSTREAM_DIALER_VTABLE := Upstream_Dialer_VTable{
+    dial = test_upstream_dial,
+}
+
+test_upstream_listen :: proc "odin" (
+    user_data: rawptr,
+    endpoint: net.Endpoint,
+) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error) {
+    (^bool)(user_data)^ = true
+    native_socket, socket_err := net.make_bound_udp_socket(
+        endpoint.address,
+        endpoint.port,
+    )
+    if socket_err != nil {
+        err = network_error("raknet.test_upstream_listen")
+        return
+    }
+    return native_socket, nil
+}
+
+TEST_UPSTREAM_LISTENER_VTABLE := Upstream_Packet_Listener_VTable{
+    listen = test_upstream_listen,
+}
+
 @(test)
 uint24_round_trip :: proc(t: ^testing.T) {
     values := [?]UInt24{0, 1, 0xff, 0xffff, 0xff_ffff}
@@ -192,6 +230,64 @@ deadline_methods_match_upstream_not_supported :: proc(t: ^testing.T) {
             )
             mcpe_runtime.destroy_error(err)
         }
+    }
+}
+
+@(test)
+custom_upstream_dialer_connects :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    called := false
+    dialer := Dialer{
+        upstream_dialer = {
+            user_data = &called,
+            vtable = &TEST_UPSTREAM_DIALER_VTABLE,
+        },
+    }
+    address := net.endpoint_to_string(listener_address(listener))
+    client, dial_err := dialer_dial_timeout(dialer, address, 3 * time.Second)
+    testing.expect(t, dial_err == nil)
+    testing.expect(t, called)
+    if dial_err != nil {
+        return
+    }
+    defer conn_destroy(client)
+    server, accept_err := accept(listener)
+    testing.expect(t, accept_err == nil)
+    if accept_err == nil {
+        conn_destroy(server)
+    }
+}
+
+@(test)
+custom_upstream_packet_listener_binds :: proc(t: ^testing.T) {
+    called := false
+    listener, listen_err := listen_config(
+        {
+            upstream_packet_listener = {
+                user_data = &called,
+                vtable = &TEST_UPSTREAM_LISTENER_VTABLE,
+            },
+        },
+        "127.0.0.1:0",
+    )
+    testing.expect(t, listen_err == nil)
+    testing.expect(t, called)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    address := net.endpoint_to_string(listener_address(listener))
+    response, ping_err := ping_timeout(address, time.Second)
+    testing.expect(t, ping_err == nil)
+    if ping_err == nil {
+        delete(response)
     }
 }
 

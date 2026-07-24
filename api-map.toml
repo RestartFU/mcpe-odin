@@ -25,8 +25,8 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.UpstreamDialer"
-odin = ""
-status = "missing"
+odin = "mcpe:raknet.Upstream_Dialer"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Ping"
@@ -155,8 +155,8 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.UpstreamPacketListener"
-odin = ""
-status = "missing"
+odin = "mcpe:raknet.Upstream_Packet_Listener"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.ListenConfig"

@@ -6,9 +6,24 @@ import "core:time"
 import message "mcpe:raknet/message"
 import mcpe_runtime "mcpe:runtime"
 
+Upstream_Dial_Proc :: proc "odin" (
+    user_data: rawptr,
+    remote: net.Endpoint,
+) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error)
+
+Upstream_Dialer_VTable :: struct {
+    dial: Upstream_Dial_Proc,
+}
+
+Upstream_Dialer :: struct {
+    user_data: rawptr,
+    vtable:    ^Upstream_Dialer_VTable,
+}
+
 Dialer :: struct {
     max_transient_errors: int,
     max_mtu:              u16,
+    upstream_dialer:      Upstream_Dialer,
 }
 
 MIN_SUPPORTED_MTU :: u16(576)
@@ -78,6 +93,34 @@ dialer_retry_receive_error :: proc(
         return true, nil
     }
     return false, receive_err
+}
+
+dialer_make_socket :: proc(
+    dialer: Dialer,
+    remote: net.Endpoint,
+) -> (socket: net.UDP_Socket, err: mcpe_runtime.Error) {
+    if dialer.upstream_dialer.vtable != nil {
+        if dialer.upstream_dialer.vtable.dial == nil {
+            err = mcpe_runtime.make_error(
+                .Invalid_Argument,
+                "raknet.dial.socket",
+                "upstream dialer has no dial procedure",
+            )
+            return
+        }
+        return dialer.upstream_dialer.vtable.dial(
+            dialer.upstream_dialer.user_data,
+            remote,
+        )
+    }
+    native_socket, socket_err := net.make_unbound_udp_socket(
+        net.family_from_address(remote.address),
+    )
+    if socket_err != nil {
+        err = network_error("raknet.dial.socket")
+        return
+    }
+    return native_socket, nil
 }
 
 dialer_discover_mtu :: proc(
@@ -275,11 +318,7 @@ dial_config :: proc(
         return
     }
     remote := resolve_endpoint(address) or_return
-    socket, socket_err := net.make_unbound_udp_socket(net.family_from_address(remote.address))
-    if socket_err != nil {
-        err = network_error("raknet.dial.socket")
-        return
-    }
+    socket := dialer_make_socket(configured_dialer, remote) or_return
     keep_socket := false
     defer if !keep_socket {
         net.close(socket)

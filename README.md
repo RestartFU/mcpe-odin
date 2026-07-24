@@ -24,6 +24,7 @@ tracked explicitly in `api-map.toml`; package presence does not imply parity.
 ./tools/odinw benchmark -o:speed
 ./tests/benchmarks/raknet-compare.sh
 MCPE_ODIN_ENFORCE_BENCHMARKS=1 ./tests/benchmarks/raknet-compare.sh
+./tests/benchmarks/raknet-network-compare.sh
 ./tests/differential/raknet-messages.sh
 ./tests/differential/raknet-cross-runtime.sh
 ./tools/api-audit/check.sh

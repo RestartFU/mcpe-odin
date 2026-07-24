@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/netip"
 	"os"
+	"sort"
 	"strconv"
 	"time"
 
@@ -165,6 +166,83 @@ func dialEcho(address string, payloadSize int) {
 	fmt.Println("go-client-ok")
 }
 
+const (
+	benchmarkWarmups    = 50
+	benchmarkIterations = 1000
+	benchmarkPayload    = 1024
+)
+
+func serveBenchmark() {
+	listener, err := raknet.Listen("127.0.0.1:0")
+	if err != nil {
+		panic(err)
+	}
+	defer listener.Close()
+	fmt.Println(listener.Addr().String())
+
+	conn, err := listener.Accept()
+	if err != nil {
+		panic(err)
+	}
+	buffer := make([]byte, benchmarkPayload)
+	for range benchmarkWarmups + benchmarkIterations {
+		count, readErr := conn.Read(buffer)
+		if readErr != nil {
+			panic(readErr)
+		}
+		if count != benchmarkPayload {
+			panic("unexpected benchmark payload size")
+		}
+		if _, writeErr := conn.Write(buffer[:count]); writeErr != nil {
+			panic(writeErr)
+		}
+	}
+	_ = conn.Close()
+	time.Sleep(1500 * time.Millisecond)
+}
+
+func dialBenchmark(address string) {
+	conn, err := raknet.DialTimeout(address, 3*time.Second)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	payload := crossRuntimePayload(benchmarkPayload)
+	buffer := make([]byte, benchmarkPayload)
+	roundTrip := func() {
+		if _, writeErr := conn.Write(payload); writeErr != nil {
+			panic(writeErr)
+		}
+		count, readErr := conn.Read(buffer)
+		if readErr != nil {
+			panic(readErr)
+		}
+		if !bytes.Equal(buffer[:count], payload) {
+			panic("unexpected benchmark echo")
+		}
+	}
+	for range benchmarkWarmups {
+		roundTrip()
+	}
+	latencies := make([]int64, benchmarkIterations)
+	started := time.Now()
+	for index := range benchmarkIterations {
+		sampleStarted := time.Now()
+		roundTrip()
+		latencies[index] = time.Since(sampleStarted).Nanoseconds()
+	}
+	elapsed := time.Since(started)
+	sort.Slice(latencies, func(i, j int) bool {
+		return latencies[i] < latencies[j]
+	})
+	p95 := latencies[(benchmarkIterations*95+99)/100-1]
+	fmt.Printf(
+		"raknet benchmark: p95_ns=%d messages_per_second=%.2f\n",
+		p95,
+		float64(benchmarkIterations)/elapsed.Seconds(),
+	)
+}
+
 func udpProxy(targetAddress string, dropPercent int, chaos bool) {
 	target, err := net.ResolveUDPAddr("udp", targetAddress)
 	if err != nil {
@@ -264,6 +342,8 @@ func main() {
 	switch os.Args[1] {
 	case "serve-echo":
 		serveEcho()
+	case "serve-benchmark":
+		serveBenchmark()
 	case "dial-echo":
 		if len(os.Args) != 3 && len(os.Args) != 4 {
 			panic("usage: go-oracle dial-echo <address> [payload-size]")
@@ -277,6 +357,11 @@ func main() {
 			}
 		}
 		dialEcho(os.Args[2], payloadSize)
+	case "dial-benchmark":
+		if len(os.Args) != 3 {
+			panic("usage: go-oracle dial-benchmark <address>")
+		}
+		dialBenchmark(os.Args[2])
 	case "udp-proxy":
 		if len(os.Args) != 4 && len(os.Args) != 5 {
 			panic("usage: go-oracle udp-proxy <target> <drop-percent> [chaos]")

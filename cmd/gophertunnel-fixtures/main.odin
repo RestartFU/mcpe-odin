@@ -507,6 +507,51 @@ main :: proc() {
         "packet_client_bound_close_form",
         packet.Client_Bound_Close_Form{},
     )
+    emit_packet(
+        "packet_login",
+        packet.Login{
+            client_protocol = 1001,
+            connection_request = []u8{1, 2, 3, 4},
+        },
+    )
+    emit_packet(
+        "packet_resource_pack_client_response",
+        packet.Resource_Pack_Client_Response{
+            response = packet.Pack_Response_Send_Packs,
+            packs_to_download = []string{
+                "pack-one_1.0.0",
+                "pack-two_2.0.0",
+            },
+        },
+    )
+    emit_packet(
+        "packet_resource_pack_data_info",
+        packet.Resource_Pack_Data_Info{
+            uuid = "d2d3a4b5-c6d7-48e9-a001-020304050607",
+            data_chunk_size = 1_048_576,
+            chunk_count = 16,
+            size = 15_500_000,
+            hash = []u8{0xde, 0xad, 0xbe, 0xef},
+            premium = true,
+            pack_type = packet.Resource_Pack_Type_Resources,
+        },
+    )
+    emit_packet(
+        "packet_resource_pack_chunk_data",
+        packet.Resource_Pack_Chunk_Data{
+            uuid = "d2d3a4b5-c6d7-48e9-a001-020304050607",
+            chunk_index = 7,
+            data_offset = 7 * 1_048_576,
+            data = []u8{9, 8, 7, 6},
+        },
+    )
+    emit_packet(
+        "packet_resource_pack_chunk_request",
+        packet.Resource_Pack_Chunk_Request{
+            uuid = "d2d3a4b5-c6d7-48e9-a001-020304050607",
+            chunk_index = -1,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

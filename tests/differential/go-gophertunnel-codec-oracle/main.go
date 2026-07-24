@@ -495,6 +495,61 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_login",
+		&packet.Login{
+			ClientProtocol:    1001,
+			ConnectionRequest: []byte{1, 2, 3, 4},
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_resource_pack_client_response",
+		&packet.ResourcePackClientResponse{
+			Response: packet.PackResponseSendPacks,
+			PacksToDownload: []string{
+				"pack-one_1.0.0",
+				"pack-two_2.0.0",
+			},
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_resource_pack_data_info",
+		&packet.ResourcePackDataInfo{
+			UUID:          "d2d3a4b5-c6d7-48e9-a001-020304050607",
+			DataChunkSize: 1_048_576,
+			ChunkCount:    16,
+			Size:          15_500_000,
+			Hash:          []byte{0xde, 0xad, 0xbe, 0xef},
+			Premium:       true,
+			PackType:      packet.ResourcePackTypeResources,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_resource_pack_chunk_data",
+		&packet.ResourcePackChunkData{
+			UUID:        "d2d3a4b5-c6d7-48e9-a001-020304050607",
+			ChunkIndex:  7,
+			DataOffset:  7 * 1_048_576,
+			Data:        []byte{9, 8, 7, 6},
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_resource_pack_chunk_request",
+		&packet.ResourcePackChunkRequest{
+			UUID:       "d2d3a4b5-c6d7-48e9-a001-020304050607",
+			ChunkIndex: -1,
+		},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

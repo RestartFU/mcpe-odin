@@ -239,6 +239,31 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Close_Form"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Login"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Login"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ResourcePackClientResponse"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Resource_Pack_Client_Response"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ResourcePackDataInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Resource_Pack_Data_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ResourcePackChunkData"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Resource_Pack_Chunk_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ResourcePackChunkRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Resource_Pack_Chunk_Request"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

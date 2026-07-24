@@ -76,10 +76,12 @@ Request_Network_Settings :: struct {
 
 modeled_packet_id :: proc(id: u32) -> bool {
     switch id {
-    case IDPlayStatus,
+    case IDLogin,
+         IDPlayStatus,
          IDServerToClientHandshake,
          IDClientToServerHandshake,
          IDDisconnect,
+         IDResourcePackClientResponse,
          IDSetTime,
          IDRemoveActor,
          IDTakeItemActor,
@@ -99,6 +101,9 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDRequestChunkRadius,
          IDChunkRadiusUpdated,
          IDShowCredits,
+         IDResourcePackDataInfo,
+         IDResourcePackChunkData,
+         IDResourcePackChunkRequest,
          IDTransfer,
          IDStopSound,
          IDSetLastHurtBy,
@@ -127,6 +132,9 @@ write_payload :: proc(
     value: Packet,
 ) -> mcpe_runtime.Error {
     switch packet in value {
+    case Login:
+        protocol.write_be_i32(output, packet.client_protocol)
+        protocol.write_byte_slice(output, packet.connection_request)
     case Play_Status:
         protocol.write_be_i32(output, packet.status)
     case Server_To_Client_Handshake:
@@ -138,6 +146,20 @@ write_payload :: proc(
         if !packet.hide_disconnection_screen {
             protocol.write_string(output, packet.message)
             protocol.write_string(output, packet.filtered_message)
+        }
+    case Resource_Pack_Client_Response:
+        if len(packet.packs_to_download) >
+           MAX_RESOURCE_PACK_RESPONSE_ENTRIES {
+            return packet_error(
+                .Limit_Exceeded,
+                "gophertunnel.packet.write",
+                "resource pack response exceeds entry limit",
+            )
+        }
+        protocol.write_u8(output, packet.response)
+        protocol.write_u16(output, u16(len(packet.packs_to_download)))
+        for entry in packet.packs_to_download {
+            protocol.write_string(output, entry)
         }
     case Set_Time:
         protocol.write_varint32(output, packet.time)
@@ -197,6 +219,22 @@ write_payload :: proc(
     case Show_Credits:
         protocol.write_varuint64(output, packet.player_runtime_id)
         protocol.write_varint32(output, packet.status_type)
+    case Resource_Pack_Data_Info:
+        protocol.write_string(output, packet.uuid)
+        protocol.write_u32(output, packet.data_chunk_size)
+        protocol.write_u32(output, packet.chunk_count)
+        protocol.write_u64(output, packet.size)
+        protocol.write_byte_slice(output, packet.hash)
+        protocol.write_bool(output, packet.premium)
+        protocol.write_u8(output, packet.pack_type)
+    case Resource_Pack_Chunk_Data:
+        protocol.write_string(output, packet.uuid)
+        protocol.write_u32(output, packet.chunk_index)
+        protocol.write_u64(output, packet.data_offset)
+        protocol.write_byte_slice(output, packet.data)
+    case Resource_Pack_Chunk_Request:
+        protocol.write_string(output, packet.uuid)
+        protocol.write_i32(output, packet.chunk_index)
     case Transfer:
         protocol.write_string(output, packet.address)
         protocol.write_u16(output, packet.port)
@@ -320,6 +358,12 @@ decode_packet :: proc(
     input := protocol.reader(data, 0, true, allocator)
     header = read_header(&input) or_return
     switch header.packet_id {
+    case IDLogin:
+        packet := Login{}
+        packet.client_protocol = protocol.read_be_i32(&input) or_return
+        packet.connection_request =
+            protocol.read_byte_slice(&input) or_return
+        value = packet
     case IDPlayStatus:
         packet := Play_Status{}
         packet.status = protocol.read_be_i32(&input) or_return
@@ -332,6 +376,8 @@ decode_packet :: proc(
         value = Client_To_Server_Handshake{}
     case IDDisconnect:
         value = read_disconnect(&input) or_return
+    case IDResourcePackClientResponse:
+        value = read_resource_pack_client_response(&input) or_return
     case IDSetTime:
         packet := Set_Time{}
         packet.time = protocol.read_varint32(&input) or_return
@@ -435,6 +481,12 @@ decode_packet :: proc(
             protocol.read_varuint64(&input) or_return
         packet.status_type = protocol.read_varint32(&input) or_return
         value = packet
+    case IDResourcePackDataInfo:
+        value = read_resource_pack_data_info(&input) or_return
+    case IDResourcePackChunkData:
+        value = read_resource_pack_chunk_data(&input) or_return
+    case IDResourcePackChunkRequest:
+        value = read_resource_pack_chunk_request(&input) or_return
     case IDTransfer:
         value = read_transfer(&input) or_return
     case IDStopSound:

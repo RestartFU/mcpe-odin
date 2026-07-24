@@ -399,3 +399,152 @@ owned_entity_control_fields_are_cleaned_on_truncation :: proc(
         delete(data)
     }
 }
+
+@(test)
+resource_pack_transfer_packets_round_trip :: proc(t: ^testing.T) {
+    packets := [?]Packet{
+        Login{
+            client_protocol = 1001,
+            connection_request = []u8{1, 2, 3, 4},
+        },
+        Resource_Pack_Client_Response{
+            response = Pack_Response_Send_Packs,
+            packs_to_download = []string{"pack-one_1.0.0", "pack-two_2.0.0"},
+        },
+        Resource_Pack_Data_Info{
+            uuid = "d2d3a4b5-c6d7-48e9-a001-020304050607",
+            data_chunk_size = 1_048_576,
+            chunk_count = 16,
+            size = 15_500_000,
+            hash = []u8{0xde, 0xad, 0xbe, 0xef},
+            premium = true,
+            pack_type = Resource_Pack_Type_Resources,
+        },
+        Resource_Pack_Chunk_Data{
+            uuid = "d2d3a4b5-c6d7-48e9-a001-020304050607",
+            chunk_index = 7,
+            data_offset = 7 * 1_048_576,
+            data = []u8{9, 8, 7, 6},
+        },
+        Resource_Pack_Chunk_Request{
+            uuid = "d2d3a4b5-c6d7-48e9-a001-020304050607",
+            chunk_index = -1,
+        },
+    }
+    ids := [?]u32{
+        IDLogin,
+        IDResourcePackClientResponse,
+        IDResourcePackDataInfo,
+        IDResourcePackChunkData,
+        IDResourcePackChunkRequest,
+    }
+    for original, index in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, header, decode_err := decode_packet(data)
+        testing.expect(t, decode_err == nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+            delete(data)
+            continue
+        }
+        testing.expect_value(t, header.packet_id, ids[index])
+        reencoded, reencode_err := encode_packet(decoded)
+        testing.expect(t, reencode_err == nil)
+        if reencode_err == nil {
+            testing.expect(t, slice.equal(data, reencoded))
+            delete(reencoded)
+        } else {
+            mcpe_runtime.destroy_error(reencode_err)
+        }
+        destroy_packet(&decoded)
+        delete(data)
+    }
+}
+
+@(test)
+resource_pack_response_entry_count_is_bounded :: proc(t: ^testing.T) {
+    decoded, _, err := decode_packet(
+        []u8{
+            u8(IDResourcePackClientResponse),
+            Pack_Response_Send_Packs,
+            1,
+            4,
+        },
+    )
+    testing.expect(t, decoded == nil)
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(err)
+    }
+
+    entries := make(
+        []string,
+        MAX_RESOURCE_PACK_RESPONSE_ENTRIES + 1,
+    )
+    defer delete(entries)
+    _, encode_err := encode_packet(
+        Resource_Pack_Client_Response{
+            response = Pack_Response_Send_Packs,
+            packs_to_download = entries,
+        },
+    )
+    testing.expect(t, encode_err != nil)
+    if encode_err != nil {
+        testing.expect_value(
+            t,
+            encode_err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(encode_err)
+    }
+}
+
+@(test)
+owned_resource_pack_fields_are_cleaned_on_truncation :: proc(
+    t: ^testing.T,
+) {
+    packets := [?]Packet{
+        Login{
+            client_protocol = 1001,
+            connection_request = []u8{1, 2, 3},
+        },
+        Resource_Pack_Client_Response{
+            response = Pack_Response_Send_Packs,
+            packs_to_download = []string{"one", "two"},
+        },
+        Resource_Pack_Data_Info{
+            uuid = "pack",
+            hash = []u8{1, 2, 3},
+        },
+        Resource_Pack_Chunk_Data{
+            uuid = "pack",
+            data = []u8{1, 2, 3},
+        },
+        Resource_Pack_Chunk_Request{uuid = "pack", chunk_index = 1},
+    }
+    for original in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, _, decode_err := decode_packet(data[:len(data) - 1])
+        testing.expect(t, decoded == nil)
+        testing.expect(t, decode_err != nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+        }
+        delete(data)
+    }
+}

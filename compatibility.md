@@ -99,6 +99,13 @@ caller limit plus a 64 MiB hard ceiling. It uses `inflateInit2_`, `inflate`,
 `inflateEnd`, and `zlibVersion` from `libz.so.1`; the exact development source
 and ABI are recorded in `third_party.lock.toml`.
 
+## Protocol safety deviations
+
+Pinned gophertunnel's resource-pack response writer can emit more than 1,024
+pack IDs even though its reader rejects that count, and counts above 65,535
+wrap on the wire. Odin rejects more than 1,024 entries during encoding to keep
+its encoder and guarded decoder symmetric.
+
 ## RakNet safety deviations
 
 Pinned go-raknet admits a seventeenth concurrent split assembly, then rejects

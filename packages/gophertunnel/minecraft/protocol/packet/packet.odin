@@ -51,10 +51,12 @@ Unknown_Packet :: struct {
 }
 
 Packet :: union {
+    Login,
     Play_Status,
     Server_To_Client_Handshake,
     Client_To_Server_Handshake,
     Disconnect,
+    Resource_Pack_Client_Response,
     Set_Time,
     Remove_Actor,
     Take_Item_Actor,
@@ -74,6 +76,9 @@ Packet :: union {
     Request_Chunk_Radius,
     Chunk_Radius_Updated,
     Show_Credits,
+    Resource_Pack_Data_Info,
+    Resource_Pack_Chunk_Data,
+    Resource_Pack_Chunk_Request,
     Transfer,
     Stop_Sound,
     Set_Last_Hurt_By,
@@ -108,10 +113,13 @@ packet_id :: proc(value: Packet) -> (
     err: mcpe_runtime.Error,
 ) {
     switch packet in value {
+    case Login:                       id = IDLogin
     case Play_Status:                 id = IDPlayStatus
     case Server_To_Client_Handshake:  id = IDServerToClientHandshake
     case Client_To_Server_Handshake:  id = IDClientToServerHandshake
     case Disconnect:                  id = IDDisconnect
+    case Resource_Pack_Client_Response:
+        id = IDResourcePackClientResponse
     case Set_Time:                    id = IDSetTime
     case Remove_Actor:                id = IDRemoveActor
     case Take_Item_Actor:             id = IDTakeItemActor
@@ -131,6 +139,9 @@ packet_id :: proc(value: Packet) -> (
     case Request_Chunk_Radius:        id = IDRequestChunkRadius
     case Chunk_Radius_Updated:        id = IDChunkRadiusUpdated
     case Show_Credits:                id = IDShowCredits
+    case Resource_Pack_Data_Info:     id = IDResourcePackDataInfo
+    case Resource_Pack_Chunk_Data:    id = IDResourcePackChunkData
+    case Resource_Pack_Chunk_Request: id = IDResourcePackChunkRequest
     case Transfer:                    id = IDTransfer
     case Stop_Sound:                  id = IDStopSound
     case Set_Last_Hurt_By:            id = IDSetLastHurtBy
@@ -176,6 +187,8 @@ destroy_packet :: proc(
         return
     }
     #partial switch packet in value^ {
+    case Login:
+        delete(packet.connection_request, allocator)
     case Server_To_Client_Handshake:
         delete(packet.jwt, allocator)
     case Disconnect:
@@ -185,6 +198,19 @@ destroy_packet :: proc(
         delete(packet.address, allocator)
     case Stop_Sound:
         delete(packet.sound_name, allocator)
+    case Resource_Pack_Client_Response:
+        for entry in packet.packs_to_download {
+            delete(entry, allocator)
+        }
+        delete(packet.packs_to_download, allocator)
+    case Resource_Pack_Data_Info:
+        delete(packet.uuid, allocator)
+        delete(packet.hash, allocator)
+    case Resource_Pack_Chunk_Data:
+        delete(packet.uuid, allocator)
+        delete(packet.data, allocator)
+    case Resource_Pack_Chunk_Request:
+        delete(packet.uuid, allocator)
     case Modal_Form_Request:
         delete(packet.form_data, allocator)
     case Show_Profile:

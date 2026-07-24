@@ -180,6 +180,10 @@ conn_report_send_error :: proc(
     return err
 }
 
+conn_send_error_is_terminal :: proc(err: net.UDP_Send_Error) -> bool {
+    return err == .Invalid_Argument
+}
+
 conn_log_receive_error :: proc(conn: ^Conn, err: mcpe_runtime.Error) {
     mcpe_runtime.report_error(conn.error_log, err)
     mcpe_runtime.destroy_error(err)
@@ -355,7 +359,7 @@ conn_send_datagram_locked :: proc(conn: ^Conn, packet: ^Packet) -> mcpe_runtime.
     }
     if _, send_err := net.send_udp(conn.socket, w.data[:], conn.remote); send_err != nil {
         send_error := conn_report_send_error(conn, "raknet.write")
-        if send_err != .Invalid_Argument {
+        if !conn_send_error_is_terminal(send_err) {
             // Pinned go-raknet reports recoverable connected-send errors but
             // relies on ACK/NACK recovery instead of failing Write.
             mcpe_runtime.destroy_error(send_error)
@@ -643,8 +647,17 @@ conn_send_acknowledgement :: proc(conn: ^Conn, packets: []UInt24, flag: u8) -> m
             return mcpe_runtime.make_error(.Internal, "raknet.send_acknowledgement", "zero acknowledgement progress")
         }
         if _, send_err := net.send_udp(conn.socket, w.data[:], conn.remote); send_err != nil {
+            send_error := conn_report_send_error(
+                conn,
+                "raknet.send_acknowledgement",
+            )
             writer_destroy(&w)
-            return network_error("raknet.send_acknowledgement")
+            if conn_send_error_is_terminal(send_err) {
+                return send_error
+            }
+            mcpe_runtime.destroy_error(send_error)
+            offset += consumed
+            continue
         }
         writer_destroy(&w)
         offset += consumed

@@ -797,6 +797,14 @@ connected_pong_send_is_unreliable :: proc(t: ^testing.T) {
 }
 
 @(test)
+connected_send_error_classifier_matches_upstream_policy :: proc(t: ^testing.T) {
+    testing.expect(t, conn_send_error_is_terminal(.Invalid_Argument))
+    testing.expect(t, !conn_send_error_is_terminal(.Network_Unreachable))
+    testing.expect(t, !conn_send_error_is_terminal(.Host_Unreachable))
+    testing.expect(t, !conn_send_error_is_terminal(.Insufficient_Resources))
+}
+
+@(test)
 closing_connection_drops_decoded_content :: proc(t: ^testing.T) {
     conn := Conn{
         closing_at_ns = 1,

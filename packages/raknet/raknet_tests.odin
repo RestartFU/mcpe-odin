@@ -330,6 +330,36 @@ close_drains_before_disconnect :: proc(t: ^testing.T) {
 }
 
 @(test)
+connection_context_outlives_connection_storage :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    address := net.endpoint_to_string(listener_address(listener))
+    client, dial_err := dial_timeout(address, 3 * time.Second)
+    testing.expect(t, dial_err == nil)
+    if dial_err != nil {
+        return
+    }
+    server, accept_err := accept(listener)
+    testing.expect(t, accept_err == nil)
+    if accept_err != nil {
+        conn_destroy(client)
+        return
+    }
+    defer conn_destroy(server)
+
+    lifecycle := connection_context(client)
+    defer destroy_context(&lifecycle)
+    testing.expect(t, !context_cancelled(lifecycle))
+    conn_destroy(client)
+    testing.expect(t, context_cancelled(lifecycle))
+}
+
+@(test)
 dial_context_observes_pre_cancelled_token :: proc(t: ^testing.T) {
     token: mcpe_runtime.Cancel_Token
     mcpe_runtime.cancel(&token)

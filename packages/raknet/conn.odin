@@ -34,6 +34,7 @@ Conn :: struct {
     owns_socket: bool,
     mode:        Connection_Mode,
     mtu:         u16,
+    lifecycle_context: Conn_Context,
 
     mutex:          sync.Mutex,
     ack_mutex:      sync.Mutex,
@@ -99,6 +100,7 @@ conn_destroy_empty_collections :: proc(conn: ^Conn) {
     split_assembler_destroy(&conn.splits)
     resend_map_destroy(&conn.resend)
     delete(conn.pending_acks)
+    destroy_context(&conn.lifecycle_context)
 }
 
 conn_create :: proc(
@@ -116,6 +118,7 @@ conn_create :: proc(
     conn.owns_socket = owns_socket
     conn.mode = mode
     conn.mtu = clamp_mtu(mtu, MIN_MTU_SIZE)
+    conn.lifecycle_context = conn_context_create(allocator)
     conn.reference_count = 1
     conn.app_reference = mode == .Client
     // Resource ceilings protect both listeners and clients from hostile peers.
@@ -207,6 +210,7 @@ conn_finalize :: proc(conn: ^Conn) {
     delete(conn.pending_acks)
     channel.destroy(conn.incoming)
     channel.destroy(conn.connected_event)
+    destroy_context(&conn.lifecycle_context)
     free(conn, conn.allocator)
 }
 
@@ -511,6 +515,7 @@ set_deadline :: proc(
 }
 
 conn_finish_close :: proc(conn: ^Conn) {
+    mcpe_runtime.cancel(context_token(conn.lifecycle_context))
     channel.close(conn.incoming)
     channel.close(conn.connected_event)
     if conn.owns_socket {

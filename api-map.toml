@@ -120,8 +120,8 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Conn.Context"
-odin = ""
-status = "missing"
+odin = "mcpe:raknet.connection_context"
+status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Conn.RemoteAddr"

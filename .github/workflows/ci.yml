@@ -23,5 +23,5 @@ jobs:
         run: ./tests/differential/raknet-messages.sh
       - name: RakNet cross-runtime echo
         run: ./tests/differential/raknet-cross-runtime.sh
-      - name: RakNet throughput comparison
+      - name: RakNet throughput smoke gate
         run: ./tests/benchmarks/raknet-compare.sh

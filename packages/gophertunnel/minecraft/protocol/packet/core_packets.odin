@@ -81,6 +81,11 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDClientToServerHandshake,
          IDDisconnect,
          IDSetTime,
+         IDRemoveActor,
+         IDTakeItemActor,
+         IDBlockPickRequest,
+         IDActorPickRequest,
+         IDSetActorMotion,
          IDSetHealth,
          IDSetSpawnPosition,
          IDRespawn,
@@ -97,10 +102,20 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDTransfer,
          IDStopSound,
          IDSetLastHurtBy,
+         IDModalFormRequest,
+         IDShowProfile,
          IDSetDefaultGameType,
+         IDRemoveObjective,
+         IDSetLocalPlayerAsInitialised,
          IDNetworkStackLatency,
          IDNetworkSettings,
+         IDUpdatePlayerGameType,
+         IDFilterText,
+         IDSimulationType,
+         IDToastRequest,
          IDRequestNetworkSettings,
+         IDAwardAchievement,
+         IDClientBoundCloseForm,
          IDServerBoundLoadingScreen:
         return true
     }
@@ -126,6 +141,23 @@ write_payload :: proc(
         }
     case Set_Time:
         protocol.write_varint32(output, packet.time)
+    case Remove_Actor:
+        protocol.write_varint64(output, packet.entity_unique_id)
+    case Take_Item_Actor:
+        protocol.write_varuint64(output, packet.item_entity_runtime_id)
+        protocol.write_varuint64(output, packet.taker_entity_runtime_id)
+    case Block_Pick_Request:
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_bool(output, packet.add_block_nbt)
+        protocol.write_u8(output, packet.hot_bar_slot)
+    case Actor_Pick_Request:
+        protocol.write_i64(output, packet.entity_unique_id)
+        protocol.write_u8(output, packet.hot_bar_slot)
+        protocol.write_bool(output, packet.with_data)
+    case Set_Actor_Motion:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_vec3(output, packet.velocity)
+        protocol.write_varuint64(output, packet.tick)
     case Set_Health:
         protocol.write_varint32(output, packet.health)
     case Set_Spawn_Position:
@@ -175,8 +207,17 @@ write_payload :: proc(
         protocol.write_bool(output, packet.stop_music_legacy)
     case Set_Last_Hurt_By:
         protocol.write_varint32(output, packet.entity_type)
+    case Modal_Form_Request:
+        protocol.write_varuint32(output, packet.form_id)
+        protocol.write_byte_slice(output, packet.form_data)
+    case Show_Profile:
+        protocol.write_string(output, packet.xuid)
     case Set_Default_Game_Type:
         protocol.write_varint32(output, packet.game_type)
+    case Remove_Objective:
+        protocol.write_string(output, packet.objective_name)
+    case Set_Local_Player_As_Initialised:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
     case Network_Stack_Latency:
         protocol.write_i64(output, packet.timestamp)
         protocol.write_bool(output, packet.needs_response)
@@ -186,8 +227,23 @@ write_payload :: proc(
         protocol.write_bool(output, packet.client_throttle)
         protocol.write_u8(output, packet.client_throttle_threshold)
         protocol.write_f32(output, packet.client_throttle_scalar)
+    case Update_Player_Game_Type:
+        protocol.write_varint32(output, packet.game_type)
+        protocol.write_varint64(output, packet.player_unique_id)
+        protocol.write_varuint64(output, packet.tick)
+    case Filter_Text:
+        protocol.write_string(output, packet.text)
+        protocol.write_bool(output, packet.from_server)
+    case Simulation_Type:
+        protocol.write_u8(output, packet.simulation_type)
+    case Toast_Request:
+        protocol.write_string(output, packet.title)
+        protocol.write_string(output, packet.message)
     case Request_Network_Settings:
         protocol.write_be_i32(output, packet.client_protocol)
+    case Award_Achievement:
+        protocol.write_i32(output, packet.achievement_id)
+    case Client_Bound_Close_Form:
     case Server_Bound_Loading_Screen:
         protocol.write_varint32(output, packet.type)
         write_optional_u32(output, packet.loading_screen_id)
@@ -280,6 +336,36 @@ decode_packet :: proc(
         packet := Set_Time{}
         packet.time = protocol.read_varint32(&input) or_return
         value = packet
+    case IDRemoveActor:
+        packet := Remove_Actor{}
+        packet.entity_unique_id = protocol.read_varint64(&input) or_return
+        value = packet
+    case IDTakeItemActor:
+        packet := Take_Item_Actor{}
+        packet.item_entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.taker_entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        value = packet
+    case IDBlockPickRequest:
+        packet := Block_Pick_Request{}
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.add_block_nbt = protocol.read_bool(&input) or_return
+        packet.hot_bar_slot = protocol.read_u8(&input) or_return
+        value = packet
+    case IDActorPickRequest:
+        packet := Actor_Pick_Request{}
+        packet.entity_unique_id = protocol.read_i64(&input) or_return
+        packet.hot_bar_slot = protocol.read_u8(&input) or_return
+        packet.with_data = protocol.read_bool(&input) or_return
+        value = packet
+    case IDSetActorMotion:
+        packet := Set_Actor_Motion{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.velocity = protocol.read_vec3(&input) or_return
+        packet.tick = protocol.read_varuint64(&input) or_return
+        value = packet
     case IDSetHealth:
         packet := Set_Health{}
         packet.health = protocol.read_varint32(&input) or_return
@@ -357,9 +443,27 @@ decode_packet :: proc(
         packet := Set_Last_Hurt_By{}
         packet.entity_type = protocol.read_varint32(&input) or_return
         value = packet
+    case IDModalFormRequest:
+        packet := Modal_Form_Request{}
+        packet.form_id = protocol.read_varuint32(&input) or_return
+        packet.form_data = protocol.read_byte_slice(&input) or_return
+        value = packet
+    case IDShowProfile:
+        packet := Show_Profile{}
+        packet.xuid = protocol.read_string(&input) or_return
+        value = packet
     case IDSetDefaultGameType:
         packet := Set_Default_Game_Type{}
         packet.game_type = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDRemoveObjective:
+        packet := Remove_Objective{}
+        packet.objective_name = protocol.read_string(&input) or_return
+        value = packet
+    case IDSetLocalPlayerAsInitialised:
+        packet := Set_Local_Player_As_Initialised{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
         value = packet
     case IDNetworkStackLatency:
         packet := Network_Stack_Latency{}
@@ -376,10 +480,30 @@ decode_packet :: proc(
         packet.client_throttle_scalar =
             protocol.read_f32(&input) or_return
         value = packet
+    case IDUpdatePlayerGameType:
+        packet := Update_Player_Game_Type{}
+        packet.game_type = protocol.read_varint32(&input) or_return
+        packet.player_unique_id = protocol.read_varint64(&input) or_return
+        packet.tick = protocol.read_varuint64(&input) or_return
+        value = packet
+    case IDFilterText:
+        value = read_filter_text(&input) or_return
+    case IDSimulationType:
+        packet := Simulation_Type{}
+        packet.simulation_type = protocol.read_u8(&input) or_return
+        value = packet
+    case IDToastRequest:
+        value = read_toast_request(&input) or_return
     case IDRequestNetworkSettings:
         packet := Request_Network_Settings{}
         packet.client_protocol = protocol.read_be_i32(&input) or_return
         value = packet
+    case IDAwardAchievement:
+        packet := Award_Achievement{}
+        packet.achievement_id = protocol.read_i32(&input) or_return
+        value = packet
+    case IDClientBoundCloseForm:
+        value = Client_Bound_Close_Form{}
     case IDServerBoundLoadingScreen:
         packet := Server_Bound_Loading_Screen{}
         packet.type = protocol.read_varint32(&input) or_return

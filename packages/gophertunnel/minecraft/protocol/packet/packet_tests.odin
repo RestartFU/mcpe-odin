@@ -285,3 +285,117 @@ dimension_packets_round_trip_optional_loading_screen_id :: proc(
         delete(data)
     }
 }
+
+@(test)
+entity_control_packets_round_trip :: proc(t: ^testing.T) {
+    form_data := `{"type":"modal"}`
+    packets := [?]Packet{
+        Remove_Actor{entity_unique_id = -0x1020_3040},
+        Take_Item_Actor{
+            item_entity_runtime_id = 0x1020,
+            taker_entity_runtime_id = 0x3040,
+        },
+        Block_Pick_Request{
+            position = {-12, 64, 3456},
+            add_block_nbt = true,
+            hot_bar_slot = 7,
+        },
+        Actor_Pick_Request{
+            entity_unique_id = -0x0102_0304_0506_0708,
+            hot_bar_slot = 8,
+            with_data = true,
+        },
+        Set_Actor_Motion{
+            entity_runtime_id = 0x1020_3040,
+            velocity = {1.25, -2.5, 9.75},
+            tick = 123_456,
+        },
+        Modal_Form_Request{
+            form_id = 42,
+            form_data = transmute([]u8)form_data,
+        },
+        Show_Profile{xuid = "2533274790395904"},
+        Remove_Objective{objective_name = "kills"},
+        Set_Local_Player_As_Initialised{
+            entity_runtime_id = 0x1234_5678,
+        },
+        Update_Player_Game_Type{
+            game_type = Game_Type_Adventure,
+            player_unique_id = -123_456,
+            tick = 98_765,
+        },
+        Filter_Text{text = "hello", from_server = true},
+        Simulation_Type{simulation_type = Simulation_Type_Test},
+        Toast_Request{title = "Title", message = "Message"},
+        Award_Achievement{achievement_id = -1234},
+        Client_Bound_Close_Form{},
+    }
+    ids := [?]u32{
+        IDRemoveActor,
+        IDTakeItemActor,
+        IDBlockPickRequest,
+        IDActorPickRequest,
+        IDSetActorMotion,
+        IDModalFormRequest,
+        IDShowProfile,
+        IDRemoveObjective,
+        IDSetLocalPlayerAsInitialised,
+        IDUpdatePlayerGameType,
+        IDFilterText,
+        IDSimulationType,
+        IDToastRequest,
+        IDAwardAchievement,
+        IDClientBoundCloseForm,
+    }
+    for original, index in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, header, decode_err := decode_packet(data)
+        testing.expect(t, decode_err == nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+            delete(data)
+            continue
+        }
+        testing.expect_value(t, header.packet_id, ids[index])
+        reencoded, reencode_err := encode_packet(decoded)
+        testing.expect(t, reencode_err == nil)
+        if reencode_err == nil {
+            testing.expect(t, slice.equal(data, reencoded))
+            delete(reencoded)
+        } else {
+            mcpe_runtime.destroy_error(reencode_err)
+        }
+        destroy_packet(&decoded)
+        delete(data)
+    }
+}
+
+@(test)
+owned_entity_control_fields_are_cleaned_on_truncation :: proc(
+    t: ^testing.T,
+) {
+    packets := [?]Packet{
+        Filter_Text{text = "hello", from_server = true},
+        Toast_Request{title = "Title", message = "Message"},
+    }
+    for original in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, _, decode_err := decode_packet(data[:len(data) - 1])
+        testing.expect(t, decoded == nil)
+        testing.expect(t, decode_err != nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+        }
+        delete(data)
+    }
+}

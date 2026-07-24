@@ -164,6 +164,81 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Bound_Loading_Screen"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.RemoveActor"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Remove_Actor"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.TakeItemActor"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Take_Item_Actor"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.BlockPickRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Block_Pick_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ActorPickRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Actor_Pick_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetActorMotion"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Actor_Motion"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ModalFormRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Modal_Form_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ShowProfile"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Show_Profile"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.RemoveObjective"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Remove_Objective"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetLocalPlayerAsInitialised"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Local_Player_As_Initialised"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.UpdatePlayerGameType"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Player_Game_Type"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.FilterText"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Filter_Text"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SimulationType"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Simulation_Type"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ToastRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Toast_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AwardAchievement"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Award_Achievement"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientBoundCloseForm"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Close_Form"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

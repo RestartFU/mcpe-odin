@@ -379,6 +379,122 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_remove_actor",
+		&packet.RemoveActor{EntityUniqueID: -0x1020_3040},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_take_item_actor",
+		&packet.TakeItemActor{
+			ItemEntityRuntimeID:  0x1020,
+			TakerEntityRuntimeID: 0x3040,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_block_pick_request",
+		&packet.BlockPickRequest{
+			Position:    protocol.BlockPos{-12, 64, 3456},
+			AddBlockNBT: true,
+			HotBarSlot:  7,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_actor_pick_request",
+		&packet.ActorPickRequest{
+			EntityUniqueID: -0x0102_0304_0506_0708,
+			HotBarSlot:     8,
+			WithData:       true,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_set_actor_motion",
+		&packet.SetActorMotion{
+			EntityRuntimeID: 0x1020_3040,
+			Velocity:        mgl32.Vec3{1.25, -2.5, 9.75},
+			Tick:            123_456,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_modal_form_request",
+		&packet.ModalFormRequest{
+			FormID:   42,
+			FormData: []byte(`{"type":"modal"}`),
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_show_profile",
+		&packet.ShowProfile{XUID: "2533274790395904"},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_remove_objective",
+		&packet.RemoveObjective{ObjectiveName: "kills"},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_set_local_player_as_initialised",
+		&packet.SetLocalPlayerAsInitialised{
+			EntityRuntimeID: 0x1234_5678,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_update_player_game_type",
+		&packet.UpdatePlayerGameType{
+			GameType:       packet.GameTypeAdventure,
+			PlayerUniqueID: -123_456,
+			Tick:           98_765,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_filter_text",
+		&packet.FilterText{Text: "hello", FromServer: true},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_simulation_type",
+		&packet.SimulationType{
+			SimulationType: packet.SimulationTypeTest,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_toast_request",
+		&packet.ToastRequest{Title: "Title", Message: "Message"},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_award_achievement",
+		&packet.AwardAchievement{AchievementID: -1234},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_client_bound_close_form",
+		&packet.ClientBoundCloseForm{},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

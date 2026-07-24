@@ -56,6 +56,11 @@ Packet :: union {
     Client_To_Server_Handshake,
     Disconnect,
     Set_Time,
+    Remove_Actor,
+    Take_Item_Actor,
+    Block_Pick_Request,
+    Actor_Pick_Request,
+    Set_Actor_Motion,
     Set_Health,
     Set_Spawn_Position,
     Respawn,
@@ -72,10 +77,20 @@ Packet :: union {
     Transfer,
     Stop_Sound,
     Set_Last_Hurt_By,
+    Modal_Form_Request,
+    Show_Profile,
     Set_Default_Game_Type,
+    Remove_Objective,
+    Set_Local_Player_As_Initialised,
     Network_Stack_Latency,
     Network_Settings,
+    Update_Player_Game_Type,
+    Filter_Text,
+    Simulation_Type,
+    Toast_Request,
     Request_Network_Settings,
+    Award_Achievement,
+    Client_Bound_Close_Form,
     Server_Bound_Loading_Screen,
     Unknown_Packet,
 }
@@ -98,6 +113,11 @@ packet_id :: proc(value: Packet) -> (
     case Client_To_Server_Handshake:  id = IDClientToServerHandshake
     case Disconnect:                  id = IDDisconnect
     case Set_Time:                    id = IDSetTime
+    case Remove_Actor:                id = IDRemoveActor
+    case Take_Item_Actor:             id = IDTakeItemActor
+    case Block_Pick_Request:          id = IDBlockPickRequest
+    case Actor_Pick_Request:          id = IDActorPickRequest
+    case Set_Actor_Motion:            id = IDSetActorMotion
     case Set_Health:                  id = IDSetHealth
     case Set_Spawn_Position:          id = IDSetSpawnPosition
     case Respawn:                     id = IDRespawn
@@ -114,10 +134,21 @@ packet_id :: proc(value: Packet) -> (
     case Transfer:                    id = IDTransfer
     case Stop_Sound:                  id = IDStopSound
     case Set_Last_Hurt_By:            id = IDSetLastHurtBy
+    case Modal_Form_Request:          id = IDModalFormRequest
+    case Show_Profile:                id = IDShowProfile
     case Set_Default_Game_Type:       id = IDSetDefaultGameType
+    case Remove_Objective:            id = IDRemoveObjective
+    case Set_Local_Player_As_Initialised:
+        id = IDSetLocalPlayerAsInitialised
     case Network_Stack_Latency:       id = IDNetworkStackLatency
     case Network_Settings:            id = IDNetworkSettings
+    case Update_Player_Game_Type:     id = IDUpdatePlayerGameType
+    case Filter_Text:                 id = IDFilterText
+    case Simulation_Type:             id = IDSimulationType
+    case Toast_Request:               id = IDToastRequest
     case Request_Network_Settings:    id = IDRequestNetworkSettings
+    case Award_Achievement:           id = IDAwardAchievement
+    case Client_Bound_Close_Form:     id = IDClientBoundCloseForm
     case Server_Bound_Loading_Screen: id = IDServerBoundLoadingScreen
     case Unknown_Packet:              id = packet.packet_id
     case:
@@ -154,6 +185,17 @@ destroy_packet :: proc(
         delete(packet.address, allocator)
     case Stop_Sound:
         delete(packet.sound_name, allocator)
+    case Modal_Form_Request:
+        delete(packet.form_data, allocator)
+    case Show_Profile:
+        delete(packet.xuid, allocator)
+    case Remove_Objective:
+        delete(packet.objective_name, allocator)
+    case Filter_Text:
+        delete(packet.text, allocator)
+    case Toast_Request:
+        delete(packet.title, allocator)
+        delete(packet.message, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

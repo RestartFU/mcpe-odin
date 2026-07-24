@@ -420,6 +420,93 @@ main :: proc() {
             type = packet.Loading_Screen_Type_End,
         },
     )
+    emit_packet(
+        "packet_remove_actor",
+        packet.Remove_Actor{entity_unique_id = -0x1020_3040},
+    )
+    emit_packet(
+        "packet_take_item_actor",
+        packet.Take_Item_Actor{
+            item_entity_runtime_id = 0x1020,
+            taker_entity_runtime_id = 0x3040,
+        },
+    )
+    emit_packet(
+        "packet_block_pick_request",
+        packet.Block_Pick_Request{
+            position = {-12, 64, 3456},
+            add_block_nbt = true,
+            hot_bar_slot = 7,
+        },
+    )
+    emit_packet(
+        "packet_actor_pick_request",
+        packet.Actor_Pick_Request{
+            entity_unique_id = -0x0102_0304_0506_0708,
+            hot_bar_slot = 8,
+            with_data = true,
+        },
+    )
+    emit_packet(
+        "packet_set_actor_motion",
+        packet.Set_Actor_Motion{
+            entity_runtime_id = 0x1020_3040,
+            velocity = {1.25, -2.5, 9.75},
+            tick = 123_456,
+        },
+    )
+    form_data := `{"type":"modal"}`
+    emit_packet(
+        "packet_modal_form_request",
+        packet.Modal_Form_Request{
+            form_id = 42,
+            form_data = transmute([]u8)form_data,
+        },
+    )
+    emit_packet(
+        "packet_show_profile",
+        packet.Show_Profile{xuid = "2533274790395904"},
+    )
+    emit_packet(
+        "packet_remove_objective",
+        packet.Remove_Objective{objective_name = "kills"},
+    )
+    emit_packet(
+        "packet_set_local_player_as_initialised",
+        packet.Set_Local_Player_As_Initialised{
+            entity_runtime_id = 0x1234_5678,
+        },
+    )
+    emit_packet(
+        "packet_update_player_game_type",
+        packet.Update_Player_Game_Type{
+            game_type = packet.Game_Type_Adventure,
+            player_unique_id = -123_456,
+            tick = 98_765,
+        },
+    )
+    emit_packet(
+        "packet_filter_text",
+        packet.Filter_Text{text = "hello", from_server = true},
+    )
+    emit_packet(
+        "packet_simulation_type",
+        packet.Simulation_Type{
+            simulation_type = packet.Simulation_Type_Test,
+        },
+    )
+    emit_packet(
+        "packet_toast_request",
+        packet.Toast_Request{title = "Title", message = "Message"},
+    )
+    emit_packet(
+        "packet_award_achievement",
+        packet.Award_Achievement{achievement_id = -1234},
+    )
+    emit_packet(
+        "packet_client_bound_close_form",
+        packet.Client_Bound_Close_Form{},
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

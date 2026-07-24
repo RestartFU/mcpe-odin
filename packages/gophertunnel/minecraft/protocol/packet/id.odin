@@ -1,0 +1,15 @@
+package gt_packet
+
+IDLogin                    :: u32(1)
+IDPlayStatus               :: u32(2)
+IDServerToClientHandshake  :: u32(3)
+IDClientToServerHandshake  :: u32(4)
+IDDisconnect               :: u32(5)
+IDSetTime                  :: u32(10)
+IDSetHealth                :: u32(42)
+IDSetDifficulty            :: u32(60)
+IDRequestChunkRadius       :: u32(69)
+IDChunkRadiusUpdated       :: u32(70)
+IDNetworkStackLatency      :: u32(115)
+IDNetworkSettings          :: u32(143)
+IDRequestNetworkSettings   :: u32(193)

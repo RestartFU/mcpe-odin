@@ -102,6 +102,11 @@ binary NBT with upstream depth, string, and network-byte limits. Network
 encoding and decoding also share a 65,536-node heap-amplification ceiling.
 `nbt.dump` reproduces upstream's human-readable tagged tree format.
 
+The first protocol `packet` slice includes header/sub-client framing, a tagged
+`Packet` union, unknown-payload preservation, and login/network control packet
+codecs for protocol 1001. Pinned-Go differential fixtures cover headers,
+network settings, disconnect variants, time, and latency.
+
 ## Compatibility policy
 
 Upstream behaviour is authoritative, including quirks. Public Odin APIs keep

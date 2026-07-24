@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 type nestedNBT struct {
@@ -53,6 +54,21 @@ func emitNBTDump(name string, value any) {
 		panic(err)
 	}
 	fmt.Printf("%s %s\n", name, hex.EncodeToString([]byte(text)))
+}
+
+func emitPacket(name string, pk packet.Packet, sender, target byte) {
+	var buffer bytes.Buffer
+	header := packet.Header{
+		PacketID:        pk.ID(),
+		SenderSubClient: sender,
+		TargetSubClient: target,
+	}
+	if err := header.Write(&buffer); err != nil {
+		panic(err)
+	}
+	writer := protocol.NewWriter(&buffer, 0)
+	pk.Marshal(writer)
+	fmt.Printf("%s %s\n", name, hex.EncodeToString(buffer.Bytes()))
 }
 
 func main() {
@@ -167,5 +183,58 @@ func main() {
 	emitNBTDump(
 		"nbt_dump_empty_int",
 		nbtDumpFixture{Values: []int32{}},
+	)
+
+	emitPacket(
+		"packet_request_network_settings",
+		&packet.RequestNetworkSettings{ClientProtocol: 1001},
+		2,
+		3,
+	)
+	emitPacket(
+		"packet_network_settings",
+		&packet.NetworkSettings{
+			CompressionThreshold:    256,
+			CompressionAlgorithm:    packet.CompressionAlgorithmSnappy,
+			ClientThrottle:          true,
+			ClientThrottleThreshold: 12,
+			ClientThrottleScalar:    0.75,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_disconnect",
+		&packet.Disconnect{
+			Reason:          57,
+			Message:         "Disconnected",
+			FilteredMessage: "Filtered",
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_disconnect_hidden",
+		&packet.Disconnect{
+			Reason:                  57,
+			HideDisconnectionScreen: true,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_set_time",
+		&packet.SetTime{Time: -12_345},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_network_stack_latency",
+		&packet.NetworkStackLatency{
+			Timestamp:     -1_234_567_890,
+			NeedsResponse: true,
+		},
+		0,
+		0,
 	)
 }

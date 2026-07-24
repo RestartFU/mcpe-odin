@@ -39,6 +39,46 @@ odin = "mcpe:gophertunnel/minecraft/nbt.dump"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Packet"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Packet"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Header"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Header"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Header.Write"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.write_header"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Header.Read"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.read_header"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlayStatus"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Play_Status"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Disconnect"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Disconnect"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.NetworkSettings"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Network_Settings"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.RequestNetworkSettings"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Request_Network_Settings"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/go-raknet.ErrBufferTooSmall"
 odin = "mcpe:runtime.Error_Kind.Limit_Exceeded"
 status = "partial"

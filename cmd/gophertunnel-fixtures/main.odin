@@ -3,6 +3,7 @@ package gophertunnel_fixtures
 import "core:fmt"
 import nbt "mcpe:gophertunnel/minecraft/nbt"
 import protocol "mcpe:gophertunnel/minecraft/protocol"
+import packet "mcpe:gophertunnel/minecraft/protocol/packet"
 
 emit :: proc(name: string, data: []u8) {
     fmt.printf("%s ", name)
@@ -20,6 +21,22 @@ emit_dump :: proc(name: string, root: ^nbt.Value) {
     assert(dump_err == nil)
     defer delete(text)
     emit(name, transmute([]u8)text)
+}
+
+emit_packet :: proc(
+    name: string,
+    value: packet.Packet,
+    sender_sub_client: u8 = 0,
+    target_sub_client: u8 = 0,
+) {
+    data, err := packet.encode_packet(
+        value,
+        sender_sub_client,
+        target_sub_client,
+    )
+    assert(err == nil)
+    defer delete(data)
+    emit(name, data)
 }
 
 nbt_fixture :: proc() -> nbt.Value {
@@ -251,4 +268,47 @@ main :: proc() {
     )
     defer nbt.destroy_value(&empty_int_root)
     emit_dump("nbt_dump_empty_int", &empty_int_root)
+
+    emit_packet(
+        "packet_request_network_settings",
+        packet.Request_Network_Settings{client_protocol = 1001},
+        2,
+        3,
+    )
+    emit_packet(
+        "packet_network_settings",
+        packet.Network_Settings{
+            compression_threshold = 256,
+            compression_algorithm = packet.Compression_Algorithm_Snappy,
+            client_throttle = true,
+            client_throttle_threshold = 12,
+            client_throttle_scalar = 0.75,
+        },
+    )
+    emit_packet(
+        "packet_disconnect",
+        packet.Disconnect{
+            reason = 57,
+            message = "Disconnected",
+            filtered_message = "Filtered",
+        },
+    )
+    emit_packet(
+        "packet_disconnect_hidden",
+        packet.Disconnect{
+            reason = 57,
+            hide_disconnection_screen = true,
+        },
+    )
+    emit_packet(
+        "packet_set_time",
+        packet.Set_Time{time = -12_345},
+    )
+    emit_packet(
+        "packet_network_stack_latency",
+        packet.Network_Stack_Latency{
+            timestamp = -1_234_567_890,
+            needs_response = true,
+        },
+    )
 }

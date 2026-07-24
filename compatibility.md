@@ -31,6 +31,14 @@ data is valid only for the documented operation window.
 Error-logger callbacks borrow their `Error` only for the callback. Default
 zero-value loggers discard errors, matching upstream's disabled default.
 
+## RakNet safety deviations
+
+Pinned go-raknet admits a seventeenth concurrent split assembly, then rejects
+all later split fragments. Odin rejects only new assemblies after sixteen
+records while allowing existing assemblies to finish. This deliberate
+malformed-input safety exception prevents a peer-triggered permanent
+split-processing denial of service.
+
 ## Naming
 
 Types retain recognizable upstream names. Procedures use Odin snake case:

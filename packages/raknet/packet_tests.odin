@@ -468,3 +468,65 @@ split_assembler_reassembles_out_of_order :: proc(t: ^testing.T) {
     testing.expect(t, complete)
     testing.expect(t, slice.equal(content, []u8{1, 2, 3, 4}))
 }
+
+@(test)
+split_assembler_allows_existing_records_at_limit :: proc(t: ^testing.T) {
+    assembler := split_assembler_init()
+    defer split_assembler_destroy(&assembler)
+    for split_id: u16 = 0; split_id < MAX_CONCURRENT_SPLITS; split_id += 1 {
+        packet := Packet{
+            split = true,
+            split_count = 2,
+            split_index = 0,
+            split_id = split_id,
+            content = []u8{1},
+        }
+        _, complete, err := split_assembler_add(&assembler, &packet, true)
+        testing.expect(t, err == nil)
+        testing.expect(t, !complete)
+    }
+    testing.expect_value(
+        t,
+        len(assembler.records),
+        MAX_CONCURRENT_SPLITS,
+    )
+
+    extra := Packet{
+        split = true,
+        split_count = 2,
+        split_index = 0,
+        split_id = MAX_CONCURRENT_SPLITS,
+        content = []u8{1},
+    }
+    _, complete, err := split_assembler_add(&assembler, &extra, true)
+    testing.expect(t, !complete)
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(err)
+    }
+
+    packet := Packet{
+        split = true,
+        split_count = 2,
+        split_index = 1,
+        split_id = 0,
+        content = []u8{2},
+    }
+    content: []u8
+    content, complete, err = split_assembler_add(
+        &assembler,
+        &packet,
+        true,
+    )
+    testing.expect(t, err == nil)
+    testing.expect(t, complete)
+    if err == nil {
+        testing.expect(t, slice.equal(content, []u8{1, 2}))
+        delete(content, assembler.allocator)
+    }
+}

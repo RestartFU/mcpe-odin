@@ -33,6 +33,23 @@ packet_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+packet_accepts_reserved_reliability_like_upstream :: proc(t: ^testing.T) {
+    for reliability: u8 = 5; reliability <= 7; reliability += 1 {
+        data := []u8{
+            reliability << 5,
+            0,
+            8,
+            0x42,
+        }
+        packet, consumed, err := decode_packet(data)
+        testing.expect(t, err == nil)
+        testing.expect_value(t, consumed, len(data))
+        testing.expect_value(t, u8(packet.reliability), reliability)
+        testing.expect(t, slice.equal(packet.content, data[3:]))
+    }
+}
+
+@(test)
 packet_split_respects_mtu :: proc(t: ^testing.T) {
     data: [4096]u8
     fragments, err := split_content(data[:], 1400)

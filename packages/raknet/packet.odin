@@ -82,10 +82,8 @@ decode_packet :: proc(data: []u8) -> (
     header := data[0]
     packet.split = header & SPLIT_FLAG != 0
     raw_reliability := (header & 0xe0) >> 5
-    if raw_reliability > u8(Reliability.Reliable_Sequenced) {
-        err = mcpe_runtime.make_error(.Malformed, "raknet.read_packet", "unknown reliability")
-        return
-    }
+    // Pinned go-raknet accepts reserved reliability values 5..7 and treats
+    // them like unindexed payloads. Preserve that wire quirk.
     packet.reliability = Reliability(raw_reliability)
     content_size := int(load_u16_be(data[1:3]) >> 3)
     if content_size == 0 {

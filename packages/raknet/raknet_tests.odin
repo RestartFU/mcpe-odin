@@ -420,6 +420,24 @@ custom_upstream_packet_listener_binds :: proc(t: ^testing.T) {
 }
 
 @(test)
+close_overload_accepts_listeners :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    close_err := close(listener)
+    testing.expect(t, close_err == nil)
+    _, accept_err := accept(listener)
+    testing.expect(t, accept_err != nil)
+    if accept_err != nil {
+        testing.expect_value(t, accept_err.kind, mcpe_runtime.Error_Kind.Closed)
+        mcpe_runtime.destroy_error(accept_err)
+    }
+    destroy_listener(listener)
+}
+
+@(test)
 listener_reports_decode_errors :: proc(t: ^testing.T) {
     log: Test_Error_Log
     listener, listen_err := listen_config(

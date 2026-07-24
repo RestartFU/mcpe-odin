@@ -599,7 +599,7 @@ conn_send_disconnect_notification :: proc(conn: ^Conn) {
     }
 }
 
-close :: proc(conn: ^Conn) -> mcpe_runtime.Error {
+close_connection :: proc(conn: ^Conn) -> mcpe_runtime.Error {
     if conn == nil {
         return nil
     }

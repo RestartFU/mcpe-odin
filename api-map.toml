@@ -255,7 +255,7 @@ status = "partial"
 
 [[symbol]]
 upstream = "github.com/sandertv/go-raknet.Listener.Close"
-odin = "mcpe:raknet.close_listener"
+odin = "mcpe:raknet.close"
 status = "partial"
 
 [[symbol]]

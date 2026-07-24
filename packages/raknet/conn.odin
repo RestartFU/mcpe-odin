@@ -51,11 +51,16 @@ Conn :: struct {
     release_finished: bool,
 
     sequence:      UInt24,
+    sequence_index: UInt24,
     order_index:   UInt24,
     message_index: UInt24,
     split_id:      u32,
+    sequenced_initialized:    bool,
+    sequenced_order_index:    UInt24,
+    sequenced_sequence_index: UInt24,
 
     window:          Datagram_Window,
+    reliable_window: Reliable_Window,
     ordered:         Packet_Queue,
     splits:          Split_Assembler,
     resend:          Resend_Map,
@@ -102,6 +107,7 @@ conn_create :: proc(
     // Resource ceilings protect both listeners and clients from hostile peers.
     conn.limits_enabled = true
     conn.window = datagram_window_init()
+    conn.reliable_window = reliable_window_init()
     conn.ordered = packet_queue_init()
     conn.splits = split_assembler_init(allocator)
     conn.resend = resend_map_init()
@@ -177,6 +183,7 @@ conn_finalize :: proc(conn: ^Conn) {
         delete(content, conn.allocator)
     }
     datagram_window_destroy(&conn.window)
+    reliable_window_destroy(&conn.reliable_window)
     packet_queue_destroy(&conn.ordered)
     split_assembler_destroy(&conn.splits)
     resend_map_destroy(&conn.resend)
@@ -320,6 +327,10 @@ conn_write_reliability :: proc(
         if reliability_is_sequenced_or_ordered(reliability) {
             order_index = uint24_inc(&conn.order_index)
         }
+        sequence_index: UInt24
+        if reliability_is_sequenced(reliability) {
+            sequence_index = uint24_inc(&conn.sequence_index)
+        }
         split_id := u16(conn.split_id)
         if len(fragments) > 1 {
             conn.split_id += 1
@@ -329,6 +340,7 @@ conn_write_reliability :: proc(
             packet := new(Packet, conn.allocator)
             packet.reliability = reliability
             packet.order_index = order_index
+            packet.sequence_index = sequence_index
             packet.content = make([]u8, len(fragment), conn.allocator)
             copy(packet.content, fragment)
             if reliability_is_reliable(reliability) {
@@ -621,7 +633,89 @@ conn_deliver_content :: proc(conn: ^Conn, content: []u8) -> mcpe_runtime.Error {
     return nil
 }
 
+conn_accept_sequenced :: proc(
+    conn: ^Conn,
+    packet: ^Packet,
+) -> (accepted: bool, err: mcpe_runtime.Error) {
+    if !conn.sequenced_initialized {
+        conn.sequenced_initialized = true
+        conn.sequenced_order_index = packet.order_index
+        conn.sequenced_sequence_index = packet.sequence_index
+        return true, nil
+    }
+    if packet.order_index == conn.sequenced_order_index {
+        if uint24_before(
+            conn.sequenced_sequence_index,
+            packet.sequence_index,
+        ) {
+            if uint24_forward_distance(
+                conn.sequenced_sequence_index,
+                packet.sequence_index,
+            ) > u32(MAX_WINDOW_SIZE) {
+                return false, mcpe_runtime.make_error(
+                    .Limit_Exceeded,
+                    "raknet.receive_packet",
+                    "sequenced packet is outside receive window",
+                )
+            }
+            conn.sequenced_sequence_index = packet.sequence_index
+            return true, nil
+        }
+        if uint24_before(
+            packet.sequence_index,
+            conn.sequenced_sequence_index,
+        ) || packet.sequence_index == conn.sequenced_sequence_index {
+            return false, nil
+        }
+        return false, mcpe_runtime.make_error(
+            .Limit_Exceeded,
+            "raknet.receive_packet",
+            "ambiguous sequenced packet index",
+        )
+    }
+    if uint24_before(conn.sequenced_order_index, packet.order_index) {
+        if uint24_forward_distance(
+            conn.sequenced_order_index,
+            packet.order_index,
+        ) > u32(MAX_WINDOW_SIZE) {
+            return false, mcpe_runtime.make_error(
+                .Limit_Exceeded,
+                "raknet.receive_packet",
+                "sequenced order is outside receive window",
+            )
+        }
+        conn.sequenced_order_index = packet.order_index
+        conn.sequenced_sequence_index = packet.sequence_index
+        return true, nil
+    }
+    if uint24_before(packet.order_index, conn.sequenced_order_index) {
+        return false, nil
+    }
+    return false, mcpe_runtime.make_error(
+        .Limit_Exceeded,
+        "raknet.receive_packet",
+        "ambiguous sequenced order index",
+    )
+}
+
 conn_receive_packet :: proc(conn: ^Conn, packet: ^Packet) -> mcpe_runtime.Error {
+    if reliability_is_reliable(packet.reliability) {
+        switch result := reliable_window_add(
+            &conn.reliable_window,
+            packet.message_index,
+        ); result {
+        case .Duplicate:
+            return nil
+        case .Out_Of_Window:
+            return mcpe_runtime.make_error(
+                .Limit_Exceeded,
+                "raknet.receive_packet",
+                "reliable message is outside receive window",
+            )
+        case .Added:
+        }
+    }
+
     content := packet.content
     content_owned := false
     if packet.split {
@@ -639,6 +733,22 @@ conn_receive_packet :: proc(conn: ^Conn, packet: ^Packet) -> mcpe_runtime.Error 
             return nil
         }
         content_owned = true
+    }
+
+    if reliability_is_sequenced(packet.reliability) {
+        accepted, sequence_err := conn_accept_sequenced(conn, packet)
+        if sequence_err != nil {
+            if content_owned {
+                delete(content, conn.splits.allocator)
+            }
+            return sequence_err
+        }
+        if !accepted {
+            if content_owned {
+                delete(content, conn.splits.allocator)
+            }
+            return nil
+        }
     }
 
     if packet.reliability != .Reliable_Ordered {

@@ -160,6 +160,59 @@ ordered_packet_queue_rejects_far_indices :: proc(t: ^testing.T) {
 }
 
 @(test)
+reliable_window_deduplicates_and_wraps :: proc(t: ^testing.T) {
+    window := reliable_window_init()
+    defer reliable_window_destroy(&window)
+
+    testing.expect_value(
+        t,
+        reliable_window_add(&window, UInt24(UINT24_MASK)),
+        Reliable_Window_Result.Added,
+    )
+    testing.expect_value(
+        t,
+        reliable_window_add(&window, UInt24(0)),
+        Reliable_Window_Result.Added,
+    )
+    testing.expect_value(
+        t,
+        reliable_window_add(&window, UInt24(UINT24_MASK)),
+        Reliable_Window_Result.Duplicate,
+    )
+    far := uint24_add(UInt24(0), u32(MAX_WINDOW_SIZE) + 1)
+    testing.expect_value(
+        t,
+        reliable_window_add(&window, far),
+        Reliable_Window_Result.Out_Of_Window,
+    )
+}
+
+@(test)
+sequenced_packets_discard_stale_indices :: proc(t: ^testing.T) {
+    conn: Conn
+    first := Packet{
+        reliability = .Reliable_Sequenced,
+        sequence_index = 10,
+        order_index = 20,
+    }
+    accepted, err := conn_accept_sequenced(&conn, &first)
+    testing.expect(t, err == nil)
+    testing.expect(t, accepted)
+
+    stale := first
+    stale.sequence_index = 9
+    accepted, err = conn_accept_sequenced(&conn, &stale)
+    testing.expect(t, err == nil)
+    testing.expect(t, !accepted)
+
+    next := first
+    next.sequence_index = 11
+    accepted, err = conn_accept_sequenced(&conn, &next)
+    testing.expect(t, err == nil)
+    testing.expect(t, accepted)
+}
+
+@(test)
 resend_map_tracks_rtt :: proc(t: ^testing.T) {
     resend := resend_map_init()
     defer resend_map_destroy(&resend)

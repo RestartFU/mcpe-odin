@@ -74,6 +74,41 @@ TEST_UPSTREAM_LISTENER_VTABLE := Upstream_Packet_Listener_VTable{
     listen = test_upstream_listen,
 }
 
+Test_OVH_Workaround_State :: struct {
+    socket:     net.UDP_Socket,
+    saw_request_2: bool,
+}
+
+test_ovh_workaround_server :: proc(worker: ^thread.Thread) {
+    state := (^Test_OVH_Workaround_State)(worker.data)
+    buffer: [MAX_MTU_SIZE]u8
+    _, remote, receive_err := net.recv_udp(state.socket, buffer[:])
+    if receive_err != nil {
+        return
+    }
+    broken := message.marshal_open_connection_reply_1({
+        server_guid = 0,
+        mtu = 1200,
+    })
+    _, _ = net.send_udp(state.socket, broken.data[:], remote)
+    writer_destroy(&broken)
+
+    count: int
+    count, _, receive_err = net.recv_udp(state.socket, buffer[:])
+    if receive_err != nil {
+        return
+    }
+    state.saw_request_2 =
+        count > 0 &&
+        buffer[0] == message.ID_OPEN_CONNECTION_REQUEST_2
+    valid := message.marshal_open_connection_reply_1({
+        server_guid = 1,
+        mtu = 1200,
+    })
+    _, _ = net.send_udp(state.socket, valid.data[:], remote)
+    writer_destroy(&valid)
+}
+
 @(test)
 dialer_retries_only_go_transient_receive_errors :: proc(t: ^testing.T) {
     transient_codes := [?]linux.Errno{
@@ -187,6 +222,52 @@ generated_ids_match_upstream_sign_and_direction :: proc(t: ^testing.T) {
     testing.expect(t, first_listener > 0)
     testing.expect(t, second_listener > 0)
     testing.expect(t, second_listener > first_listener)
+}
+
+@(test)
+invalid_reply_1_triggers_ovh_request_2_workaround :: proc(t: ^testing.T) {
+    server, server_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    testing.expect(t, server_err == nil)
+    if server_err != nil {
+        return
+    }
+    defer net.close(server)
+    _ = net.set_option(server, .Receive_Timeout, 2 * time.Second)
+    remote, remote_err := net.bound_endpoint(server)
+    testing.expect(t, remote_err == nil)
+    if remote_err != nil {
+        return
+    }
+    client, client_err := net.make_bound_udp_socket(net.IP4_Loopback, 0)
+    testing.expect(t, client_err == nil)
+    if client_err != nil {
+        return
+    }
+    defer net.close(client)
+
+    state := Test_OVH_Workaround_State{socket = server}
+    worker := thread.create(test_ovh_workaround_server)
+    worker.data = &state
+    thread.start(worker)
+    transient_errors := 0
+    mtu, _, _, discover_err := dialer_discover_mtu(
+        {},
+        client,
+        remote,
+        -5,
+        nil,
+        mcpe_runtime.system_now_ns(nil) + i64(2 * time.Second),
+        &transient_errors,
+    )
+    thread.join(worker)
+    thread.destroy(worker)
+    testing.expect(t, discover_err == nil)
+    if discover_err != nil {
+        mcpe_runtime.destroy_error(discover_err)
+        return
+    }
+    testing.expect_value(t, mtu, u16(1200))
+    testing.expect(t, state.saw_request_2)
 }
 
 @(test)

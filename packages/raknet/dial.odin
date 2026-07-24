@@ -141,6 +141,7 @@ dialer_discover_mtu :: proc(
     dialer: Dialer,
     socket: net.UDP_Socket,
     remote: net.Endpoint,
+    client_id: i64,
     token: ^mcpe_runtime.Cancel_Token,
     deadline_ns: i64,
     transient_error_count: ^int,
@@ -223,6 +224,22 @@ dialer_discover_mtu :: proc(
                     if reply.server_guid == 0 ||
                        reply.mtu < MIN_MTU_SIZE ||
                        reply.mtu > 1500 {
+                        // Pinned go-raknet sends Request2 even for this broken
+                        // Reply1. OVH protection can require that packet before
+                        // allowing the next valid Reply1 through.
+                        workaround := message.marshal_open_connection_request_2({
+                            server_address = message_address_from_endpoint(remote),
+                            mtu = reply.mtu,
+                            client_guid = client_id,
+                            server_has_security = reply.server_has_security,
+                            cookie = reply.cookie,
+                        })
+                        _, _ = net.send_udp(
+                            socket,
+                            workaround.data[:],
+                            remote,
+                        )
+                        writer_destroy(&workaround)
                         continue
                     }
                     // Pinned go-raknet trusts a valid fixed-range server MTU
@@ -348,6 +365,7 @@ dial_config :: proc(
         configured_dialer,
         socket,
         remote,
+        client_id,
         token,
         deadline_ns,
         &transient_error_count,

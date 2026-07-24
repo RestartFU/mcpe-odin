@@ -352,6 +352,80 @@ listener_reports_decode_errors :: proc(t: ^testing.T) {
 }
 
 @(test)
+dialer_logs_malformed_packets_without_closing :: proc(t: ^testing.T) {
+    listener, listen_err := listen("127.0.0.1:0")
+    testing.expect(t, listen_err == nil)
+    if listen_err != nil {
+        return
+    }
+    defer destroy_listener(listener)
+
+    log: Test_Error_Log
+    dialer := Dialer{
+        error_log = {
+            user_data = &log,
+            report = test_error_report,
+        },
+    }
+    address := net.endpoint_to_string(listener_address(listener))
+    client, dial_err := dialer_dial_timeout(
+        dialer,
+        address,
+        3 * time.Second,
+    )
+    testing.expect(t, dial_err == nil)
+    if dial_err != nil {
+        return
+    }
+    defer conn_destroy(client)
+    server, accept_err := accept(listener)
+    testing.expect(t, accept_err == nil)
+    if accept_err != nil {
+        return
+    }
+    defer conn_destroy(server)
+
+    _, malformed_err := net.send_udp(
+        listener.socket,
+        []u8{BIT_FLAG_ACK | BIT_FLAG_DATAGRAM},
+        client.local,
+    )
+    testing.expect(t, malformed_err == nil)
+    if malformed_err != nil {
+        return
+    }
+    for _ in 0..<100 {
+        if sync.atomic_load(&log.count) != 0 {
+            break
+        }
+        time.sleep(5 * time.Millisecond)
+    }
+    testing.expect_value(t, sync.atomic_load(&log.count), i64(1))
+    testing.expect_value(
+        t,
+        log.kind,
+        mcpe_runtime.Error_Kind.Unexpected_EOF,
+    )
+
+    expected := []u8{0x41, 0x42, 0x43}
+    _, write_err := write(server, expected)
+    testing.expect(t, write_err == nil)
+    if write_err != nil {
+        mcpe_runtime.destroy_error(write_err)
+        return
+    }
+    response: [3]u8
+    count, read_err := read(client, response[:])
+    testing.expect(t, read_err == nil)
+    if read_err != nil {
+        mcpe_runtime.destroy_error(read_err)
+        return
+    }
+    testing.expect_value(t, count, len(expected))
+    testing.expect(t, slice.equal(response[:count], expected))
+}
+
+@(test)
 close_drains_before_disconnect :: proc(t: ^testing.T) {
     listener, listen_err := listen("127.0.0.1:0")
     testing.expect(t, listen_err == nil)

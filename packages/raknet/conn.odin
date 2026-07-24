@@ -1066,8 +1066,9 @@ conn_receive_thread :: proc(worker: ^thread.Thread) {
         if receive_error := conn_receive(conn, buffer[:count]); receive_error != nil {
             mcpe_runtime.report_error(conn.error_log, receive_error)
             mcpe_runtime.destroy_error(receive_error)
-            conn_close_internal(conn)
-            return
+            // Pinned go-raknet's dialer logs malformed connected packets and
+            // keeps its client receive loop alive.
+            continue
         }
     }
 }

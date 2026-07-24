@@ -5,8 +5,16 @@ tag = "dev-2026-07a"
 reported_version = "dev-2026-07-nightly:819fdc7"
 linux_amd64_url = "https://github.com/odin-lang/Odin/releases/download/dev-2026-07a/odin-linux-amd64-dev-2026-07a.tar.gz"
 linux_amd64_sha256 = "32a7678abc66f1af7353abb5b0b5da47d94b7e663f6d250df29bc9117e864c10"
+license = "zlib"
+license_file = ".tools/odin-dev-2026-07a/LICENSE"
+
+[source_ports.go_raknet]
+repository = "https://github.com/Sandertv/go-raknet.git"
+commit = "0d1fd09e2cf6d50dbc7c0764731109196ed9e248"
+license = "MIT"
+license_sha256 = "763afaa2e01ff9a4d98549fbf2cbbbe56ecdb5826b4cc9b4b0254a3f934dc7c7"
+notice = "THIRD_PARTY_NOTICES.md"
 
 # Native dependencies remain disabled until their compatibility suites exist.
 # Adding a dependency requires repository, immutable commit, archive checksum,
 # license identifier, C ABI surface, and ownership tests.
-

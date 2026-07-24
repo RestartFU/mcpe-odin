@@ -56,4 +56,5 @@ upstream concepts and names recognizable while using Odin procedures, result
 tuples, explicit ownership, and context allocators. See `compatibility.md`.
 
 This project is not affiliated with Mojang Studios, Microsoft, Sandertv, or
-Dragonfly contributors.
+Dragonfly contributors. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+for source-port and toolchain attribution.

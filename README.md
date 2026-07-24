@@ -107,6 +107,11 @@ The first protocol `packet` slice includes header/sub-client framing, a tagged
 codecs for protocol 1001. Pinned-Go differential fixtures cover headers,
 network settings, disconnect variants, time, latency, and uncompressed batch
 framing. Batch decoding enforces upstream's 812-packet client-side limit.
+Raw DEFLATE compression is interoperable in both directions: Odin decodes Go
+level-6 streams and emits standards-compliant stored blocks. Decompression is
+bounded to 64 MiB while compressed batch integration and tuned encoding remain
+in progress. Safe hostile-stream decoding uses the pinned four-symbol zlib ABI;
+no local zlib build is performed.
 
 ## Compatibility policy
 

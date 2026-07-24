@@ -83,6 +83,13 @@ the input batch bytes. Only delete the outer slice. Zero-byte transport reads
 return no packets and no error, matching upstream. Disabling the 812-packet
 client limit retains a 65,536-entry allocation ceiling.
 
+`packet.compress_flate` currently emits raw DEFLATE stored blocks. They are
+wire-compatible but intentionally not yet throughput-equivalent to upstream's
+level-6 encoder. `decompress_flate` accepts upstream streams and enforces its
+caller limit plus a 64 MiB hard ceiling. It uses `inflateInit2_`, `inflate`,
+`inflateEnd`, and `zlibVersion` from `libz.so.1`; the exact development source
+and ABI are recorded in `third_party.lock.toml`.
+
 ## RakNet safety deviations
 
 Pinned go-raknet admits a seventeenth concurrent split assembly, then rejects

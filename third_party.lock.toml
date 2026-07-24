@@ -18,3 +18,13 @@ notice = "THIRD_PARTY_NOTICES.md"
 # Native dependencies remain disabled until their compatibility suites exist.
 # Adding a dependency requires repository, immutable commit, archive checksum,
 # license identifier, C ABI surface, and ownership tests.
+
+[native.zlib]
+repository = "https://github.com/madler/zlib.git"
+tag = "v1.3.2"
+commit = "da607da739fa6047df13e66a2af6b8bec7c2a498"
+license = "Zlib"
+soname = "libz.so.1"
+development_sha256 = "568e6925e6e09303fc28d63f4ad11ac642c1daeaf3d7ece0a587a8717e23092c"
+symbols = ["zlibVersion", "inflateInit2_", "inflate", "inflateEnd"]
+notice = "THIRD_PARTY_NOTICES.md"

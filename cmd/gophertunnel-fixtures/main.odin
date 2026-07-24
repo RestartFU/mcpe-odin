@@ -328,4 +328,37 @@ main :: proc() {
     assert(batch_err == nil)
     defer delete(batch)
     emit("packet_batch", batch)
+
+    go_flate := []u8{
+        0xed, 0xca, 0xc1, 0x0d, 0x00, 0x10, 0x0c, 0x40,
+        0xd1, 0x55, 0x3a, 0x8b, 0xbb, 0x21, 0xa4, 0x2a,
+        0x11, 0xa1, 0x52, 0xf6, 0x8f, 0x93, 0x2d, 0xfe,
+        0x3b, 0xbf, 0xdc, 0x97, 0x69, 0x94, 0x76, 0x25,
+        0x59, 0x0d, 0xd7, 0x21, 0xbb, 0xe8, 0xb0, 0x2b,
+        0xea, 0x73, 0x87, 0x9d, 0xd3, 0x7d, 0x49, 0x26,
+        0x91, 0x48, 0x24, 0x12, 0x89, 0x44, 0x22, 0xfd,
+        0xf4, 0x00,
+    }
+    go_flate_decoded, go_flate_err := packet.decompress_flate(
+        go_flate,
+        2368,
+    )
+    assert(go_flate_err == nil)
+    defer delete(go_flate_decoded)
+    emit("flate_go_to_odin", go_flate_decoded)
+
+    odin_flate_text := "Odin raw DEFLATE"
+    odin_flate_input := transmute([]u8)odin_flate_text
+    odin_flate, odin_flate_err := packet.compress_flate(
+        odin_flate_input,
+    )
+    assert(odin_flate_err == nil)
+    defer delete(odin_flate)
+    odin_flate_decoded, odin_decode_err := packet.decompress_flate(
+        odin_flate,
+        len(odin_flate_input),
+    )
+    assert(odin_decode_err == nil)
+    defer delete(odin_flate_decoded)
+    emit("flate_odin_to_go", odin_flate_decoded)
 }

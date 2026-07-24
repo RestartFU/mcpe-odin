@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"compress/flate"
 	"encoding/hex"
 	"fmt"
 	"image/color"
+	"io"
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
@@ -256,4 +258,32 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("packet_batch %s\n", hex.EncodeToString(batch.Bytes()))
+
+	goFlateInput := bytes.Repeat(
+		[]byte("Minecraft Bedrock packet compression "),
+		64,
+	)
+	fmt.Printf(
+		"flate_go_to_odin %s\n",
+		hex.EncodeToString(goFlateInput),
+	)
+
+	odinFlate := []byte{
+		0x01, 0x10, 0x00, 0xef, 0xff,
+		0x4f, 0x64, 0x69, 0x6e, 0x20, 0x72, 0x61,
+		0x77, 0x20, 0x44, 0x45, 0x46, 0x4c, 0x41, 0x54,
+		0x45,
+	}
+	flateReader := flate.NewReader(bytes.NewReader(odinFlate))
+	odinDecoded, err := io.ReadAll(flateReader)
+	if err != nil {
+		panic(err)
+	}
+	if err := flateReader.Close(); err != nil {
+		panic(err)
+	}
+	fmt.Printf(
+		"flate_odin_to_go %s\n",
+		hex.EncodeToString(odinDecoded),
+	)
 }

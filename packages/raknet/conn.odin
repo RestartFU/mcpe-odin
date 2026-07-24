@@ -186,6 +186,11 @@ conn_report_send_error :: proc(
     return err
 }
 
+conn_log_receive_error :: proc(conn: ^Conn, err: mcpe_runtime.Error) {
+    mcpe_runtime.report_error(conn.error_log, err)
+    mcpe_runtime.destroy_error(err)
+}
+
 conn_finalize :: proc(conn: ^Conn) {
     if conn == nil {
         return
@@ -1119,14 +1124,15 @@ conn_receive_thread :: proc(worker: ^thread.Thread) {
             if sync.atomic_load(&conn.closed) {
                 return
             }
+            err := network_error("raknet.receive")
+            conn_log_receive_error(conn, err)
             continue
         }
         if count == 0 || remote != conn.remote {
             continue
         }
         if receive_error := conn_receive(conn, buffer[:count]); receive_error != nil {
-            mcpe_runtime.report_error(conn.error_log, receive_error)
-            mcpe_runtime.destroy_error(receive_error)
+            conn_log_receive_error(conn, receive_error)
             // Pinned go-raknet's dialer logs malformed connected packets and
             // keeps its client receive loop alive.
             continue

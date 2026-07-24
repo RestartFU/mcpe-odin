@@ -388,19 +388,15 @@ dial_config :: proc(
                 mcpe_runtime.destroy_error(receive_err)
                 continue
             }
-            conn_destroy(conn)
-            conn = nil
-            err = receive_err
-            return
+            conn_log_receive_error(conn, receive_err)
+            continue
         }
         if packet_remote != remote {
             continue
         }
         if process_err := conn_receive(conn, buffer[:count]); process_err != nil {
-            conn_destroy(conn)
-            conn = nil
-            err = process_err
-            return
+            conn_log_receive_error(conn, process_err)
+            continue
         }
         _, connected = channel.try_recv(conn.connected_event)
     }

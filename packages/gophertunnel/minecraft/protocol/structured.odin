@@ -334,6 +334,160 @@ write_locator_bar_waypoint :: proc(
     write_u8(value, input.action)
 }
 
+read_sync_world_clock_state_data :: proc(value: ^Reader) -> (
+    result: Sync_World_Clock_State_Data,
+    err: mcpe_runtime.Error,
+) {
+    result.clock_id = read_varuint64(value) or_return
+    result.time = read_varint32(value) or_return
+    result.paused = read_bool(value) or_return
+    return
+}
+
+write_sync_world_clock_state_data :: proc(
+    value: ^Writer,
+    input: Sync_World_Clock_State_Data,
+) {
+    write_varuint64(value, input.clock_id)
+    write_varint32(value, input.time)
+    write_bool(value, input.paused)
+}
+
+destroy_time_marker_data :: proc(
+    marker: Time_Marker_Data,
+    allocator := context.allocator,
+) {
+    delete(marker.name, allocator)
+}
+
+read_time_marker_data :: proc(value: ^Reader) -> (
+    result: Time_Marker_Data,
+    err: mcpe_runtime.Error,
+) {
+    result.id = read_varuint64(value) or_return
+    result.name = read_string(value) or_return
+    result.time, err = read_varint32(value)
+    if err == nil {
+        result.period.set, err = read_bool(value)
+    }
+    if err == nil && result.period.set {
+        result.period.value, err = read_i32(value)
+    }
+    if err != nil {
+        destroy_time_marker_data(result, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_time_marker_data :: proc(
+    value: ^Writer,
+    input: Time_Marker_Data,
+) {
+    write_varuint64(value, input.id)
+    write_string(value, input.name)
+    write_varint32(value, input.time)
+    write_bool(value, input.period.set)
+    if input.period.set {
+        write_i32(value, input.period.value)
+    }
+}
+
+destroy_time_marker_slice :: proc(
+    markers: []Time_Marker_Data,
+    allocator := context.allocator,
+) {
+    for marker in markers {
+        destroy_time_marker_data(marker, allocator)
+    }
+    delete(markers, allocator)
+}
+
+read_time_marker_slice :: proc(value: ^Reader) -> (
+    result: []Time_Marker_Data,
+    err: mcpe_runtime.Error,
+) {
+    count := read_varuint32(value) or_return
+    if count > MAX_COLLECTION_ELEMENTS {
+        return nil, codec_error(
+            .Limit_Exceeded,
+            "gophertunnel.protocol.read_time_marker_slice",
+            "time markers exceed entry limit",
+        )
+    }
+    result = make([]Time_Marker_Data, int(count), value.allocator)
+    for &marker, index in result {
+        marker, err = read_time_marker_data(value)
+        if err != nil {
+            for previous in result[:index] {
+                destroy_time_marker_data(previous, value.allocator)
+            }
+            delete(result, value.allocator)
+            result = nil
+            return
+        }
+    }
+    return
+}
+
+write_time_marker_slice :: proc(
+    value: ^Writer,
+    input: []Time_Marker_Data,
+) -> mcpe_runtime.Error {
+    if len(input) > MAX_COLLECTION_ELEMENTS {
+        return codec_error(
+            .Limit_Exceeded,
+            "gophertunnel.protocol.write_time_marker_slice",
+            "time markers exceed entry limit",
+        )
+    }
+    write_varuint32(value, u32(len(input)))
+    for marker in input {
+        write_time_marker_data(value, marker)
+    }
+    return nil
+}
+
+destroy_world_clock_data :: proc(
+    clock: World_Clock_Data,
+    allocator := context.allocator,
+) {
+    delete(clock.name, allocator)
+    destroy_time_marker_slice(clock.time_markers, allocator)
+}
+
+read_world_clock_data :: proc(value: ^Reader) -> (
+    result: World_Clock_Data,
+    err: mcpe_runtime.Error,
+) {
+    result.id = read_varuint64(value) or_return
+    result.name = read_string(value) or_return
+    result.time, err = read_varint32(value)
+    if err == nil {
+        result.paused, err = read_bool(value)
+    }
+    if err == nil {
+        result.time_markers, err = read_time_marker_slice(value)
+    }
+    if err != nil {
+        destroy_world_clock_data(result, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_world_clock_data :: proc(
+    value: ^Writer,
+    input: World_Clock_Data,
+) -> mcpe_runtime.Error {
+    write_varuint64(value, input.id)
+    write_string(value, input.name)
+    write_varint32(value, input.time)
+    write_bool(value, input.paused)
+    write_time_marker_slice(value, input.time_markers) or_return
+    return nil
+}
+
 read_vec2 :: proc(value: ^Reader) -> (result: Vec2, err: mcpe_runtime.Error) {
     for &component in result {
         component = read_f32(value) or_return

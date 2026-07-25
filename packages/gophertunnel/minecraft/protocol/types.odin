@@ -111,6 +111,32 @@ Locator_Bar_Waypoint :: struct {
     action:       u8,
 }
 
+Clock_Payload_Type_Sync_State          :: u32(0)
+Clock_Payload_Type_Initialize_Registry :: u32(1)
+Clock_Payload_Type_Add_Time_Marker     :: u32(2)
+Clock_Payload_Type_Remove_Time_Marker  :: u32(3)
+
+Sync_World_Clock_State_Data :: struct {
+    clock_id: u64,
+    time:     i32,
+    paused:   bool,
+}
+
+Time_Marker_Data :: struct {
+    id:     u64,
+    name:   string,
+    time:   i32,
+    period: Optional(i32),
+}
+
+World_Clock_Data :: struct {
+    id:           u64,
+    name:         string,
+    time:         i32,
+    paused:       bool,
+    time_markers: []Time_Marker_Data,
+}
+
 Entity_Link_Remove    :: u8(0)
 Entity_Link_Rider     :: u8(1)
 Entity_Link_Passenger :: u8(2)

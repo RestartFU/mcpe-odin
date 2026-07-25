@@ -1805,6 +1805,49 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_sync_world_clocks_state",
+		&packet.SyncWorldClocks{
+			PayloadType: protocol.ClockPayloadTypeSyncState,
+			SyncStates: []protocol.SyncWorldClockStateData{{
+				ClockID: 7, Time: -20, Paused: true,
+			}},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_sync_world_clocks_registry",
+		&packet.SyncWorldClocks{
+			PayloadType: protocol.ClockPayloadTypeInitializeRegistry,
+			Clocks: []protocol.WorldClockData{{
+				ID: 7, Name: "day", Time: 1200,
+				TimeMarkers: []protocol.TimeMarkerData{{
+					ID: 9, Name: "noon", Time: 6000,
+					Period: protocol.Option(int32(24000)),
+				}},
+			}},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_sync_world_clocks_add",
+		&packet.SyncWorldClocks{
+			PayloadType: protocol.ClockPayloadTypeAddTimeMarker,
+			AddClockID: 7,
+			AddTimeMarkers: []protocol.TimeMarkerData{{
+				ID: 10, Name: "sunset", Time: 12000,
+			}},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_sync_world_clocks_remove",
+		&packet.SyncWorldClocks{
+			PayloadType: protocol.ClockPayloadTypeRemoveTimeMarker,
+			RemoveClockID: 7, RemoveTimeMarkerIDs: []uint64{9, 10},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

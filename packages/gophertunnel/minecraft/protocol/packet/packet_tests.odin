@@ -1257,6 +1257,45 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 action = protocol.Waypoint_Action_Add,
             }},
         },
+        Sync_World_Clocks{
+            payload_type = protocol.Clock_Payload_Type_Sync_State,
+            sync_states = []protocol.Sync_World_Clock_State_Data{{
+                clock_id = 7,
+                time = -20,
+                paused = true,
+            }},
+        },
+        Sync_World_Clocks{
+            payload_type =
+                protocol.Clock_Payload_Type_Initialize_Registry,
+            clocks = []protocol.World_Clock_Data{{
+                id = 7,
+                name = "day",
+                time = 1200,
+                paused = false,
+                time_markers = []protocol.Time_Marker_Data{{
+                    id = 9,
+                    name = "noon",
+                    time = 6000,
+                    period = protocol.option(i32(24000)),
+                }},
+            }},
+        },
+        Sync_World_Clocks{
+            payload_type = protocol.Clock_Payload_Type_Add_Time_Marker,
+            add_clock_id = 7,
+            add_time_markers = []protocol.Time_Marker_Data{{
+                id = 10,
+                name = "sunset",
+                time = 12000,
+            }},
+        },
+        Sync_World_Clocks{
+            payload_type =
+                protocol.Clock_Payload_Type_Remove_Time_Marker,
+            remove_clock_id = 7,
+            remove_time_marker_ids = []u64{9, 10},
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1380,6 +1419,10 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDClientBoundDataStore,
         IDGraphicsOverrideParameter,
         IDLocatorBar,
+        IDSyncWorldClocks,
+        IDSyncWorldClocks,
+        IDSyncWorldClocks,
+        IDSyncWorldClocks,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)

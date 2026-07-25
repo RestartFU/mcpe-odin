@@ -230,6 +230,7 @@ Packet :: union {
     Client_Bound_Data_Store,
     Graphics_Override_Parameter,
     Locator_Bar,
+    Sync_World_Clocks,
     Unknown_Packet,
 }
 
@@ -444,6 +445,7 @@ packet_id :: proc(value: Packet) -> (
     case Client_Bound_Data_Store:      id = IDClientBoundDataStore
     case Graphics_Override_Parameter:  id = IDGraphicsOverrideParameter
     case Locator_Bar:                  id = IDLocatorBar
+    case Sync_World_Clocks:            id = IDSyncWorldClocks
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -745,6 +747,17 @@ destroy_packet :: proc(
             protocol.destroy_waypoint(waypoint.waypoint, allocator)
         }
         delete(packet.waypoints, allocator)
+    case Sync_World_Clocks:
+        delete(packet.sync_states, allocator)
+        for clock in packet.clocks {
+            protocol.destroy_world_clock_data(clock, allocator)
+        }
+        delete(packet.clocks, allocator)
+        protocol.destroy_time_marker_slice(
+            packet.add_time_markers,
+            allocator,
+        )
+        delete(packet.remove_time_marker_ids, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

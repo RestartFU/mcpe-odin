@@ -913,6 +913,16 @@ Locator_Bar :: struct {
     waypoints: []protocol.Locator_Bar_Waypoint,
 }
 
+Sync_World_Clocks :: struct {
+    payload_type:           u32,
+    sync_states:            []protocol.Sync_World_Clock_State_Data,
+    clocks:                 []protocol.World_Clock_Data,
+    add_clock_id:           u64,
+    add_time_markers:       []protocol.Time_Marker_Data,
+    remove_clock_id:        u64,
+    remove_time_marker_ids: []u64,
+}
+
 destroy_graphics_override_parameter :: proc(
     packet: Graphics_Override_Parameter,
     allocator := context.allocator,
@@ -1876,6 +1886,104 @@ read_locator_bar_waypoints :: proc(input: ^protocol.Reader) -> (
             for previous in values[:index] {
                 protocol.destroy_waypoint(
                     previous.waypoint,
+                    input.allocator,
+                )
+            }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_sync_world_clock_states :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Sync_World_Clock_State_Data,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_sync_world_clock_states",
+            "world clock states exceed entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_sync_world_clock_state_data(output, value)
+    }
+    return nil
+}
+
+read_sync_world_clock_states :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Sync_World_Clock_State_Data,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_sync_world_clock_states",
+            "world clock states exceed entry limit",
+        )
+    }
+    values = make(
+        []protocol.Sync_World_Clock_State_Data,
+        int(count),
+        input.allocator,
+    )
+    for &value in values {
+        value, err = protocol.read_sync_world_clock_state_data(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_world_clocks :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.World_Clock_Data,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_world_clocks",
+            "world clocks exceed entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_world_clock_data(output, value) or_return
+    }
+    return nil
+}
+
+read_world_clocks :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.World_Clock_Data,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_world_clocks",
+            "world clocks exceed entry limit",
+        )
+    }
+    values = make(
+        []protocol.World_Clock_Data,
+        int(count),
+        input.allocator,
+    )
+    for &value, index in values {
+        value, err = protocol.read_world_clock_data(input)
+        if err != nil {
+            for previous in values[:index] {
+                protocol.destroy_world_clock_data(
+                    previous,
                     input.allocator,
                 )
             }

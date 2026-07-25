@@ -254,7 +254,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDServerBoundDataStore,
          IDClientBoundDataStore,
          IDGraphicsOverrideParameter,
-         IDLocatorBar:
+         IDLocatorBar,
+         IDSyncWorldClocks:
         return true
     }
     return false
@@ -1258,6 +1259,35 @@ write_payload :: proc(
         protocol.write_bool(output, packet.reset)
     case Locator_Bar:
         write_locator_bar_waypoints(output, packet.waypoints) or_return
+    case Sync_World_Clocks:
+        protocol.write_varuint32(output, packet.payload_type)
+        switch packet.payload_type {
+        case protocol.Clock_Payload_Type_Sync_State:
+            write_sync_world_clock_states(
+                output,
+                packet.sync_states,
+            ) or_return
+        case protocol.Clock_Payload_Type_Initialize_Registry:
+            write_world_clocks(output, packet.clocks) or_return
+        case protocol.Clock_Payload_Type_Add_Time_Marker:
+            protocol.write_varuint64(output, packet.add_clock_id)
+            protocol.write_time_marker_slice(
+                output,
+                packet.add_time_markers,
+            ) or_return
+        case protocol.Clock_Payload_Type_Remove_Time_Marker:
+            protocol.write_varuint64(output, packet.remove_clock_id)
+            write_varuint64_slice(
+                output,
+                packet.remove_time_marker_ids,
+            ) or_return
+        case:
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write_sync_world_clocks",
+                "unknown clock payload type",
+            )
+        }
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2923,6 +2953,34 @@ decode_packet :: proc(
     case IDLocatorBar:
         packet := Locator_Bar{}
         packet.waypoints = read_locator_bar_waypoints(&input) or_return
+        value = packet
+    case IDSyncWorldClocks:
+        packet := Sync_World_Clocks{}
+        packet.payload_type = protocol.read_varuint32(&input) or_return
+        switch packet.payload_type {
+        case protocol.Clock_Payload_Type_Sync_State:
+            packet.sync_states =
+                read_sync_world_clock_states(&input) or_return
+        case protocol.Clock_Payload_Type_Initialize_Registry:
+            packet.clocks = read_world_clocks(&input) or_return
+        case protocol.Clock_Payload_Type_Add_Time_Marker:
+            packet.add_clock_id =
+                protocol.read_varuint64(&input) or_return
+            packet.add_time_markers =
+                protocol.read_time_marker_slice(&input) or_return
+        case protocol.Clock_Payload_Type_Remove_Time_Marker:
+            packet.remove_clock_id =
+                protocol.read_varuint64(&input) or_return
+            packet.remove_time_marker_ids =
+                read_varuint64_slice(&input) or_return
+        case:
+            err = packet_error(
+                .Malformed,
+                "gophertunnel.packet.read_sync_world_clocks",
+                "unknown clock payload type",
+            )
+            return
+        }
         value = packet
     case:
         value = Unknown_Packet{

@@ -1179,6 +1179,26 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Jigsaw_Structure_Data"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.SyncWorldClockStateData"
+odin = "mcpe:gophertunnel/minecraft/protocol.Sync_World_Clock_State_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.TimeMarkerData"
+odin = "mcpe:gophertunnel/minecraft/protocol.Time_Marker_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.WorldClockData"
+odin = "mcpe:gophertunnel/minecraft/protocol.World_Clock_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SyncWorldClocks"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Sync_World_Clocks"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

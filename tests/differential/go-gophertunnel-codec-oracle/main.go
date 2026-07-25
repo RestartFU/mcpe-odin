@@ -87,6 +87,10 @@ func emitIdentityValidation(name string, data login.IdentityData) {
 	fmt.Printf("%s %02x\n", name, valid)
 }
 
+func emitDeviceIDFormat(name, value string) {
+	fmt.Printf("%s %02x\n", name, byte(login.DeviceID(value).Format()))
+}
+
 func main() {
 	identity := login.IdentityData{
 		XUID:        "2533274790395904",
@@ -122,6 +126,12 @@ func main() {
 	emitIdentityValidation("login_identity_xuid_underscore", identity)
 	identity.XUID = "+1"
 	emitIdentityValidation("login_identity_xuid_plus", identity)
+	emitDeviceIDFormat("login_device_id_lower_hex", "ada3dfa4622f4e2fb2c14a496d52db96")
+	emitDeviceIDFormat("login_device_id_mixed_hex", "Ada3DFA4622F4E2FB2C14A496D52DB96")
+	emitDeviceIDFormat("login_device_id_uuid", "00112233-4455-6677-8899-aabbccddeeff")
+	emitDeviceIDFormat("login_device_id_base64", "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw=")
+	emitDeviceIDFormat("login_device_id_unpadded_base64", "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw")
+	emitDeviceIDFormat("login_device_id_invalid", "not-a-device-id")
 
 	var buffer bytes.Buffer
 	writer := protocol.NewWriter(&buffer, 0)

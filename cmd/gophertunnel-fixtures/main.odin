@@ -38,6 +38,11 @@ emit_identity_validation :: proc(
     emit(name, []u8{valid})
 }
 
+emit_device_id_format :: proc(name, value: string) {
+    format := login.device_id_format(login.Device_ID(value))
+    emit(name, []u8{u8(format)})
+}
+
 emit_packet :: proc(
     name: string,
     value: packet.Packet,
@@ -159,6 +164,30 @@ main :: proc() {
     emit_identity_validation("login_identity_xuid_underscore", identity)
     identity.xuid = "+1"
     emit_identity_validation("login_identity_xuid_plus", identity)
+    emit_device_id_format(
+        "login_device_id_lower_hex",
+        "ada3dfa4622f4e2fb2c14a496d52db96",
+    )
+    emit_device_id_format(
+        "login_device_id_mixed_hex",
+        "Ada3DFA4622F4E2FB2C14A496D52DB96",
+    )
+    emit_device_id_format(
+        "login_device_id_uuid",
+        "00112233-4455-6677-8899-aabbccddeeff",
+    )
+    emit_device_id_format(
+        "login_device_id_base64",
+        "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw=",
+    )
+    emit_device_id_format(
+        "login_device_id_unpadded_base64",
+        "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw",
+    )
+    emit_device_id_format(
+        "login_device_id_invalid",
+        "not-a-device-id",
+    )
 
     output := protocol.writer()
     defer protocol.writer_destroy(&output)

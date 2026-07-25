@@ -118,6 +118,9 @@ server-settings forms, and settings-issued commands.
 The `mcpe:gophertunnel/minecraft/protocol/login` package now exposes
 `Identity_Data` and byte-compatible upstream identity validation, including
 the legacy username-regex quirks used by authenticated and offline clients.
+It also exposes the complete `Client_Data`/persona/animation records, the
+15-value `Device_OS` catalog, and compatible Device ID classification,
+platform expectations, and cryptographic generation.
 Raw DEFLATE compression is interoperable in both directions: Odin decodes Go
 level-6 streams and emits standards-compliant stored blocks. Compressed batch
 framing supports upstream's per-batch algorithm byte, threshold no-op marker,

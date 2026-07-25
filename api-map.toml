@@ -339,6 +339,56 @@ odin = "mcpe:gophertunnel/minecraft/protocol/login.validate_identity_data"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.DeviceOS"
+odin = "mcpe:gophertunnel/minecraft/protocol.Device_OS"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.ClientData"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.Client_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.PersonaPiece"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.Persona_Piece"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.PersonaPieceTintColour"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.Persona_Piece_Tint_Colour"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.SkinAnimation"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.Skin_Animation"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.DeviceID"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.Device_ID"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.DeviceIDFormat"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.Device_ID_Format"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.DeviceID.Format"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.device_id_format"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.ClientData.ExpectedDeviceIDFormat"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.expected_device_id_format"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/login.DeviceIDFormat.Generate"
+odin = "mcpe:gophertunnel/minecraft/protocol/login.generate_device_id"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

@@ -1550,6 +1550,34 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_server_store_info",
+		&packet.ServerStoreInfo{
+			StoreInfo: protocol.Option(protocol.StoreEntryPointInfo{
+				StoreID: "store-id", StoreName: "Store",
+			}),
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_server_presence_info",
+		&packet.ServerPresenceInfo{
+			PresenceInfo: protocol.Option(protocol.PresenceInfo{
+				ExperienceName: protocol.Option("Experience"),
+				WorldName:      protocol.Option("World"), RichPresenceID: "presence-id",
+			}),
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_aim_assist_priority",
+		&packet.CameraAimAssistActorPriority{
+			PriorityData: []protocol.CameraAimAssistActorPriorityData{{
+				PresetIndex: 1, CategoryIndex: 2, ActorIndex: 3, Priority: 4,
+			}},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

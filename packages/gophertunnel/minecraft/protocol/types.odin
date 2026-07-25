@@ -78,6 +78,24 @@ Generation_Feature :: struct {
     json: []u8,
 }
 
+Store_Entry_Point_Info :: struct {
+    store_id:   string,
+    store_name: string,
+}
+
+Presence_Info :: struct {
+    experience_name: Optional(string),
+    world_name:      Optional(string),
+    rich_presence_id: string,
+}
+
+Camera_Aim_Assist_Actor_Priority_Data :: struct {
+    preset_index:   i32,
+    category_index: i32,
+    actor_index:    i32,
+    priority:       i32,
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

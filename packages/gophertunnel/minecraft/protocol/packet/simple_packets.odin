@@ -835,6 +835,18 @@ Dimension_Data :: struct {
     definitions: []protocol.Dimension_Definition,
 }
 
+Server_Store_Info :: struct {
+    store_info: protocol.Optional(protocol.Store_Entry_Point_Info),
+}
+
+Server_Presence_Info :: struct {
+    presence_info: protocol.Optional(protocol.Presence_Info),
+}
+
+Camera_Aim_Assist_Actor_Priority :: struct {
+    priority_data: []protocol.Camera_Aim_Assist_Actor_Priority_Data,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"
@@ -1454,6 +1466,58 @@ read_dimension_definitions :: proc(input: ^protocol.Reader) -> (
             for previous in values[:index] {
                 delete(previous.name, input.allocator)
             }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_aim_assist_priorities :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Camera_Aim_Assist_Actor_Priority_Data,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_aim_assist_priorities",
+            "aim assist priority list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_camera_aim_assist_actor_priority_data(
+            output,
+            value,
+        )
+    }
+    return nil
+}
+
+read_aim_assist_priorities :: proc(
+    input: ^protocol.Reader,
+) -> (
+    values: []protocol.Camera_Aim_Assist_Actor_Priority_Data,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_aim_assist_priorities",
+            "aim assist priority list exceeds entry limit",
+        )
+    }
+    values = make(
+        []protocol.Camera_Aim_Assist_Actor_Priority_Data,
+        int(count),
+        input.allocator,
+    )
+    for &value in values {
+        value, err =
+            protocol.read_camera_aim_assist_actor_priority_data(input)
+        if err != nil {
             delete(values, input.allocator)
             values = nil
             return

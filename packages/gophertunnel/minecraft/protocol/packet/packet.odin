@@ -213,6 +213,9 @@ Packet :: union {
     Trim_Data,
     Feature_Registry,
     Dimension_Data,
+    Server_Store_Info,
+    Server_Presence_Info,
+    Camera_Aim_Assist_Actor_Priority,
     Unknown_Packet,
 }
 
@@ -407,6 +410,10 @@ packet_id :: proc(value: Packet) -> (
     case Trim_Data:                    id = IDTrimData
     case Feature_Registry:             id = IDFeatureRegistry
     case Dimension_Data:               id = IDDimensionData
+    case Server_Store_Info:            id = IDServerStoreInfo
+    case Server_Presence_Info:         id = IDServerPresenceInfo
+    case Camera_Aim_Assist_Actor_Priority:
+        id = IDCameraAimAssistActorPriority
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -652,6 +659,24 @@ destroy_packet :: proc(
             delete(definition.name, allocator)
         }
         delete(packet.definitions, allocator)
+    case Server_Store_Info:
+        if packet.store_info.set {
+            delete(packet.store_info.value.store_id, allocator)
+            delete(packet.store_info.value.store_name, allocator)
+        }
+    case Server_Presence_Info:
+        if packet.presence_info.set {
+            info := packet.presence_info.value
+            if info.experience_name.set {
+                delete(info.experience_name.value, allocator)
+            }
+            if info.world_name.set {
+                delete(info.world_name.value, allocator)
+            }
+            delete(info.rich_presence_id, allocator)
+        }
+    case Camera_Aim_Assist_Actor_Priority:
+        delete(packet.priority_data, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

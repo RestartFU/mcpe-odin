@@ -1682,6 +1682,37 @@ main :: proc() {
             }},
         },
     )
+    emit_packet(
+        "packet_server_store_info",
+        packet.Server_Store_Info{
+            store_info = protocol.option(protocol.Store_Entry_Point_Info{
+                store_id = "store-id",
+                store_name = "Store",
+            }),
+        },
+    )
+    emit_packet(
+        "packet_server_presence_info",
+        packet.Server_Presence_Info{
+            presence_info = protocol.option(protocol.Presence_Info{
+                experience_name = protocol.option("Experience"),
+                world_name = protocol.option("World"),
+                rich_presence_id = "presence-id",
+            }),
+        },
+    )
+    emit_packet(
+        "packet_aim_assist_priority",
+        packet.Camera_Aim_Assist_Actor_Priority{
+            priority_data =
+                []protocol.Camera_Aim_Assist_Actor_Priority_Data{{
+                    preset_index = 1,
+                    category_index = 2,
+                    actor_index = 3,
+                    priority = 4,
+                }},
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

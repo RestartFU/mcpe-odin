@@ -237,7 +237,10 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDUnlockedRecipes,
          IDTrimData,
          IDFeatureRegistry,
-         IDDimensionData:
+         IDDimensionData,
+         IDServerStoreInfo,
+         IDServerPresenceInfo,
+         IDCameraAimAssistActorPriority:
         return true
     }
     return false
@@ -1107,6 +1110,27 @@ write_payload :: proc(
         write_dimension_definitions(
             output,
             packet.definitions,
+        ) or_return
+    case Server_Store_Info:
+        protocol.write_bool(output, packet.store_info.set)
+        if packet.store_info.set {
+            protocol.write_store_entry_point_info(
+                output,
+                packet.store_info.value,
+            )
+        }
+    case Server_Presence_Info:
+        protocol.write_bool(output, packet.presence_info.set)
+        if packet.presence_info.set {
+            protocol.write_presence_info(
+                output,
+                packet.presence_info.value,
+            )
+        }
+    case Camera_Aim_Assist_Actor_Priority:
+        write_aim_assist_priorities(
+            output,
+            packet.priority_data,
         ) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
@@ -2578,6 +2602,28 @@ decode_packet :: proc(
         packet := Dimension_Data{}
         packet.definitions =
             read_dimension_definitions(&input) or_return
+        value = packet
+    case IDServerStoreInfo:
+        packet := Server_Store_Info{}
+        packet.store_info.set = protocol.read_bool(&input) or_return
+        if packet.store_info.set {
+            packet.store_info.value =
+                protocol.read_store_entry_point_info(&input) or_return
+        }
+        value = packet
+    case IDServerPresenceInfo:
+        packet := Server_Presence_Info{}
+        packet.presence_info.set =
+            protocol.read_bool(&input) or_return
+        if packet.presence_info.set {
+            packet.presence_info.value =
+                protocol.read_presence_info(&input) or_return
+        }
+        value = packet
+    case IDCameraAimAssistActorPriority:
+        packet := Camera_Aim_Assist_Actor_Priority{}
+        packet.priority_data =
+            read_aim_assist_priorities(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

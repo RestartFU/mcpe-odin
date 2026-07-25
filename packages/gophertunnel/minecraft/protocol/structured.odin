@@ -423,3 +423,86 @@ write_generation_feature :: proc(
     write_string(value, input.name)
     write_byte_slice(value, input.json)
 }
+
+read_store_entry_point_info :: proc(value: ^Reader) -> (
+    result: Store_Entry_Point_Info,
+    err: mcpe_runtime.Error,
+) {
+    result.store_id = read_string(value) or_return
+    result.store_name, err = read_string(value)
+    if err != nil {
+        delete(result.store_id, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_store_entry_point_info :: proc(
+    value: ^Writer,
+    input: Store_Entry_Point_Info,
+) {
+    write_string(value, input.store_id)
+    write_string(value, input.store_name)
+}
+
+read_presence_info :: proc(value: ^Reader) -> (
+    result: Presence_Info,
+    err: mcpe_runtime.Error,
+) {
+    result.experience_name.set = read_bool(value) or_return
+    if result.experience_name.set {
+        result.experience_name.value = read_string(value) or_return
+    }
+    result.world_name.set, err = read_bool(value)
+    if err == nil && result.world_name.set {
+        result.world_name.value, err = read_string(value)
+    }
+    if err == nil {
+        result.rich_presence_id, err = read_string(value)
+    }
+    if err != nil {
+        if result.experience_name.set {
+            delete(result.experience_name.value, value.allocator)
+        }
+        if result.world_name.set {
+            delete(result.world_name.value, value.allocator)
+        }
+        result = {}
+    }
+    return
+}
+
+write_presence_info :: proc(value: ^Writer, input: Presence_Info) {
+    write_bool(value, input.experience_name.set)
+    if input.experience_name.set {
+        write_string(value, input.experience_name.value)
+    }
+    write_bool(value, input.world_name.set)
+    if input.world_name.set {
+        write_string(value, input.world_name.value)
+    }
+    write_string(value, input.rich_presence_id)
+}
+
+read_camera_aim_assist_actor_priority_data :: proc(
+    value: ^Reader,
+) -> (
+    result: Camera_Aim_Assist_Actor_Priority_Data,
+    err: mcpe_runtime.Error,
+) {
+    result.preset_index = read_i32(value) or_return
+    result.category_index = read_i32(value) or_return
+    result.actor_index = read_i32(value) or_return
+    result.priority = read_i32(value) or_return
+    return
+}
+
+write_camera_aim_assist_actor_priority_data :: proc(
+    value: ^Writer,
+    input: Camera_Aim_Assist_Actor_Priority_Data,
+) {
+    write_i32(value, input.preset_index)
+    write_i32(value, input.category_index)
+    write_i32(value, input.actor_index)
+    write_i32(value, input.priority)
+}

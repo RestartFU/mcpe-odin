@@ -979,6 +979,36 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Dimension_Data"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.StoreEntryPointInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol.Store_Entry_Point_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.PresenceInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol.Presence_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.CameraAimAssistActorPriorityData"
+odin = "mcpe:gophertunnel/minecraft/protocol.Camera_Aim_Assist_Actor_Priority_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ServerStoreInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Store_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ServerPresenceInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Presence_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CameraAimAssistActorPriority"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Camera_Aim_Assist_Actor_Priority"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

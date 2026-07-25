@@ -1007,6 +1007,28 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 dimension_type = 1000,
             }},
         },
+        Server_Store_Info{
+            store_info = protocol.option(protocol.Store_Entry_Point_Info{
+                store_id = "store-id",
+                store_name = "Store",
+            }),
+        },
+        Server_Presence_Info{
+            presence_info = protocol.option(protocol.Presence_Info{
+                experience_name = protocol.option("Experience"),
+                world_name = protocol.option("World"),
+                rich_presence_id = "presence-id",
+            }),
+        },
+        Camera_Aim_Assist_Actor_Priority{
+            priority_data =
+                []protocol.Camera_Aim_Assist_Actor_Priority_Data{{
+                    preset_index = 1,
+                    category_index = 2,
+                    actor_index = 3,
+                    priority = 4,
+                }},
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1115,6 +1137,9 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDTrimData,
         IDFeatureRegistry,
         IDDimensionData,
+        IDServerStoreInfo,
+        IDServerPresenceInfo,
+        IDCameraAimAssistActorPriority,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1419,6 +1444,28 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
                 generator = protocol.Generator_Overworld,
                 dimension_type = 1000,
             }},
+        },
+        Server_Store_Info{
+            store_info = protocol.option(protocol.Store_Entry_Point_Info{
+                store_id = "store-id",
+                store_name = "Store",
+            }),
+        },
+        Server_Presence_Info{
+            presence_info = protocol.option(protocol.Presence_Info{
+                experience_name = protocol.option("Experience"),
+                world_name = protocol.option("World"),
+                rich_presence_id = "presence-id",
+            }),
+        },
+        Camera_Aim_Assist_Actor_Priority{
+            priority_data =
+                []protocol.Camera_Aim_Assist_Actor_Priority_Data{{
+                    preset_index = 1,
+                    category_index = 2,
+                    actor_index = 3,
+                    priority = 4,
+                }},
         },
     }
     for original in packets {

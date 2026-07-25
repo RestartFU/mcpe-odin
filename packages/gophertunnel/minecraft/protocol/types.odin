@@ -7,6 +7,13 @@ RGBA :: struct {
     r, g, b, a: u8,
 }
 
+Bitset :: struct {
+    size:  int,
+    words: []u64,
+}
+
+Entity_Data_Flag_Count :: 130
+
 Entity_Link_Remove    :: u8(0)
 Entity_Link_Rider     :: u8(1)
 Entity_Link_Passenger :: u8(2)

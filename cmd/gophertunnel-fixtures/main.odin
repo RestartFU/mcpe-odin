@@ -1895,6 +1895,34 @@ main :: proc() {
             },
         },
     )
+    actor_flags, actor_flags_err :=
+        protocol.new_bitset(protocol.Entity_Data_Flag_Count)
+    assert(actor_flags_err == nil)
+    defer protocol.destroy_bitset(&actor_flags)
+    actor_flag_indices := [?]int{0, 64, 129}
+    for index in actor_flag_indices {
+        assert(protocol.bitset_set(&actor_flags, index) == nil)
+    }
+    emit_packet(
+        "packet_client_movement_prediction_sync",
+        packet.Client_Movement_Prediction_Sync{
+            actor_flags = actor_flags,
+            bounding_box_scale = 1,
+            bounding_box_width = 0.6,
+            bounding_box_height = 1.8,
+            movement_speed = 0.1,
+            underwater_movement_speed = 0.02,
+            lava_movement_speed = 0.03,
+            jump_strength = 0.42,
+            health = 20,
+            hunger = 18,
+            friction_modifier = 0.91,
+            bounciness = 0.2,
+            air_drag_modifier = 0.98,
+            entity_unique_id = -99,
+            flying = true,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

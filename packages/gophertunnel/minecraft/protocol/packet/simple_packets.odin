@@ -948,6 +948,24 @@ Movement_Effect :: struct {
     tick:              u64,
 }
 
+Client_Movement_Prediction_Sync :: struct {
+    actor_flags:               protocol.Bitset,
+    bounding_box_scale:        f32,
+    bounding_box_width:        f32,
+    bounding_box_height:       f32,
+    movement_speed:            f32,
+    underwater_movement_speed: f32,
+    lava_movement_speed:       f32,
+    jump_strength:             f32,
+    health:                    f32,
+    hunger:                    f32,
+    friction_modifier:         f32,
+    bounciness:                f32,
+    air_drag_modifier:         f32,
+    entity_unique_id:          i64,
+    flying:                    bool,
+}
+
 Player_Video_Capture :: struct {
     action:      u8,
     frame_rate:  i32,

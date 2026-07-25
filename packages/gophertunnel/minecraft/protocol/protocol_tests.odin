@@ -286,3 +286,58 @@ optional_values_preserve_presence :: proc(t: ^testing.T) {
     testing.expect(t, !set)
     testing.expect_value(t, value, u32(0))
 }
+@(test)
+bitset_round_trip_and_bounds :: proc(t: ^testing.T) {
+    flags, create_err := new_bitset(130)
+    testing.expect(t, create_err == nil)
+    if create_err != nil {
+        mcpe_runtime.destroy_error(create_err)
+        return
+    }
+    defer destroy_bitset(&flags)
+    flag_indices := [?]int{0, 64, 129}
+    for index in flag_indices {
+        set_err := bitset_set(&flags, index)
+        testing.expect(t, set_err == nil)
+        if set_err != nil {
+            mcpe_runtime.destroy_error(set_err)
+        }
+    }
+    output := writer()
+    defer writer_destroy(&output)
+    write_err := write_bitset(&output, flags, 130)
+    testing.expect(t, write_err == nil)
+    if write_err != nil {
+        mcpe_runtime.destroy_error(write_err)
+        return
+    }
+    source := reader(writer_bytes(&output))
+    decoded, read_err := read_bitset(&source, 130)
+    testing.expect(t, read_err == nil)
+    if read_err != nil {
+        mcpe_runtime.destroy_error(read_err)
+        return
+    }
+    defer destroy_bitset(&decoded)
+    for index in flag_indices {
+        loaded, load_err := bitset_load(decoded, index)
+        testing.expect(t, load_err == nil)
+        testing.expect(t, loaded)
+        if load_err != nil {
+            mcpe_runtime.destroy_error(load_err)
+        }
+    }
+
+    overflow := reader([]u8{0x80})
+    invalid, overflow_err := read_bitset(&overflow, 7)
+    destroy_bitset(&invalid)
+    testing.expect(t, overflow_err != nil)
+    if overflow_err != nil {
+        testing.expect_value(
+            t,
+            overflow_err.kind,
+            mcpe_runtime.Error_Kind.Malformed,
+        )
+        mcpe_runtime.destroy_error(overflow_err)
+    }
+}

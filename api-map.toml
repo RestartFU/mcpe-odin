@@ -1109,6 +1109,41 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Data_Store"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.Bitset"
+odin = "mcpe:gophertunnel/minecraft/protocol.Bitset"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.NewBitset"
+odin = "mcpe:gophertunnel/minecraft/protocol.new_bitset"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.Bitset.Set"
+odin = "mcpe:gophertunnel/minecraft/protocol.bitset_set"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.Bitset.Unset"
+odin = "mcpe:gophertunnel/minecraft/protocol.bitset_unset"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.Bitset.Load"
+odin = "mcpe:gophertunnel/minecraft/protocol.bitset_load"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.Bitset.Len"
+odin = "mcpe:gophertunnel/minecraft/protocol.Bitset.size"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientMovementPredictionSync"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Movement_Prediction_Sync"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

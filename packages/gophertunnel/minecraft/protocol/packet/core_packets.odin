@@ -201,6 +201,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDPartyDestinationCookieResponse,
          IDClientBoundControlSchemeSet,
          IDMovementEffect,
+         IDClientMovementPredictionSync,
          IDPlayerVideoCapture,
          IDPlayerLocation,
          IDClientBoundTextureShift,
@@ -810,6 +811,26 @@ write_payload :: proc(
         protocol.write_varint32(output, packet.type)
         protocol.write_varint32(output, packet.duration)
         protocol.write_varuint64(output, packet.tick)
+    case Client_Movement_Prediction_Sync:
+        protocol.write_bitset(
+            output,
+            packet.actor_flags,
+            protocol.Entity_Data_Flag_Count,
+        ) or_return
+        protocol.write_f32(output, packet.bounding_box_scale)
+        protocol.write_f32(output, packet.bounding_box_width)
+        protocol.write_f32(output, packet.bounding_box_height)
+        protocol.write_f32(output, packet.movement_speed)
+        protocol.write_f32(output, packet.underwater_movement_speed)
+        protocol.write_f32(output, packet.lava_movement_speed)
+        protocol.write_f32(output, packet.jump_strength)
+        protocol.write_f32(output, packet.health)
+        protocol.write_f32(output, packet.hunger)
+        protocol.write_f32(output, packet.friction_modifier)
+        protocol.write_f32(output, packet.bounciness)
+        protocol.write_f32(output, packet.air_drag_modifier)
+        protocol.write_varint64(output, packet.entity_unique_id)
+        protocol.write_bool(output, packet.flying)
     case Player_Video_Capture:
         protocol.write_u8(output, packet.action)
         if packet.action == Player_Video_Capture_Action_Start {
@@ -2028,6 +2049,60 @@ decode_packet :: proc(
         packet.type = protocol.read_varint32(&input) or_return
         packet.duration = protocol.read_varint32(&input) or_return
         packet.tick = protocol.read_varuint64(&input) or_return
+        value = packet
+    case IDClientMovementPredictionSync:
+        packet := Client_Movement_Prediction_Sync{}
+        packet.actor_flags =
+            protocol.read_bitset(
+                &input,
+                protocol.Entity_Data_Flag_Count,
+            ) or_return
+        packet.bounding_box_scale, err = protocol.read_f32(&input)
+        if err == nil {
+            packet.bounding_box_width, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.bounding_box_height, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.movement_speed, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.underwater_movement_speed, err =
+                protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.lava_movement_speed, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.jump_strength, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.health, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.hunger, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.friction_modifier, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.bounciness, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.air_drag_modifier, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.entity_unique_id, err =
+                protocol.read_varint64(&input)
+        }
+        if err == nil {
+            packet.flying, err = protocol.read_bool(&input)
+        }
+        if err != nil {
+            protocol.destroy_bitset(&packet.actor_flags, allocator)
+            return
+        }
         value = packet
     case IDPlayerVideoCapture:
         packet := Player_Video_Capture{}

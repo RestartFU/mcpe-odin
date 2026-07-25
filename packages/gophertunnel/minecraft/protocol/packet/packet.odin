@@ -176,6 +176,7 @@ Packet :: union {
     Party_Destination_Cookie_Response,
     Client_Bound_Control_Scheme_Set,
     Movement_Effect,
+    Client_Movement_Prediction_Sync,
     Player_Video_Capture,
     Player_Location,
     Client_Bound_Texture_Shift,
@@ -379,6 +380,8 @@ packet_id :: proc(value: Packet) -> (
     case Client_Bound_Control_Scheme_Set:
         id = IDClientBoundControlSchemeSet
     case Movement_Effect:             id = IDMovementEffect
+    case Client_Movement_Prediction_Sync:
+        id = IDClientMovementPredictionSync
     case Player_Video_Capture:        id = IDPlayerVideoCapture
     case Player_Location:             id = IDPlayerLocation
     case Client_Bound_Texture_Shift:  id = IDClientBoundTextureShift
@@ -701,6 +704,8 @@ destroy_packet :: proc(
         delete(packet.ability_data.layers, allocator)
     case Client_Cheat_Ability:
         delete(packet.ability_data.layers, allocator)
+    case Client_Movement_Prediction_Sync:
+        delete(packet.actor_flags.words, allocator)
     case Container_Registry_Cleanup:
         delete(packet.removed_containers, allocator)
     case Game_Rules_Changed:

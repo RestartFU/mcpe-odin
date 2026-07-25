@@ -468,6 +468,22 @@ resource_pack_transfer_packets_round_trip :: proc(t: ^testing.T) {
 
 @(test)
 simple_packets_round_trip :: proc(t: ^testing.T) {
+    actor_flags, actor_flags_err :=
+        protocol.new_bitset(protocol.Entity_Data_Flag_Count)
+    testing.expect(t, actor_flags_err == nil)
+    if actor_flags_err != nil {
+        mcpe_runtime.destroy_error(actor_flags_err)
+        return
+    }
+    defer protocol.destroy_bitset(&actor_flags)
+    flag_indices := [?]int{0, 64, 129}
+    for index in flag_indices {
+        set_err := protocol.bitset_set(&actor_flags, index)
+        testing.expect(t, set_err == nil)
+        if set_err != nil {
+            mcpe_runtime.destroy_error(set_err)
+        }
+    }
     packets := [?]Packet{
         Client_Bound_Data_Driven_UI_Reload{},
         Refresh_Entitlements{},
@@ -736,6 +752,23 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             type = Movement_Effect_Type_Dolphin_Boost,
             duration = 40,
             tick = 123456,
+        },
+        Client_Movement_Prediction_Sync{
+            actor_flags = actor_flags,
+            bounding_box_scale = 1,
+            bounding_box_width = 0.6,
+            bounding_box_height = 1.8,
+            movement_speed = 0.1,
+            underwater_movement_speed = 0.02,
+            lava_movement_speed = 0.03,
+            jump_strength = 0.42,
+            health = 20,
+            hunger = 18,
+            friction_modifier = 0.91,
+            bounciness = 0.2,
+            air_drag_modifier = 0.98,
+            entity_unique_id = -99,
+            flying = true,
         },
         Player_Video_Capture{
             action = Player_Video_Capture_Action_Start,
@@ -1212,6 +1245,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDPartyDestinationCookieResponse,
         IDClientBoundControlSchemeSet,
         IDMovementEffect,
+        IDClientMovementPredictionSync,
         IDPlayerVideoCapture,
         IDPlayerLocation,
         IDClientBoundTextureShift,

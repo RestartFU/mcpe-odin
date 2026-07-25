@@ -2,6 +2,181 @@ package gt_protocol
 
 import mcpe_runtime "mcpe:runtime"
 
+new_bitset :: proc(
+    size: int,
+    allocator := context.allocator,
+) -> (result: Bitset, err: mcpe_runtime.Error) {
+    if size < 0 {
+        return {}, codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.new_bitset",
+            "bitset size cannot be negative",
+        )
+    }
+    result.size = size
+    result.words = make([]u64, (size + 63) / 64, allocator)
+    return
+}
+
+destroy_bitset :: proc(
+    value: ^Bitset,
+    allocator := context.allocator,
+) {
+    if value == nil {
+        return
+    }
+    delete(value.words, allocator)
+    value^ = {}
+}
+
+bitset_storage_valid :: proc(value: Bitset) -> bool {
+    if value.size < 0 || len(value.words) != (value.size + 63) / 64 {
+        return false
+    }
+    final_bits := value.size % 64
+    if final_bits != 0 && len(value.words) != 0 {
+        valid_mask := (u64(1) << u64(final_bits)) - 1
+        if value.words[len(value.words) - 1] &~ valid_mask != 0 {
+            return false
+        }
+    }
+    return true
+}
+
+bitset_set :: proc(value: ^Bitset, index: int) -> mcpe_runtime.Error {
+    if value == nil ||
+       !bitset_storage_valid(value^) ||
+       index < 0 ||
+       index >= value.size {
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.bitset_set",
+            "bitset index out of bounds",
+        )
+    }
+    value.words[index / 64] |= u64(1) << u64(index % 64)
+    return nil
+}
+
+bitset_unset :: proc(value: ^Bitset, index: int) -> mcpe_runtime.Error {
+    if value == nil ||
+       !bitset_storage_valid(value^) ||
+       index < 0 ||
+       index >= value.size {
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.bitset_unset",
+            "bitset index out of bounds",
+        )
+    }
+    value.words[index / 64] &~= u64(1) << u64(index % 64)
+    return nil
+}
+
+bitset_load :: proc(value: Bitset, index: int) -> (
+    result: bool,
+    err: mcpe_runtime.Error,
+) {
+    if !bitset_storage_valid(value) ||
+       index < 0 ||
+       index >= value.size {
+        return false, codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.bitset_load",
+            "bitset index out of bounds",
+        )
+    }
+    result = value.words[index / 64] &
+        (u64(1) << u64(index % 64)) != 0
+    return
+}
+
+read_bitset :: proc(value: ^Reader, size: int) -> (
+    result: Bitset,
+    err: mcpe_runtime.Error,
+) {
+    result, err = new_bitset(size, value.allocator)
+    if err != nil {
+        return
+    }
+    for offset := 0; offset < size; offset += 7 {
+        octet, read_err := read_u8(value)
+        if read_err != nil {
+            destroy_bitset(&result, value.allocator)
+            return {}, read_err
+        }
+        remaining := size - offset
+        if remaining < 8 {
+            invalid_mask := u8(0xff << u8(remaining))
+            if octet & invalid_mask != 0 {
+                destroy_bitset(&result, value.allocator)
+                return {}, codec_error(
+                    .Malformed,
+                    "gophertunnel.protocol.read_bitset",
+                    "bitset overflows declared size",
+                )
+            }
+        }
+        payload := octet & 0x7f
+        for bit := 0; bit < 7 && offset + bit < size; bit += 1 {
+            if payload & (u8(1) << u8(bit)) != 0 {
+                result.words[(offset + bit) / 64] |=
+                    u64(1) << u64((offset + bit) % 64)
+            }
+        }
+        if octet & 0x80 == 0 {
+            return
+        }
+    }
+    destroy_bitset(&result, value.allocator)
+    return {}, codec_error(
+        .Malformed,
+        "gophertunnel.protocol.read_bitset",
+        "bitset overflows declared size",
+    )
+}
+
+write_bitset :: proc(
+    value: ^Writer,
+    input: Bitset,
+    size: int,
+) -> mcpe_runtime.Error {
+    if input.size != size || !bitset_storage_valid(input) {
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.write_bitset",
+            "bitset size mismatch",
+        )
+    }
+    last_set_bit := -1
+    for index := 0; index < size; index += 1 {
+        if input.words[index / 64] &
+           (u64(1) << u64(index % 64)) != 0 {
+            last_set_bit = index
+        }
+    }
+    if last_set_bit < 0 {
+        write_u8(value, 0)
+        return nil
+    }
+    last_group := last_set_bit / 7
+    for group := 0; group <= last_group; group += 1 {
+        octet: u8
+        offset := group * 7
+        for bit := 0; bit < 7 && offset + bit < size; bit += 1 {
+            if input.words[(offset + bit) / 64] &
+               (u64(1) << u64((offset + bit) % 64)) != 0 {
+                octet |= u8(1) << u8(bit)
+            }
+        }
+        if group < last_group {
+            octet |= 0x80
+        }
+        write_u8(value, octet)
+    }
+    return nil
+}
+
 read_vec2 :: proc(value: ^Reader) -> (result: Vec2, err: mcpe_runtime.Error) {
     for &component in result {
         component = read_f32(value) or_return

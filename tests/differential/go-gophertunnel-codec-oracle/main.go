@@ -1736,6 +1736,23 @@ func main() {
 		},
 		0, 0,
 	)
+	actorFlags := protocol.NewBitset(protocol.EntityDataFlagCount)
+	actorFlags.Set(0)
+	actorFlags.Set(64)
+	actorFlags.Set(129)
+	emitPacket(
+		"packet_client_movement_prediction_sync",
+		&packet.ClientMovementPredictionSync{
+			ActorFlags: actorFlags,
+			BoundingBoxScale: 1, BoundingBoxWidth: 0.6, BoundingBoxHeight: 1.8,
+			MovementSpeed: 0.1, UnderwaterMovementSpeed: 0.02,
+			LavaMovementSpeed: 0.03, JumpStrength: 0.42,
+			Health: 20, Hunger: 18, FrictionModifier: 0.91,
+			Bounciness: 0.2, AirDragModifier: 0.98,
+			EntityUniqueID: -99, Flying: true,
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

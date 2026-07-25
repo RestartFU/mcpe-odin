@@ -223,6 +223,7 @@ Packet :: union {
     Game_Rules_Changed,
     Server_Bound_Pack_Setting_Change,
     Request_Ability,
+    Server_Bound_Data_Store,
     Unknown_Packet,
 }
 
@@ -430,6 +431,7 @@ packet_id :: proc(value: Packet) -> (
     case Server_Bound_Pack_Setting_Change:
         id = IDServerBoundPackSettingChange
     case Request_Ability:              id = IDRequestAbility
+    case Server_Bound_Data_Store:      id = IDServerBoundDataStore
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -712,6 +714,8 @@ destroy_packet :: proc(
         case f32, bool:
         case:
         }
+    case Server_Bound_Data_Store:
+        protocol.destroy_data_store_update(packet.update, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

@@ -886,6 +886,10 @@ Request_Ability :: struct {
     value:   protocol.Ability_Value,
 }
 
+Server_Bound_Data_Store :: struct {
+    update: protocol.Data_Store_Update,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"

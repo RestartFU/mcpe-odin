@@ -1801,6 +1801,48 @@ main :: proc() {
         "packet_request_ability_float",
         packet.Request_Ability{ability = 13, value = f32(0.15)},
     )
+    emit_packet(
+        "packet_data_store_double",
+        packet.Server_Bound_Data_Store{
+            update = {
+                data_store_name = "settings",
+                property = "scale",
+                path = "ui",
+                control_type = protocol.Data_Store_Control_Double,
+                double_value = 1.5,
+                property_update_count = 2,
+                path_update_count = 3,
+            },
+        },
+    )
+    emit_packet(
+        "packet_data_store_bool",
+        packet.Server_Bound_Data_Store{
+            update = {
+                data_store_name = "settings",
+                property = "enabled",
+                path = "ui",
+                control_type = protocol.Data_Store_Control_Boolean,
+                bool_value = true,
+                property_update_count = 2,
+                path_update_count = 3,
+            },
+        },
+    )
+    emit_packet(
+        "packet_data_store_string",
+        packet.Server_Bound_Data_Store{
+            update = {
+                data_store_name = "settings",
+                property = "mode",
+                path = "ui",
+                control_type = protocol.Data_Store_Control_String,
+                string_value = "hard",
+                property_update_count = 2,
+                path_update_count = 3,
+            },
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

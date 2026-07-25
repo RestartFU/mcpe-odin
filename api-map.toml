@@ -1069,6 +1069,16 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Request_Ability"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.DataStoreUpdate"
+odin = "mcpe:gophertunnel/minecraft/protocol.Data_Store_Update"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ServerBoundDataStore"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Bound_Data_Store"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

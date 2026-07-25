@@ -1663,6 +1663,39 @@ func main() {
 		&packet.RequestAbility{Ability: packet.AbilityFlySpeed, Value: float32(0.15)},
 		0, 0,
 	)
+	emitPacket(
+		"packet_data_store_double",
+		&packet.ServerBoundDataStore{
+			Update: protocol.DataStoreUpdate{
+				DataStoreName: "settings", Property: "scale", Path: "ui",
+				ControlType: protocol.DataStoreControlDouble, DoubleValue: 1.5,
+				PropertyUpdateCount: 2, PathUpdateCount: 3,
+			},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_data_store_bool",
+		&packet.ServerBoundDataStore{
+			Update: protocol.DataStoreUpdate{
+				DataStoreName: "settings", Property: "enabled", Path: "ui",
+				ControlType: protocol.DataStoreControlBoolean, BoolValue: true,
+				PropertyUpdateCount: 2, PathUpdateCount: 3,
+			},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_data_store_string",
+		&packet.ServerBoundDataStore{
+			Update: protocol.DataStoreUpdate{
+				DataStoreName: "settings", Property: "mode", Path: "ui",
+				ControlType: protocol.DataStoreControlString, StringValue: "hard",
+				PropertyUpdateCount: 2, PathUpdateCount: 3,
+			},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

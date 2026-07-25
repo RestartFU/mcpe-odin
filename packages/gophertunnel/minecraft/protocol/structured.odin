@@ -800,3 +800,81 @@ write_ability_value :: proc(
     }
     return nil
 }
+
+destroy_data_store_update :: proc(
+    update: Data_Store_Update,
+    allocator := context.allocator,
+) {
+    delete(update.data_store_name, allocator)
+    delete(update.property, allocator)
+    delete(update.path, allocator)
+    delete(update.string_value, allocator)
+}
+
+read_data_store_update :: proc(value: ^Reader) -> (
+    result: Data_Store_Update,
+    err: mcpe_runtime.Error,
+) {
+    result.data_store_name = read_string(value) or_return
+    result.property, err = read_string(value)
+    if err == nil {
+        result.path, err = read_string(value)
+    }
+    if err == nil {
+        result.control_type, err = read_varuint32(value)
+    }
+    if err == nil {
+        switch result.control_type {
+        case Data_Store_Control_Double:
+            result.double_value, err = read_f64(value)
+        case Data_Store_Control_Boolean:
+            result.bool_value, err = read_bool(value)
+        case Data_Store_Control_String:
+            result.string_value, err = read_string(value)
+        case:
+            err = codec_error(
+                .Malformed,
+                "gophertunnel.protocol.read_data_store_update",
+                "unknown data store control type",
+            )
+        }
+    }
+    if err == nil {
+        result.property_update_count, err = read_u32(value)
+    }
+    if err == nil {
+        result.path_update_count, err = read_u32(value)
+    }
+    if err != nil {
+        destroy_data_store_update(result, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_data_store_update :: proc(
+    value: ^Writer,
+    input: Data_Store_Update,
+) -> mcpe_runtime.Error {
+    write_string(value, input.data_store_name)
+    write_string(value, input.property)
+    write_string(value, input.path)
+    write_varuint32(value, input.control_type)
+    switch input.control_type {
+    case Data_Store_Control_Double:
+        write_f64(value, input.double_value)
+    case Data_Store_Control_Boolean:
+        write_bool(value, input.bool_value)
+    case Data_Store_Control_String:
+        write_string(value, input.string_value)
+    case:
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.write_data_store_update",
+            "unknown data store control type",
+        )
+    }
+    write_u32(value, input.property_update_count)
+    write_u32(value, input.path_update_count)
+    return nil
+}

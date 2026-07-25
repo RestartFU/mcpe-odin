@@ -247,7 +247,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDContainerRegistryCleanup,
          IDGameRulesChanged,
          IDServerBoundPackSettingChange,
-         IDRequestAbility:
+         IDRequestAbility,
+         IDServerBoundDataStore:
         return true
     }
     return false
@@ -1182,6 +1183,11 @@ write_payload :: proc(
     case Request_Ability:
         protocol.write_varint32(output, packet.ability)
         protocol.write_ability_value(output, packet.value) or_return
+    case Server_Bound_Data_Store:
+        protocol.write_data_store_update(
+            output,
+            packet.update,
+        ) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2719,6 +2725,11 @@ decode_packet :: proc(
         packet := Request_Ability{}
         packet.ability = protocol.read_varint32(&input) or_return
         packet.value = protocol.read_ability_value(&input) or_return
+        value = packet
+    case IDServerBoundDataStore:
+        packet := Server_Bound_Data_Store{}
+        packet.update =
+            protocol.read_data_store_update(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

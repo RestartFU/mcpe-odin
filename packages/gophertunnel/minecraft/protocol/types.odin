@@ -152,6 +152,22 @@ Ability_Value :: union {
     f32,
 }
 
+Data_Store_Control_Double  :: u32(0)
+Data_Store_Control_Boolean :: u32(1)
+Data_Store_Control_String  :: u32(2)
+
+Data_Store_Update :: struct {
+    data_store_name:       string,
+    property:              string,
+    path:                  string,
+    control_type:          u32,
+    double_value:          f64,
+    bool_value:            bool,
+    string_value:          string,
+    property_update_count: u32,
+    path_update_count:     u32,
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

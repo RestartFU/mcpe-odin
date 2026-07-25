@@ -1093,6 +1093,17 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             pack_setting = {name = "mode", value = "hard"},
         },
         Request_Ability{ability = 9, value = true},
+        Server_Bound_Data_Store{
+            update = {
+                data_store_name = "settings",
+                property = "mode",
+                path = "ui",
+                control_type = protocol.Data_Store_Control_String,
+                string_value = "hard",
+                property_update_count = 2,
+                path_update_count = 3,
+            },
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1211,6 +1222,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDGameRulesChanged,
         IDServerBoundPackSettingChange,
         IDRequestAbility,
+        IDServerBoundDataStore,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1576,6 +1588,17 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
         Server_Bound_Pack_Setting_Change{
             pack_id = {},
             pack_setting = {name = "mode", value = "hard"},
+        },
+        Server_Bound_Data_Store{
+            update = {
+                data_store_name = "settings",
+                property = "mode",
+                path = "ui",
+                control_type = protocol.Data_Store_Control_String,
+                string_value = "hard",
+                property_update_count = 2,
+                path_update_count = 3,
+            },
         },
     }
     for original in packets {

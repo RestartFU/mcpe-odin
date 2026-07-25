@@ -472,6 +472,86 @@ nbt_state_packets_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+structure_template_packets_round_trip :: proc(t: ^testing.T) {
+    structure_template := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("format_version", nbt.value_int(1)),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(structure_template)
+        free(structure_template)
+    }
+    packets := [?]Packet{
+        Structure_Template_Data_Request{
+            structure_name = "village",
+            position = {-12, 64, 3456},
+            settings = {
+                palette_name = "default",
+                ignore_entities = true,
+                allow_non_ticking_chunks = true,
+                size = {16, 8, 16},
+                offset = {-8, 0, -8},
+                last_editing_player_unique_id = -99,
+                rotation = protocol.Structure_Rotation_Rotate_90,
+                mirror = protocol.Structure_Mirror_X_Axis,
+                animation_mode = protocol.Animation_Mode_Blocks,
+                animation_duration = 2.5,
+                integrity = 0.75,
+                seed = 42,
+                pivot = {8, 0, 8},
+            },
+            request_type =
+                Structure_Template_Request_Export_From_Save,
+        },
+        Structure_Template_Data_Response{
+            structure_name = "village",
+            success = true,
+            response_type = Structure_Template_Response_Export,
+            structure_template = structure_template,
+        },
+        Structure_Template_Data_Response{
+            structure_name = "missing",
+            success = false,
+            response_type = Structure_Template_Response_Query,
+        },
+    }
+    ids := [?]u32{
+        IDStructureTemplateDataRequest,
+        IDStructureTemplateDataResponse,
+        IDStructureTemplateDataResponse,
+    }
+    for original, index in packets {
+        encoded, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, header, decode_err := decode_packet(encoded)
+        testing.expect(t, decode_err == nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+            delete(encoded)
+            continue
+        }
+        testing.expect_value(t, header.packet_id, ids[index])
+        reencoded, reencode_err := encode_packet(decoded)
+        testing.expect(t, reencode_err == nil)
+        if reencode_err == nil {
+            testing.expect(t, slice.equal(encoded, reencoded))
+            delete(reencoded)
+        } else {
+            mcpe_runtime.destroy_error(reencode_err)
+        }
+        destroy_packet(&decoded)
+        delete(encoded)
+    }
+}
+
+@(test)
 dimension_packets_round_trip_optional_loading_screen_id :: proc(
     t: ^testing.T,
 ) {

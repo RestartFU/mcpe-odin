@@ -142,6 +142,37 @@ Cache_Blob :: struct {
     payload: []u8,
 }
 
+Structure_Mirror_None      :: u8(0)
+Structure_Mirror_X_Axis    :: u8(1)
+Structure_Mirror_Z_Axis    :: u8(2)
+Structure_Mirror_Both_Axes :: u8(3)
+
+Structure_Rotation_None       :: u8(0)
+Structure_Rotation_Rotate_90  :: u8(1)
+Structure_Rotation_Rotate_180 :: u8(2)
+Structure_Rotation_Rotate_270 :: u8(3)
+
+Animation_Mode_None   :: u8(0)
+Animation_Mode_Layers :: u8(1)
+Animation_Mode_Blocks :: u8(2)
+
+Structure_Settings :: struct {
+    palette_name:                  string,
+    ignore_entities:               bool,
+    ignore_blocks:                 bool,
+    allow_non_ticking_chunks:      bool,
+    size:                          Block_Pos,
+    offset:                        Block_Pos,
+    last_editing_player_unique_id: i64,
+    rotation:                      u8,
+    mirror:                        u8,
+    animation_mode:                u8,
+    animation_duration:            f32,
+    integrity:                     f32,
+    seed:                          u32,
+    pivot:                         Vec3,
+}
+
 Entity_Link_Remove    :: u8(0)
 Entity_Link_Rider     :: u8(1)
 Entity_Link_Passenger :: u8(2)

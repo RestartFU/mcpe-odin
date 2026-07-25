@@ -120,6 +120,8 @@ Packet :: union {
     Automation_Client_Connect,
     Photo_Info_Request,
     Map_Create_Locked_Copy,
+    Structure_Template_Data_Request,
+    Structure_Template_Data_Response,
     Script_Message,
     Open_Sign,
     Client_Bound_Data_Driven_UI_Close_Screen,
@@ -326,6 +328,10 @@ packet_id :: proc(value: Packet) -> (
     case Automation_Client_Connect:   id = IDAutomationClientConnect
     case Photo_Info_Request:          id = IDPhotoInfoRequest
     case Map_Create_Locked_Copy:      id = IDMapCreateLockedCopy
+    case Structure_Template_Data_Request:
+        id = IDStructureTemplateDataRequest
+    case Structure_Template_Data_Response:
+        id = IDStructureTemplateDataResponse
     case Script_Message:              id = IDScriptMessage
     case Open_Sign:                   id = IDOpenSign
     case Client_Bound_Data_Driven_UI_Close_Screen:
@@ -549,6 +555,13 @@ destroy_packet :: proc(
     case Script_Message:
         delete(packet.identifier, allocator)
         delete(packet.data, allocator)
+    case Structure_Template_Data_Request:
+        delete(packet.structure_name, allocator)
+        protocol.destroy_structure_settings(packet.settings, allocator)
+    case Structure_Template_Data_Response:
+        delete(packet.structure_name, allocator)
+        nbt.destroy_value(packet.structure_template, allocator)
+        free(packet.structure_template, allocator)
     case Available_Actor_Identifiers:
         delete(packet.serialised_entity_identifiers, allocator)
     case Current_Structure_Feature:

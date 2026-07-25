@@ -2109,6 +2109,59 @@ main :: proc() {
             payload = editor_payload,
         },
     )
+    structure_settings := protocol.Structure_Settings{
+        palette_name = "default",
+        ignore_entities = true,
+        allow_non_ticking_chunks = true,
+        size = {16, 8, 16},
+        offset = {-8, 0, -8},
+        last_editing_player_unique_id = -99,
+        rotation = protocol.Structure_Rotation_Rotate_90,
+        mirror = protocol.Structure_Mirror_X_Axis,
+        animation_mode = protocol.Animation_Mode_Blocks,
+        animation_duration = 2.5,
+        integrity = 0.75,
+        seed = 42,
+        pivot = {8, 0, 8},
+    }
+    emit_packet(
+        "packet_structure_template_request",
+        packet.Structure_Template_Data_Request{
+            structure_name = "village",
+            position = {-12, 64, 3456},
+            settings = structure_settings,
+            request_type =
+                packet.Structure_Template_Request_Export_From_Save,
+        },
+    )
+    structure_template := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("format_version", nbt.value_int(1)),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(structure_template)
+        free(structure_template)
+    }
+    emit_packet(
+        "packet_structure_template_response",
+        packet.Structure_Template_Data_Response{
+            structure_name = "village",
+            success = true,
+            response_type = packet.Structure_Template_Response_Export,
+            structure_template = structure_template,
+        },
+    )
+    emit_packet(
+        "packet_structure_template_response_missing",
+        packet.Structure_Template_Data_Response{
+            structure_name = "missing",
+            success = false,
+            response_type = packet.Structure_Template_Response_Query,
+        },
+    )
     emit_packet(
         "packet_sync_world_clocks_state",
         packet.Sync_World_Clocks{

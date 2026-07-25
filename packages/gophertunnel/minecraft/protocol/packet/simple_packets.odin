@@ -47,6 +47,27 @@ Map_Create_Locked_Copy :: struct {
     new_map_id:      i64,
 }
 
+Structure_Template_Request_Export_From_Save    :: u8(1)
+Structure_Template_Request_Export_From_Load    :: u8(2)
+Structure_Template_Request_Query_Saved_Structure :: u8(3)
+
+Structure_Template_Response_Export :: u8(1)
+Structure_Template_Response_Query  :: u8(2)
+
+Structure_Template_Data_Request :: struct {
+    structure_name: string,
+    position:       protocol.Block_Pos,
+    settings:       protocol.Structure_Settings,
+    request_type:   u8,
+}
+
+Structure_Template_Data_Response :: struct {
+    structure_name:     string,
+    success:            bool,
+    response_type:      u8,
+    structure_template: ^nbt.Value,
+}
+
 Script_Message :: struct {
     identifier: string,
     data:       []u8,

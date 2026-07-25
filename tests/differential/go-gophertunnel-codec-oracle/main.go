@@ -1880,6 +1880,45 @@ func main() {
 		},
 		0, 0,
 	)
+	structureSettings := protocol.StructureSettings{
+		PaletteName: "default", IgnoreEntities: true,
+		AllowNonTickingChunks: true,
+		Size: protocol.BlockPos{16, 8, 16},
+		Offset: protocol.BlockPos{-8, 0, -8},
+		LastEditingPlayerUniqueID: -99,
+		Rotation: protocol.StructureRotationRotate90,
+		Mirror: protocol.StructureMirrorXAxis,
+		AnimationMode: protocol.AnimationModeBlocks,
+		AnimationDuration: 2.5, Integrity: 0.75, Seed: 42,
+		Pivot: mgl32.Vec3{8, 0, 8},
+	}
+	emitPacket(
+		"packet_structure_template_request",
+		&packet.StructureTemplateDataRequest{
+			StructureName: "village",
+			Position: protocol.BlockPos{-12, 64, 3456},
+			Settings: structureSettings,
+			RequestType: packet.StructureTemplateRequestExportFromSave,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_structure_template_response",
+		&packet.StructureTemplateDataResponse{
+			StructureName: "village", Success: true,
+			ResponseType: packet.StructureTemplateResponseExport,
+			StructureTemplate: map[string]any{"format_version": int32(1)},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_structure_template_response_missing",
+		&packet.StructureTemplateDataResponse{
+			StructureName: "missing", Success: false,
+			ResponseType: packet.StructureTemplateResponseQuery,
+		},
+		0, 0,
+	)
 	emitPacket(
 		"packet_sync_world_clocks_state",
 		&packet.SyncWorldClocks{

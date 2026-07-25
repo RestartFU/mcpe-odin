@@ -509,6 +509,83 @@ write_cache_blob :: proc(value: ^Writer, input: Cache_Blob) {
     write_byte_slice(value, input.payload)
 }
 
+destroy_structure_settings :: proc(
+    settings: Structure_Settings,
+    allocator := context.allocator,
+) {
+    delete(settings.palette_name, allocator)
+}
+
+read_structure_settings :: proc(value: ^Reader) -> (
+    result: Structure_Settings,
+    err: mcpe_runtime.Error,
+) {
+    result.palette_name = read_string(value) or_return
+    result.ignore_entities, err = read_bool(value)
+    if err == nil {
+        result.ignore_blocks, err = read_bool(value)
+    }
+    if err == nil {
+        result.allow_non_ticking_chunks, err = read_bool(value)
+    }
+    if err == nil {
+        result.size, err = read_block_pos(value)
+    }
+    if err == nil {
+        result.offset, err = read_block_pos(value)
+    }
+    if err == nil {
+        result.last_editing_player_unique_id, err =
+            read_varint64(value)
+    }
+    if err == nil {
+        result.rotation, err = read_u8(value)
+    }
+    if err == nil {
+        result.mirror, err = read_u8(value)
+    }
+    if err == nil {
+        result.animation_mode, err = read_u8(value)
+    }
+    if err == nil {
+        result.animation_duration, err = read_f32(value)
+    }
+    if err == nil {
+        result.integrity, err = read_f32(value)
+    }
+    if err == nil {
+        result.seed, err = read_u32(value)
+    }
+    if err == nil {
+        result.pivot, err = read_vec3(value)
+    }
+    if err != nil {
+        destroy_structure_settings(result, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_structure_settings :: proc(
+    value: ^Writer,
+    input: Structure_Settings,
+) {
+    write_string(value, input.palette_name)
+    write_bool(value, input.ignore_entities)
+    write_bool(value, input.ignore_blocks)
+    write_bool(value, input.allow_non_ticking_chunks)
+    write_block_pos(value, input.size)
+    write_block_pos(value, input.offset)
+    write_varint64(value, input.last_editing_player_unique_id)
+    write_u8(value, input.rotation)
+    write_u8(value, input.mirror)
+    write_u8(value, input.animation_mode)
+    write_f32(value, input.animation_duration)
+    write_f32(value, input.integrity)
+    write_u32(value, input.seed)
+    write_vec3(value, input.pivot)
+}
+
 read_vec2 :: proc(value: ^Reader) -> (result: Vec2, err: mcpe_runtime.Error) {
     for &component in result {
         component = read_f32(value) or_return

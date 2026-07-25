@@ -1239,6 +1239,21 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Editor_Network"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.StructureSettings"
+odin = "mcpe:gophertunnel/minecraft/protocol.Structure_Settings"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.StructureTemplateDataRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Structure_Template_Data_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.StructureTemplateDataResponse"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Structure_Template_Data_Response"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

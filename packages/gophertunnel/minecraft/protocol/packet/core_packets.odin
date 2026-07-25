@@ -145,6 +145,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDAutomationClientConnect,
          IDPhotoInfoRequest,
          IDMapCreateLockedCopy,
+         IDStructureTemplateDataRequest,
+         IDStructureTemplateDataResponse,
          IDScriptMessage,
          IDOpenSign,
          IDClientBoundDataDrivenUICloseScreen,
@@ -603,6 +605,36 @@ write_payload :: proc(
     case Map_Create_Locked_Copy:
         protocol.write_varint64(output, packet.original_map_id)
         protocol.write_varint64(output, packet.new_map_id)
+    case Structure_Template_Data_Request:
+        protocol.write_string(output, packet.structure_name)
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_structure_settings(output, packet.settings)
+        protocol.write_u8(output, packet.request_type)
+    case Structure_Template_Data_Response:
+        protocol.write_string(output, packet.structure_name)
+        protocol.write_bool(output, packet.success)
+        if packet.success {
+            if packet.structure_template == nil ||
+               packet.structure_template.tag != .Compound {
+                return packet_error(
+                    .Invalid_Argument,
+                    "gophertunnel.packet.write_structure_template_response",
+                    "structure template must be a compound",
+                )
+            }
+            encoded, encode_err := nbt.marshal(
+                packet.structure_template,
+                .Network_Little_Endian,
+                "",
+                output.allocator,
+            )
+            if encode_err != nil {
+                return encode_err
+            }
+            protocol.write_bytes(output, encoded)
+            delete(encoded, output.allocator)
+        }
+        protocol.write_u8(output, packet.response_type)
     case Script_Message:
         protocol.write_string(output, packet.identifier)
         protocol.write_byte_slice(output, packet.data)
@@ -1795,6 +1827,69 @@ decode_packet :: proc(
         packet := Map_Create_Locked_Copy{}
         packet.original_map_id = protocol.read_varint64(&input) or_return
         packet.new_map_id = protocol.read_varint64(&input) or_return
+        value = packet
+    case IDStructureTemplateDataRequest:
+        packet := Structure_Template_Data_Request{}
+        packet.structure_name = protocol.read_string(&input) or_return
+        packet.position, err = protocol.read_block_pos(&input)
+        if err == nil {
+            packet.settings, err =
+                protocol.read_structure_settings(&input)
+        }
+        if err == nil {
+            packet.request_type, err = protocol.read_u8(&input)
+        }
+        if err != nil {
+            delete(packet.structure_name, allocator)
+            protocol.destroy_structure_settings(
+                packet.settings,
+                allocator,
+            )
+            return
+        }
+        value = packet
+    case IDStructureTemplateDataResponse:
+        packet := Structure_Template_Data_Response{}
+        packet.structure_name = protocol.read_string(&input) or_return
+        packet.success, err = protocol.read_bool(&input)
+        if err == nil && packet.success {
+            root_name: string
+            consumed: int
+            packet.structure_template, root_name, consumed, err =
+                nbt.unmarshal_prefix(
+                    protocol.peek_remaining_bytes(&input),
+                    .Network_Little_Endian,
+                    false,
+                    allocator,
+                )
+            delete(root_name, allocator)
+            if err == nil &&
+               packet.structure_template.tag != .Compound {
+                nbt.destroy_value(
+                    packet.structure_template,
+                    allocator,
+                )
+                free(packet.structure_template, allocator)
+                packet.structure_template = nil
+                err = packet_error(
+                    .Malformed,
+                    "gophertunnel.packet.read_structure_template_response",
+                    "structure template must be a compound",
+                )
+            }
+            if err == nil {
+                _, err = protocol.read_bytes(&input, consumed)
+            }
+        }
+        if err == nil {
+            packet.response_type, err = protocol.read_u8(&input)
+        }
+        if err != nil {
+            delete(packet.structure_name, allocator)
+            nbt.destroy_value(packet.structure_template, allocator)
+            free(packet.structure_template, allocator)
+            return
+        }
         value = packet
     case IDScriptMessage:
         packet := Script_Message{}

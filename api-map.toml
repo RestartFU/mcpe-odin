@@ -794,6 +794,36 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Mob_Effect"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlaySound"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Play_Sound"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Interact"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Interact"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.MoveActorAbsolute"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Move_Actor_Absolute"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.MoveActorDelta"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Move_Actor_Delta"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ContainerOpen"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Container_Open"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.NetworkChunkPublisherUpdate"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Network_Chunk_Publisher_Update"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

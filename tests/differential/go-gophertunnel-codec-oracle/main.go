@@ -1262,6 +1262,60 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_play_sound",
+		&packet.PlaySound{
+			SoundName: "note.pling", Position: mgl32.Vec3{1.25, 2.5, -3.75},
+			Volume: 0.75, Pitch: 1.25, Handle: protocol.Option(uint64(42)),
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_interact",
+		&packet.Interact{
+			ActionType:            packet.InteractActionMouseOverEntity,
+			TargetEntityRuntimeID: 1<<40 + 18,
+			Position:              protocol.Option(mgl32.Vec3{1.25, 2.5, 3.75}),
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_move_actor_absolute",
+		&packet.MoveActorAbsolute{
+			EntityRuntimeID: 1<<40 + 19, Flags: packet.MoveFlagOnGround,
+			Position: mgl32.Vec3{1.25, 2.5, 3.75},
+			Rotation: mgl32.Vec3{45, 90, 180},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_move_actor_delta",
+		&packet.MoveActorDelta{
+			EntityRuntimeID: 1<<40 + 20,
+			Flags: packet.MoveActorDeltaFlagHasX | packet.MoveActorDeltaFlagHasZ |
+				packet.MoveActorDeltaFlagHasRotY,
+			Position: mgl32.Vec3{1.25, 0, 3.75},
+			Rotation: mgl32.Vec3{0, 90, 0},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_container_open",
+		&packet.ContainerOpen{
+			WindowID: 4, ContainerType: 12,
+			ContainerPosition:       protocol.BlockPos{-12, 64, 3456},
+			ContainerEntityUniqueID: -99,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_chunk_publisher",
+		&packet.NetworkChunkPublisherUpdate{
+			Position: protocol.BlockPos{-12, 64, 3456}, Radius: 128,
+			SavedChunks: []protocol.ChunkPos{{-2, 3}, {4, -5}},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

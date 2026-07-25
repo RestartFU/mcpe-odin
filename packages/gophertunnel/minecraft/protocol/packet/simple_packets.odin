@@ -563,6 +563,67 @@ Mob_Effect :: struct {
     ambient:           bool,
 }
 
+Interact_Action_Leave_Vehicle    :: u8(3)
+Interact_Action_Mouse_Over_Entity :: u8(4)
+Interact_Action_NPC_Open         :: u8(5)
+Interact_Action_Open_Inventory   :: u8(6)
+
+Move_Flag_On_Ground        :: u8(1 << 0)
+Move_Flag_Teleport         :: u8(1 << 1)
+Move_Flag_Force_Move       :: u8(1 << 2)
+Move_Flag_Force_Completion :: u8(1 << 3)
+
+Move_Actor_Delta_Flag_Has_X     :: u16(1 << 0)
+Move_Actor_Delta_Flag_Has_Y     :: u16(1 << 1)
+Move_Actor_Delta_Flag_Has_Z     :: u16(1 << 2)
+Move_Actor_Delta_Flag_Has_Rot_X :: u16(1 << 3)
+Move_Actor_Delta_Flag_Has_Rot_Y :: u16(1 << 4)
+Move_Actor_Delta_Flag_Has_Rot_Z :: u16(1 << 5)
+Move_Actor_Delta_Flag_On_Ground :: u16(1 << 6)
+Move_Actor_Delta_Flag_Teleport  :: u16(1 << 7)
+Move_Actor_Delta_Flag_Force_Move :: u16(1 << 8)
+
+Play_Sound :: struct {
+    sound_name: string,
+    position:   protocol.Vec3,
+    volume:     f32,
+    pitch:      f32,
+    handle:     protocol.Optional(u64),
+}
+
+Interact :: struct {
+    action_type:              u8,
+    target_entity_runtime_id: u64,
+    position:                 protocol.Optional(protocol.Vec3),
+}
+
+Move_Actor_Absolute :: struct {
+    entity_runtime_id: u64,
+    flags:             u8,
+    position:          protocol.Vec3,
+    rotation:          protocol.Vec3,
+}
+
+Move_Actor_Delta :: struct {
+    flags:             u16,
+    entity_runtime_id: u64,
+    position:          protocol.Vec3,
+    rotation:          protocol.Vec3,
+}
+
+Container_Open :: struct {
+    window_id:                  u8,
+    container_type:             u8,
+    container_position:         protocol.Block_Pos,
+    container_entity_unique_id: i64,
+}
+
+Network_Chunk_Publisher_Update :: struct {
+    position:     protocol.Block_Pos,
+    radius:       u32,
+    saved_chunks: []protocol.Chunk_Pos,
+}
+
 Party_Destination_Cookie_Response :: struct {
     cookie:   string,
     accepted: bool,
@@ -690,6 +751,47 @@ read_varint32_slice :: proc(
     values = make([]i32, int(count), input.allocator)
     for &value in values {
         value, err = protocol.read_varint32(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_chunk_pos_slice_u32 :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Chunk_Pos,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_chunk_pos_slice_u32",
+            "chunk position list exceeds entry limit",
+        )
+    }
+    protocol.write_u32(output, u32(len(values)))
+    for value in values {
+        protocol.write_chunk_pos(output, value)
+    }
+    return nil
+}
+
+read_chunk_pos_slice_u32 :: proc(
+    input: ^protocol.Reader,
+) -> (values: []protocol.Chunk_Pos, err: mcpe_runtime.Error) {
+    count := protocol.read_u32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_chunk_pos_slice_u32",
+            "chunk position list exceeds entry limit",
+        )
+    }
+    values = make([]protocol.Chunk_Pos, int(count), input.allocator)
+    for &value in values {
+        value, err = protocol.read_chunk_pos(input)
         if err != nil {
             delete(values, input.allocator)
             values = nil

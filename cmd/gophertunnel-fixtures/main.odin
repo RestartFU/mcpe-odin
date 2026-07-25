@@ -1373,6 +1373,61 @@ main :: proc() {
             ambient = false,
         },
     )
+    emit_packet(
+        "packet_play_sound",
+        packet.Play_Sound{
+            sound_name = "note.pling",
+            position = {1.25, 2.5, -3.75},
+            volume = 0.75,
+            pitch = 1.25,
+            handle = protocol.option(u64(42)),
+        },
+    )
+    emit_packet(
+        "packet_interact",
+        packet.Interact{
+            action_type = packet.Interact_Action_Mouse_Over_Entity,
+            target_entity_runtime_id = u64(1) << 40 | 18,
+            position = protocol.option(protocol.Vec3{1.25, 2.5, 3.75}),
+        },
+    )
+    emit_packet(
+        "packet_move_actor_absolute",
+        packet.Move_Actor_Absolute{
+            entity_runtime_id = u64(1) << 40 | 19,
+            flags = packet.Move_Flag_On_Ground,
+            position = {1.25, 2.5, 3.75},
+            rotation = {45, 90, 180},
+        },
+    )
+    emit_packet(
+        "packet_move_actor_delta",
+        packet.Move_Actor_Delta{
+            entity_runtime_id = u64(1) << 40 | 20,
+            flags = packet.Move_Actor_Delta_Flag_Has_X |
+                    packet.Move_Actor_Delta_Flag_Has_Z |
+                    packet.Move_Actor_Delta_Flag_Has_Rot_Y,
+            position = {1.25, 0, 3.75},
+            rotation = {0, 90, 0},
+        },
+    )
+    emit_packet(
+        "packet_container_open",
+        packet.Container_Open{
+            window_id = 4,
+            container_type = 12,
+            container_position = {-12, 64, 3456},
+            container_entity_unique_id = -99,
+        },
+    )
+    emit_packet(
+        "packet_chunk_publisher",
+        packet.Network_Chunk_Publisher_Update{
+            position = {-12, 64, 3456},
+            radius = 128,
+            saved_chunks = []protocol.Chunk_Pos{{-2, 3}, {4, -5}},
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

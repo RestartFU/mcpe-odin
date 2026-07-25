@@ -209,7 +209,13 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDPlayerUpdateEntityOverrides,
          IDCameraAimAssist,
          IDChangeMobProperty,
-         IDMobEffect:
+         IDMobEffect,
+         IDPlaySound,
+         IDInteract,
+         IDMoveActorAbsolute,
+         IDMoveActorDelta,
+         IDContainerOpen,
+         IDNetworkChunkPublisherUpdate:
         return true
     }
     return false
@@ -833,6 +839,65 @@ write_payload :: proc(
         protocol.write_varint32(output, packet.duration)
         protocol.write_varuint64(output, packet.tick)
         protocol.write_bool(output, packet.ambient)
+    case Play_Sound:
+        protocol.write_string(output, packet.sound_name)
+        protocol.write_sound_pos(output, packet.position)
+        protocol.write_f32(output, packet.volume)
+        protocol.write_f32(output, packet.pitch)
+        protocol.write_bool(output, packet.handle.set)
+        if packet.handle.set {
+            protocol.write_u64(output, packet.handle.value)
+        }
+    case Interact:
+        protocol.write_u8(output, packet.action_type)
+        protocol.write_varuint64(
+            output,
+            packet.target_entity_runtime_id,
+        )
+        protocol.write_bool(output, packet.position.set)
+        if packet.position.set {
+            protocol.write_vec3(output, packet.position.value)
+        }
+    case Move_Actor_Absolute:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_u8(output, packet.flags)
+        protocol.write_vec3(output, packet.position)
+        protocol.write_byte_float(output, packet.rotation[0])
+        protocol.write_byte_float(output, packet.rotation[1])
+        protocol.write_byte_float(output, packet.rotation[2])
+    case Move_Actor_Delta:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_u16(output, packet.flags)
+        if packet.flags & Move_Actor_Delta_Flag_Has_X != 0 {
+            protocol.write_f32(output, packet.position[0])
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Y != 0 {
+            protocol.write_f32(output, packet.position[1])
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Z != 0 {
+            protocol.write_f32(output, packet.position[2])
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Rot_X != 0 {
+            protocol.write_byte_float(output, packet.rotation[0])
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Rot_Y != 0 {
+            protocol.write_byte_float(output, packet.rotation[1])
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Rot_Z != 0 {
+            protocol.write_byte_float(output, packet.rotation[2])
+        }
+    case Container_Open:
+        protocol.write_u8(output, packet.window_id)
+        protocol.write_u8(output, packet.container_type)
+        protocol.write_block_pos(output, packet.container_position)
+        protocol.write_varint64(
+            output,
+            packet.container_entity_unique_id,
+        )
+    case Network_Chunk_Publisher_Update:
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_varuint32(output, packet.radius)
+        write_chunk_pos_slice_u32(output, packet.saved_chunks) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -1793,6 +1858,103 @@ decode_packet :: proc(
         packet.duration = protocol.read_varint32(&input) or_return
         packet.tick = protocol.read_varuint64(&input) or_return
         packet.ambient = protocol.read_bool(&input) or_return
+        value = packet
+    case IDPlaySound:
+        packet := Play_Sound{}
+        packet.sound_name = protocol.read_string(&input) or_return
+        packet.position, err = protocol.read_sound_pos(&input)
+        if err != nil {
+            delete(packet.sound_name, allocator)
+            return
+        }
+        packet.volume, err = protocol.read_f32(&input)
+        if err != nil {
+            delete(packet.sound_name, allocator)
+            return
+        }
+        packet.pitch, err = protocol.read_f32(&input)
+        if err != nil {
+            delete(packet.sound_name, allocator)
+            return
+        }
+        packet.handle.set, err = protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.sound_name, allocator)
+            return
+        }
+        if packet.handle.set {
+            packet.handle.value, err = protocol.read_u64(&input)
+            if err != nil {
+                delete(packet.sound_name, allocator)
+                return
+            }
+        }
+        value = packet
+    case IDInteract:
+        packet := Interact{}
+        packet.action_type = protocol.read_u8(&input) or_return
+        packet.target_entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.position.set = protocol.read_bool(&input) or_return
+        if packet.position.set {
+            packet.position.value = protocol.read_vec3(&input) or_return
+        }
+        value = packet
+    case IDMoveActorAbsolute:
+        packet := Move_Actor_Absolute{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.flags = protocol.read_u8(&input) or_return
+        packet.position = protocol.read_vec3(&input) or_return
+        packet.rotation[0] =
+            protocol.read_byte_float(&input) or_return
+        packet.rotation[1] =
+            protocol.read_byte_float(&input) or_return
+        packet.rotation[2] =
+            protocol.read_byte_float(&input) or_return
+        value = packet
+    case IDMoveActorDelta:
+        packet := Move_Actor_Delta{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.flags = protocol.read_u16(&input) or_return
+        if packet.flags & Move_Actor_Delta_Flag_Has_X != 0 {
+            packet.position[0] = protocol.read_f32(&input) or_return
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Y != 0 {
+            packet.position[1] = protocol.read_f32(&input) or_return
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Z != 0 {
+            packet.position[2] = protocol.read_f32(&input) or_return
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Rot_X != 0 {
+            packet.rotation[0] =
+                protocol.read_byte_float(&input) or_return
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Rot_Y != 0 {
+            packet.rotation[1] =
+                protocol.read_byte_float(&input) or_return
+        }
+        if packet.flags & Move_Actor_Delta_Flag_Has_Rot_Z != 0 {
+            packet.rotation[2] =
+                protocol.read_byte_float(&input) or_return
+        }
+        value = packet
+    case IDContainerOpen:
+        packet := Container_Open{}
+        packet.window_id = protocol.read_u8(&input) or_return
+        packet.container_type = protocol.read_u8(&input) or_return
+        packet.container_position =
+            protocol.read_block_pos(&input) or_return
+        packet.container_entity_unique_id =
+            protocol.read_varint64(&input) or_return
+        value = packet
+    case IDNetworkChunkPublisherUpdate:
+        packet := Network_Chunk_Publisher_Update{}
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.radius = protocol.read_varuint32(&input) or_return
+        packet.saved_chunks =
+            read_chunk_pos_slice_u32(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

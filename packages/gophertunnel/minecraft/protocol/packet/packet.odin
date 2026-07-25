@@ -185,6 +185,12 @@ Packet :: union {
     Camera_Aim_Assist,
     Change_Mob_Property,
     Mob_Effect,
+    Play_Sound,
+    Interact,
+    Move_Actor_Absolute,
+    Move_Actor_Delta,
+    Container_Open,
+    Network_Chunk_Publisher_Update,
     Unknown_Packet,
 }
 
@@ -350,6 +356,13 @@ packet_id :: proc(value: Packet) -> (
     case Camera_Aim_Assist:           id = IDCameraAimAssist
     case Change_Mob_Property:         id = IDChangeMobProperty
     case Mob_Effect:                  id = IDMobEffect
+    case Play_Sound:                  id = IDPlaySound
+    case Interact:                    id = IDInteract
+    case Move_Actor_Absolute:         id = IDMoveActorAbsolute
+    case Move_Actor_Delta:            id = IDMoveActorDelta
+    case Container_Open:              id = IDContainerOpen
+    case Network_Chunk_Publisher_Update:
+        id = IDNetworkChunkPublisherUpdate
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -525,6 +538,10 @@ destroy_packet :: proc(
     case Change_Mob_Property:
         delete(packet.property, allocator)
         delete(packet.string_value, allocator)
+    case Play_Sound:
+        delete(packet.sound_name, allocator)
+    case Network_Chunk_Publisher_Update:
+        delete(packet.saved_chunks, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

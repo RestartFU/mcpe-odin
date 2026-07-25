@@ -2073,6 +2073,42 @@ main :: proc() {
             engine_version = "1.26.30",
         },
     )
+    block_actor_data := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("id", nbt.value_string("Chest")),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(block_actor_data)
+        free(block_actor_data)
+    }
+    emit_packet(
+        "packet_block_actor_data",
+        packet.Block_Actor_Data{
+            position = {-12, 64, 3456},
+            nbt_data = block_actor_data,
+        },
+    )
+    editor_payload := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("action", nbt.value_string("update")),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(editor_payload)
+        free(editor_payload)
+    }
+    emit_packet(
+        "packet_editor_network",
+        packet.Editor_Network{
+            route_to_manager = true,
+            payload = editor_payload,
+        },
+    )
     emit_packet(
         "packet_sync_world_clocks_state",
         packet.Sync_World_Clocks{

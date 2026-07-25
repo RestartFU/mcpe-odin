@@ -411,6 +411,67 @@ add_volume_entity_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+nbt_state_packets_round_trip :: proc(t: ^testing.T) {
+    block_data := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("id", nbt.value_string("Chest")),
+            },
+        ),
+    )
+    editor_payload := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("action", nbt.value_string("update")),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(block_data)
+        free(block_data)
+        nbt.destroy_value(editor_payload)
+        free(editor_payload)
+    }
+    packets := [?]Packet{
+        Block_Actor_Data{
+            position = {-12, 64, 3456},
+            nbt_data = block_data,
+        },
+        Editor_Network{
+            route_to_manager = true,
+            payload = editor_payload,
+        },
+    }
+    ids := [?]u32{IDBlockActorData, IDEditorNetwork}
+    for original, index in packets {
+        encoded, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, header, decode_err := decode_packet(encoded)
+        testing.expect(t, decode_err == nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+            delete(encoded)
+            continue
+        }
+        testing.expect_value(t, header.packet_id, ids[index])
+        reencoded, reencode_err := encode_packet(decoded)
+        testing.expect(t, reencode_err == nil)
+        if reencode_err == nil {
+            testing.expect(t, slice.equal(encoded, reencoded))
+            delete(reencoded)
+        } else {
+            mcpe_runtime.destroy_error(reencode_err)
+        }
+        destroy_packet(&decoded)
+        delete(encoded)
+    }
+}
+
+@(test)
 dimension_packets_round_trip_optional_loading_screen_id :: proc(
     t: ^testing.T,
 ) {

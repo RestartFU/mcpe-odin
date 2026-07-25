@@ -416,6 +416,16 @@ Sync_Actor_Property :: struct {
     property_data: ^nbt.Value,
 }
 
+Block_Actor_Data :: struct {
+    position: protocol.Block_Pos,
+    nbt_data: ^nbt.Value,
+}
+
+Editor_Network :: struct {
+    route_to_manager: bool,
+    payload:          ^nbt.Value,
+}
+
 Add_Volume_Entity :: struct {
     entity_runtime_id:   u32,
     entity_metadata:     ^nbt.Value,

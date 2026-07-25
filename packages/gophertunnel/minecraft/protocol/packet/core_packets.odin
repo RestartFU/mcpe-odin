@@ -193,6 +193,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDClientCacheMissResponse,
          IDClientBoundDebugRenderer,
          IDSyncActorProperty,
+         IDBlockActorData,
+         IDEditorNetwork,
          IDAddVolumeEntity,
          IDClientBoundDataDrivenUIShowScreen,
          IDSubClientLogin,
@@ -823,6 +825,46 @@ write_payload :: proc(
         }
         encoded, encode_err := nbt.marshal(
             packet.property_data,
+            .Network_Little_Endian,
+            "",
+            output.allocator,
+        )
+        if encode_err != nil {
+            return encode_err
+        }
+        protocol.write_bytes(output, encoded)
+        delete(encoded, output.allocator)
+    case Block_Actor_Data:
+        protocol.write_block_pos(output, packet.position)
+        if packet.nbt_data == nil || packet.nbt_data.tag != .Compound {
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write_block_actor_data",
+                "block actor data must be a compound",
+            )
+        }
+        encoded, encode_err := nbt.marshal(
+            packet.nbt_data,
+            .Network_Little_Endian,
+            "",
+            output.allocator,
+        )
+        if encode_err != nil {
+            return encode_err
+        }
+        protocol.write_bytes(output, encoded)
+        delete(encoded, output.allocator)
+    case Editor_Network:
+        protocol.write_bool(output, packet.route_to_manager)
+        if packet.payload == nil || packet.payload.tag != .Compound {
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write_editor_network",
+                "editor network payload must be a compound",
+            )
+        }
+        encoded, encode_err := nbt.marshal(
+            packet.payload,
             .Network_Little_Endian,
             "",
             output.allocator,
@@ -2196,6 +2238,58 @@ decode_packet :: proc(
                 .Malformed,
                 "gophertunnel.packet.read_sync_actor_property",
                 "actor property data must be a compound",
+            )
+            return
+        }
+        value = packet
+    case IDBlockActorData:
+        packet := Block_Actor_Data{}
+        packet.position = protocol.read_block_pos(&input) or_return
+        root_name: string
+        payload := protocol.read_remaining_bytes(&input)
+        packet.nbt_data, root_name, err = nbt.unmarshal(
+            payload,
+            .Network_Little_Endian,
+            false,
+            allocator,
+        )
+        delete(root_name, allocator)
+        if err != nil {
+            return
+        }
+        if packet.nbt_data.tag != .Compound {
+            nbt.destroy_value(packet.nbt_data, allocator)
+            free(packet.nbt_data, allocator)
+            err = packet_error(
+                .Malformed,
+                "gophertunnel.packet.read_block_actor_data",
+                "block actor data must be a compound",
+            )
+            return
+        }
+        value = packet
+    case IDEditorNetwork:
+        packet := Editor_Network{}
+        packet.route_to_manager = protocol.read_bool(&input) or_return
+        root_name: string
+        payload := protocol.read_remaining_bytes(&input)
+        packet.payload, root_name, err = nbt.unmarshal(
+            payload,
+            .Network_Little_Endian,
+            false,
+            allocator,
+        )
+        delete(root_name, allocator)
+        if err != nil {
+            return
+        }
+        if packet.payload.tag != .Compound {
+            nbt.destroy_value(packet.payload, allocator)
+            free(packet.payload, allocator)
+            err = packet_error(
+                .Malformed,
+                "gophertunnel.packet.read_editor_network",
+                "editor network payload must be a compound",
             )
             return
         }

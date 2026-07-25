@@ -168,6 +168,8 @@ Packet :: union {
     Client_Cache_Miss_Response,
     Client_Bound_Debug_Renderer,
     Sync_Actor_Property,
+    Block_Actor_Data,
+    Editor_Network,
     Add_Volume_Entity,
     Client_Bound_Data_Driven_UI_Show_Screen,
     Sub_Client_Login,
@@ -374,6 +376,8 @@ packet_id :: proc(value: Packet) -> (
     case Client_Cache_Miss_Response:  id = IDClientCacheMissResponse
     case Client_Bound_Debug_Renderer: id = IDClientBoundDebugRenderer
     case Sync_Actor_Property:         id = IDSyncActorProperty
+    case Block_Actor_Data:            id = IDBlockActorData
+    case Editor_Network:              id = IDEditorNetwork
     case Add_Volume_Entity:           id = IDAddVolumeEntity
     case Client_Bound_Data_Driven_UI_Show_Screen:
         id = IDClientBoundDataDrivenUIShowScreen
@@ -608,6 +612,12 @@ destroy_packet :: proc(
     case Sync_Actor_Property:
         nbt.destroy_value(packet.property_data, allocator)
         free(packet.property_data, allocator)
+    case Block_Actor_Data:
+        nbt.destroy_value(packet.nbt_data, allocator)
+        free(packet.nbt_data, allocator)
+    case Editor_Network:
+        nbt.destroy_value(packet.payload, allocator)
+        free(packet.payload, allocator)
     case Add_Volume_Entity:
         nbt.destroy_value(packet.entity_metadata, allocator)
         free(packet.entity_metadata, allocator)

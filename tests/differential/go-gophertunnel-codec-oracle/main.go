@@ -1865,6 +1865,22 @@ func main() {
 		0, 0,
 	)
 	emitPacket(
+		"packet_block_actor_data",
+		&packet.BlockActorData{
+			Position: protocol.BlockPos{-12, 64, 3456},
+			NBTData: map[string]any{"id": "Chest"},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_editor_network",
+		&packet.EditorNetwork{
+			RouteToManager: true,
+			Payload: map[string]any{"action": "update"},
+		},
+		0, 0,
+	)
+	emitPacket(
 		"packet_sync_world_clocks_state",
 		&packet.SyncWorldClocks{
 			PayloadType: protocol.ClockPayloadTypeSyncState,

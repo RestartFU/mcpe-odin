@@ -221,6 +221,7 @@ Packet :: union {
     Client_Cheat_Ability,
     Container_Registry_Cleanup,
     Game_Rules_Changed,
+    Server_Bound_Pack_Setting_Change,
     Unknown_Packet,
 }
 
@@ -425,6 +426,8 @@ packet_id :: proc(value: Packet) -> (
     case Client_Cheat_Ability:         id = IDClientCheatAbility
     case Container_Registry_Cleanup:   id = IDContainerRegistryCleanup
     case Game_Rules_Changed:           id = IDGameRulesChanged
+    case Server_Bound_Pack_Setting_Change:
+        id = IDServerBoundPackSettingChange
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -699,6 +702,14 @@ destroy_packet :: proc(
             delete(rule.name, allocator)
         }
         delete(packet.game_rules, allocator)
+    case Server_Bound_Pack_Setting_Change:
+        delete(packet.pack_setting.name, allocator)
+        switch setting_value in packet.pack_setting.value {
+        case string:
+            delete(setting_value, allocator)
+        case f32, bool:
+        case:
+        }
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

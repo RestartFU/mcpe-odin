@@ -1088,6 +1088,10 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 },
             },
         },
+        Server_Bound_Pack_Setting_Change{
+            pack_id = {},
+            pack_setting = {name = "mode", value = "hard"},
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1204,6 +1208,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDClientCheatAbility,
         IDContainerRegistryCleanup,
         IDGameRulesChanged,
+        IDServerBoundPackSettingChange,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1565,6 +1570,10 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
                     value = f32(50.5),
                 },
             },
+        },
+        Server_Bound_Pack_Setting_Change{
+            pack_id = {},
+            pack_setting = {name = "mode", value = "hard"},
         },
     }
     for original in packets {

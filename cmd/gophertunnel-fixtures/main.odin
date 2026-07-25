@@ -1772,6 +1772,27 @@ main :: proc() {
             },
         },
     )
+    emit_packet(
+        "packet_pack_setting_float",
+        packet.Server_Bound_Pack_Setting_Change{
+            pack_id = pack_uuid,
+            pack_setting = {name = "scale", value = f32(1.5)},
+        },
+    )
+    emit_packet(
+        "packet_pack_setting_bool",
+        packet.Server_Bound_Pack_Setting_Change{
+            pack_id = pack_uuid,
+            pack_setting = {name = "enabled", value = true},
+        },
+    )
+    emit_packet(
+        "packet_pack_setting_string",
+        packet.Server_Bound_Pack_Setting_Change{
+            pack_id = pack_uuid,
+            pack_setting = {name = "mode", value = "hard"},
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

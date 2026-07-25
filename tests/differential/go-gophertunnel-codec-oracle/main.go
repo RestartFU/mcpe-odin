@@ -1629,6 +1629,30 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_pack_setting_float",
+		&packet.ServerBoundPackSettingChange{
+			PackID:      packUUID,
+			PackSetting: protocol.PackSetting{Name: "scale", Value: float32(1.5)},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_pack_setting_bool",
+		&packet.ServerBoundPackSettingChange{
+			PackID:      packUUID,
+			PackSetting: protocol.PackSetting{Name: "enabled", Value: true},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_pack_setting_string",
+		&packet.ServerBoundPackSettingChange{
+			PackID:      packUUID,
+			PackSetting: protocol.PackSetting{Name: "mode", Value: "hard"},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

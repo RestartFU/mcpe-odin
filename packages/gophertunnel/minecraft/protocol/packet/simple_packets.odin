@@ -876,6 +876,11 @@ Game_Rules_Changed :: struct {
     game_rules: []protocol.Game_Rule,
 }
 
+Server_Bound_Pack_Setting_Change :: struct {
+    pack_id:      protocol.UUID,
+    pack_setting: protocol.Pack_Setting,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"

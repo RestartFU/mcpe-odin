@@ -245,7 +245,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDUpdateAbilities,
          IDClientCheatAbility,
          IDContainerRegistryCleanup,
-         IDGameRulesChanged:
+         IDGameRulesChanged,
+         IDServerBoundPackSettingChange:
         return true
     }
     return false
@@ -1171,6 +1172,12 @@ write_payload :: proc(
         ) or_return
     case Game_Rules_Changed:
         write_game_rules(output, packet.game_rules) or_return
+    case Server_Bound_Pack_Setting_Change:
+        protocol.write_uuid(output, packet.pack_id)
+        protocol.write_pack_setting(
+            output,
+            packet.pack_setting,
+        ) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2697,6 +2704,12 @@ decode_packet :: proc(
     case IDGameRulesChanged:
         packet := Game_Rules_Changed{}
         packet.game_rules = read_game_rules(&input) or_return
+        value = packet
+    case IDServerBoundPackSettingChange:
+        packet := Server_Bound_Pack_Setting_Change{}
+        packet.pack_id = protocol.read_uuid(&input) or_return
+        packet.pack_setting =
+            protocol.read_pack_setting(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

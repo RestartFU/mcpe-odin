@@ -1054,6 +1054,16 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Game_Rules_Changed"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.PackSetting"
+odin = "mcpe:gophertunnel/minecraft/protocol.Pack_Setting"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ServerBoundPackSettingChange"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Bound_Pack_Setting_Change"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

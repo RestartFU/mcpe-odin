@@ -680,3 +680,80 @@ write_game_rule :: proc(
     }
     return nil
 }
+
+read_pack_setting :: proc(value: ^Reader) -> (
+    result: Pack_Setting,
+    err: mcpe_runtime.Error,
+) {
+    result.name = read_string(value) or_return
+    setting_type, type_err := read_varuint32(value)
+    if type_err != nil {
+        delete(result.name, value.allocator)
+        result = {}
+        err = type_err
+        return
+    }
+    switch setting_type {
+    case 0:
+        setting_value, value_err := read_f32(value)
+        if value_err != nil {
+            delete(result.name, value.allocator)
+            result = {}
+            err = value_err
+            return
+        }
+        result.value = setting_value
+    case 1:
+        setting_value, value_err := read_bool(value)
+        if value_err != nil {
+            delete(result.name, value.allocator)
+            result = {}
+            err = value_err
+            return
+        }
+        result.value = setting_value
+    case 2:
+        setting_value, value_err := read_string(value)
+        if value_err != nil {
+            delete(result.name, value.allocator)
+            result = {}
+            err = value_err
+            return
+        }
+        result.value = setting_value
+    case:
+        delete(result.name, value.allocator)
+        result = {}
+        err = codec_error(
+            .Malformed,
+            "gophertunnel.protocol.read_pack_setting",
+            "unknown pack setting type",
+        )
+    }
+    return
+}
+
+write_pack_setting :: proc(
+    value: ^Writer,
+    input: Pack_Setting,
+) -> mcpe_runtime.Error {
+    write_string(value, input.name)
+    switch setting_value in input.value {
+    case f32:
+        write_varuint32(value, 0)
+        write_f32(value, setting_value)
+    case bool:
+        write_varuint32(value, 1)
+        write_bool(value, setting_value)
+    case string:
+        write_varuint32(value, 2)
+        write_string(value, setting_value)
+    case:
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.write_pack_setting",
+            "nil pack setting value",
+        )
+    }
+    return nil
+}

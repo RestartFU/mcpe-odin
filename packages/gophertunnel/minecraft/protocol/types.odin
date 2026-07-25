@@ -136,6 +136,17 @@ Game_Rule :: struct {
     value:                     Game_Rule_Value,
 }
 
+Pack_Setting_Value :: union {
+    f32,
+    bool,
+    string,
+}
+
+Pack_Setting :: struct {
+    name:  string,
+    value: Pack_Setting_Value,
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

@@ -162,6 +162,17 @@ Packet :: union {
     NPC_Request,
     Player_Action,
     Spawn_Particle_Effect,
+    Client_Cache_Blob_Status,
+    Client_Bound_Data_Driven_UI_Show_Screen,
+    Sub_Client_Login,
+    Script_Custom_Event,
+    Emote_List,
+    Send_Party_Destination_Cookie,
+    Player_Toggle_Crafter_Slot_Request,
+    Client_Camera_Aim_Assist,
+    Server_Bound_Data_Driven_Screen_Closed,
+    Position_Tracking_DB_Client_Request,
+    Party_Changed,
     Unknown_Packet,
 }
 
@@ -295,6 +306,22 @@ packet_id :: proc(value: Packet) -> (
     case NPC_Request:                 id = IDNPCRequest
     case Player_Action:               id = IDPlayerAction
     case Spawn_Particle_Effect:       id = IDSpawnParticleEffect
+    case Client_Cache_Blob_Status:    id = IDClientCacheBlobStatus
+    case Client_Bound_Data_Driven_UI_Show_Screen:
+        id = IDClientBoundDataDrivenUIShowScreen
+    case Sub_Client_Login:            id = IDSubClientLogin
+    case Script_Custom_Event:         id = IDScriptCustomEvent
+    case Emote_List:                  id = IDEmoteList
+    case Send_Party_Destination_Cookie:
+        id = IDSendPartyDestinationCookie
+    case Player_Toggle_Crafter_Slot_Request:
+        id = IDPlayerToggleCrafterSlotRequest
+    case Client_Camera_Aim_Assist:    id = IDClientCameraAimAssist
+    case Server_Bound_Data_Driven_Screen_Closed:
+        id = IDServerBoundDataDrivenScreenClosed
+    case Position_Tracking_DB_Client_Request:
+        id = IDPositionTrackingDBClientRequest
+    case Party_Changed:               id = IDPartyChanged
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -432,6 +459,30 @@ destroy_packet :: proc(
         delete(packet.particle_name, allocator)
         if packet.molang_variables.set {
             delete(packet.molang_variables.value, allocator)
+        }
+    case Client_Cache_Blob_Status:
+        delete(packet.miss_hashes, allocator)
+        delete(packet.hit_hashes, allocator)
+    case Client_Bound_Data_Driven_UI_Show_Screen:
+        delete(packet.screen_id, allocator)
+    case Sub_Client_Login:
+        delete(packet.connection_request, allocator)
+    case Script_Custom_Event:
+        delete(packet.event_name, allocator)
+        delete(packet.event_data, allocator)
+    case Emote_List:
+        delete(packet.emote_pieces, allocator)
+    case Send_Party_Destination_Cookie:
+        delete(packet.cookie, allocator)
+        delete(packet.intent, allocator)
+        delete(packet.destination_name, allocator)
+    case Client_Camera_Aim_Assist:
+        delete(packet.preset_id, allocator)
+    case Server_Bound_Data_Driven_Screen_Closed:
+        delete(packet.close_reason, allocator)
+    case Party_Changed:
+        if packet.party_info.set {
+            delete(packet.party_info.value.party_id, allocator)
         }
     case Unknown_Packet:
         delete(packet.payload, allocator)

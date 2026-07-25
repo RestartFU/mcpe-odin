@@ -186,7 +186,18 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDLecternUpdate,
          IDNPCRequest,
          IDPlayerAction,
-         IDSpawnParticleEffect:
+         IDSpawnParticleEffect,
+         IDClientCacheBlobStatus,
+         IDClientBoundDataDrivenUIShowScreen,
+         IDSubClientLogin,
+         IDScriptCustomEvent,
+         IDEmoteList,
+         IDSendPartyDestinationCookie,
+         IDPlayerToggleCrafterSlotRequest,
+         IDClientCameraAimAssist,
+         IDServerBoundDataDrivenScreenClosed,
+         IDPositionTrackingDBClientRequest,
+         IDPartyChanged:
         return true
     }
     return false
@@ -691,6 +702,50 @@ write_payload :: proc(
             protocol.write_byte_slice(
                 output,
                 packet.molang_variables.value,
+            )
+        }
+    case Client_Cache_Blob_Status:
+        write_u64_slice(output, packet.miss_hashes) or_return
+        write_u64_slice(output, packet.hit_hashes) or_return
+    case Client_Bound_Data_Driven_UI_Show_Screen:
+        protocol.write_string(output, packet.screen_id)
+        protocol.write_u32(output, packet.form_id)
+        write_optional_u32(output, packet.data_instance_id)
+    case Sub_Client_Login:
+        protocol.write_byte_slice(output, packet.connection_request)
+    case Script_Custom_Event:
+        protocol.write_string(output, packet.event_name)
+        protocol.write_byte_slice(output, packet.event_data)
+    case Emote_List:
+        protocol.write_varuint64(output, packet.player_runtime_id)
+        write_uuid_slice(output, packet.emote_pieces) or_return
+    case Send_Party_Destination_Cookie:
+        protocol.write_string(output, packet.cookie)
+        protocol.write_string(output, packet.intent)
+        protocol.write_string(output, packet.destination_name)
+    case Player_Toggle_Crafter_Slot_Request:
+        protocol.write_i32(output, packet.pos_x)
+        protocol.write_i32(output, packet.pos_y)
+        protocol.write_i32(output, packet.pos_z)
+        protocol.write_u8(output, packet.slot)
+        protocol.write_bool(output, packet.disabled)
+    case Client_Camera_Aim_Assist:
+        protocol.write_string(output, packet.preset_id)
+        protocol.write_u8(output, packet.action)
+        protocol.write_bool(output, packet.allow_aim_assist)
+    case Server_Bound_Data_Driven_Screen_Closed:
+        protocol.write_u32(output, packet.form_id)
+        protocol.write_string(output, packet.close_reason)
+    case Position_Tracking_DB_Client_Request:
+        protocol.write_u8(output, packet.request_action)
+        protocol.write_varint32(output, packet.tracking_id)
+    case Party_Changed:
+        protocol.write_bool(output, packet.party_info.set)
+        if packet.party_info.set {
+            protocol.write_string(output, packet.party_info.value.party_id)
+            protocol.write_bool(
+                output,
+                packet.party_info.value.party_leader,
             )
         }
     case Unknown_Packet:
@@ -1402,6 +1457,110 @@ decode_packet :: proc(
                 protocol.read_byte_slice(&input)
             if err != nil {
                 delete(packet.particle_name, allocator)
+                return
+            }
+        }
+        value = packet
+    case IDClientCacheBlobStatus:
+        packet := Client_Cache_Blob_Status{}
+        packet.miss_hashes = read_u64_slice(&input) or_return
+        packet.hit_hashes, err = read_u64_slice(&input)
+        if err != nil {
+            delete(packet.miss_hashes, allocator)
+            return
+        }
+        value = packet
+    case IDClientBoundDataDrivenUIShowScreen:
+        packet := Client_Bound_Data_Driven_UI_Show_Screen{}
+        packet.screen_id = protocol.read_string(&input) or_return
+        packet.form_id, err = protocol.read_u32(&input)
+        if err != nil {
+            delete(packet.screen_id, allocator)
+            return
+        }
+        packet.data_instance_id, err = read_optional_u32(&input)
+        if err != nil {
+            delete(packet.screen_id, allocator)
+            return
+        }
+        value = packet
+    case IDSubClientLogin:
+        packet := Sub_Client_Login{}
+        packet.connection_request =
+            protocol.read_byte_slice(&input) or_return
+        value = packet
+    case IDScriptCustomEvent:
+        packet := Script_Custom_Event{}
+        packet.event_name = protocol.read_string(&input) or_return
+        packet.event_data, err = protocol.read_byte_slice(&input)
+        if err != nil {
+            delete(packet.event_name, allocator)
+            return
+        }
+        value = packet
+    case IDEmoteList:
+        packet := Emote_List{}
+        packet.player_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.emote_pieces = read_uuid_slice(&input) or_return
+        value = packet
+    case IDSendPartyDestinationCookie:
+        packet := Send_Party_Destination_Cookie{}
+        packet.cookie = protocol.read_string(&input) or_return
+        packet.intent, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.cookie, allocator)
+            return
+        }
+        packet.destination_name, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.cookie, allocator)
+            delete(packet.intent, allocator)
+            return
+        }
+        value = packet
+    case IDPlayerToggleCrafterSlotRequest:
+        packet := Player_Toggle_Crafter_Slot_Request{}
+        packet.pos_x = protocol.read_i32(&input) or_return
+        packet.pos_y = protocol.read_i32(&input) or_return
+        packet.pos_z = protocol.read_i32(&input) or_return
+        packet.slot = protocol.read_u8(&input) or_return
+        packet.disabled = protocol.read_bool(&input) or_return
+        value = packet
+    case IDClientCameraAimAssist:
+        packet := Client_Camera_Aim_Assist{}
+        packet.preset_id = protocol.read_string(&input) or_return
+        packet.action, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.preset_id, allocator)
+            return
+        }
+        packet.allow_aim_assist, err = protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.preset_id, allocator)
+            return
+        }
+        value = packet
+    case IDServerBoundDataDrivenScreenClosed:
+        packet := Server_Bound_Data_Driven_Screen_Closed{}
+        packet.form_id = protocol.read_u32(&input) or_return
+        packet.close_reason = protocol.read_string(&input) or_return
+        value = packet
+    case IDPositionTrackingDBClientRequest:
+        packet := Position_Tracking_DB_Client_Request{}
+        packet.request_action = protocol.read_u8(&input) or_return
+        packet.tracking_id = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDPartyChanged:
+        packet := Party_Changed{}
+        packet.party_info.set = protocol.read_bool(&input) or_return
+        if packet.party_info.set {
+            packet.party_info.value.party_id =
+                protocol.read_string(&input) or_return
+            packet.party_info.value.party_leader, err =
+                protocol.read_bool(&input)
+            if err != nil {
+                delete(packet.party_info.value.party_id, allocator)
                 return
             }
         }

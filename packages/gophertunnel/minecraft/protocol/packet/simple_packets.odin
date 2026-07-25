@@ -383,3 +383,149 @@ Spawn_Particle_Effect :: struct {
     particle_name:   string,
     molang_variables: protocol.Optional([]u8),
 }
+
+Client_Cache_Blob_Status :: struct {
+    miss_hashes: []u64,
+    hit_hashes:  []u64,
+}
+
+Client_Bound_Data_Driven_UI_Show_Screen :: struct {
+    screen_id:        string,
+    form_id:          u32,
+    data_instance_id: protocol.Optional(u32),
+}
+
+Sub_Client_Login :: struct {
+    connection_request: []u8,
+}
+
+Script_Custom_Event :: struct {
+    event_name: string,
+    event_data: []u8,
+}
+
+Emote_List :: struct {
+    player_runtime_id: u64,
+    emote_pieces:      []protocol.UUID,
+}
+
+Send_Party_Destination_Cookie :: struct {
+    cookie:           string,
+    intent:           string,
+    destination_name: string,
+}
+
+Player_Toggle_Crafter_Slot_Request :: struct {
+    pos_x:    i32,
+    pos_y:    i32,
+    pos_z:    i32,
+    slot:     u8,
+    disabled: bool,
+}
+
+Client_Camera_Aim_Assist :: struct {
+    preset_id:       string,
+    action:          u8,
+    allow_aim_assist: bool,
+}
+
+Server_Bound_Data_Driven_Screen_Closed :: struct {
+    form_id:      u32,
+    close_reason: string,
+}
+
+Position_Tracking_DB_Client_Request :: struct {
+    request_action: u8,
+    tracking_id:    i32,
+}
+
+Party_Info :: struct {
+    party_id:     string,
+    party_leader: bool,
+}
+
+Party_Changed :: struct {
+    party_info: protocol.Optional(Party_Info),
+}
+
+write_u64_slice :: proc(
+    output: ^protocol.Writer,
+    values: []u64,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_u64_slice",
+            "u64 list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_u64(output, value)
+    }
+    return nil
+}
+
+read_u64_slice :: proc(
+    input: ^protocol.Reader,
+) -> (values: []u64, err: mcpe_runtime.Error) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_u64_slice",
+            "u64 list exceeds entry limit",
+        )
+    }
+    values = make([]u64, int(count), input.allocator)
+    for &value in values {
+        value, err = protocol.read_u64(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_uuid_slice :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.UUID,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_uuid_slice",
+            "UUID list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_uuid(output, value)
+    }
+    return nil
+}
+
+read_uuid_slice :: proc(
+    input: ^protocol.Reader,
+) -> (values: []protocol.UUID, err: mcpe_runtime.Error) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_uuid_slice",
+            "UUID list exceeds entry limit",
+        )
+    }
+    values = make([]protocol.UUID, int(count), input.allocator)
+    for &value in values {
+        value, err = protocol.read_uuid(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}

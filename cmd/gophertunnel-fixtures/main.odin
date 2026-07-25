@@ -1174,6 +1174,90 @@ main :: proc() {
             ),
         },
     )
+    emit_packet(
+        "packet_cache_blob_status",
+        packet.Client_Cache_Blob_Status{
+            miss_hashes = []u64{1, 0x0123_4567_89ab_cdef},
+            hit_hashes = []u64{2, 3},
+        },
+    )
+    emit_packet(
+        "packet_data_ui_show",
+        packet.Client_Bound_Data_Driven_UI_Show_Screen{
+            screen_id = "screen:test",
+            form_id = 42,
+            data_instance_id = protocol.option(u32(99)),
+        },
+    )
+    emit_packet(
+        "packet_sub_client_login",
+        packet.Sub_Client_Login{
+            connection_request = []u8{1, 2, 3, 4},
+        },
+    )
+    emit_packet(
+        "packet_script_custom_event",
+        packet.Script_Custom_Event{
+            event_name = "test:event",
+            event_data = []u8{4, 5, 6},
+        },
+    )
+    emit_packet(
+        "packet_emote_list",
+        packet.Emote_List{
+            player_runtime_id = u64(1) << 40 | 15,
+            emote_pieces = []protocol.UUID{pack_uuid},
+        },
+    )
+    emit_packet(
+        "packet_party_cookie",
+        packet.Send_Party_Destination_Cookie{
+            cookie = "opaque",
+            intent = "OptIn",
+            destination_name = "server",
+        },
+    )
+    emit_packet(
+        "packet_toggle_crafter",
+        packet.Player_Toggle_Crafter_Slot_Request{
+            pos_x = -12,
+            pos_y = 64,
+            pos_z = 3456,
+            slot = 8,
+            disabled = true,
+        },
+    )
+    emit_packet(
+        "packet_client_aim_assist",
+        packet.Client_Camera_Aim_Assist{
+            preset_id = "preset",
+            action = 1,
+            allow_aim_assist = true,
+        },
+    )
+    emit_packet(
+        "packet_data_screen_closed",
+        packet.Server_Bound_Data_Driven_Screen_Closed{
+            form_id = 42,
+            close_reason = "userbusy",
+        },
+    )
+    emit_packet(
+        "packet_position_tracking_request",
+        packet.Position_Tracking_DB_Client_Request{
+            request_action = 0,
+            tracking_id = -99,
+        },
+    )
+    emit_packet(
+        "packet_party_changed",
+        packet.Party_Changed{
+            party_info = protocol.option(packet.Party_Info{
+                party_id = "party",
+                party_leader = true,
+            }),
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

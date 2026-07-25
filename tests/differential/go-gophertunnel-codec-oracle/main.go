@@ -1093,6 +1093,76 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_cache_blob_status",
+		&packet.ClientCacheBlobStatus{
+			MissHashes: []uint64{1, 0x0123456789abcdef},
+			HitHashes:  []uint64{2, 3},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_data_ui_show",
+		&packet.ClientBoundDataDrivenUIShowScreen{
+			ScreenID: "screen:test", FormID: 42,
+			DataInstanceID: protocol.Option(uint32(99)),
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_sub_client_login",
+		&packet.SubClientLogin{ConnectionRequest: []byte{1, 2, 3, 4}},
+		0, 0,
+	)
+	emitPacket(
+		"packet_script_custom_event",
+		&packet.ScriptCustomEvent{EventName: "test:event", EventData: []byte{4, 5, 6}},
+		0, 0,
+	)
+	emitPacket(
+		"packet_emote_list",
+		&packet.EmoteList{PlayerRuntimeID: 1<<40 + 15, EmotePieces: []uuid.UUID{packUUID}},
+		0, 0,
+	)
+	emitPacket(
+		"packet_party_cookie",
+		&packet.SendPartyDestinationCookie{
+			Cookie: "opaque", Intent: packet.PartyDestinationCookieIntentOptIn,
+			DestinationName: "server",
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_toggle_crafter",
+		&packet.PlayerToggleCrafterSlotRequest{
+			PosX: -12, PosY: 64, PosZ: 3456, Slot: 8, Disabled: true,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_client_aim_assist",
+		&packet.ClientCameraAimAssist{PresetID: "preset", Action: 1, AllowAimAssist: true},
+		0, 0,
+	)
+	emitPacket(
+		"packet_data_screen_closed",
+		&packet.ServerBoundDataDrivenScreenClosed{
+			FormID: 42, CloseReason: packet.DataDrivenScreenCloseReasonUserBusy,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_position_tracking_request",
+		&packet.PositionTrackingDBClientRequest{RequestAction: 0, TrackingID: -99},
+		0, 0,
+	)
+	emitPacket(
+		"packet_party_changed",
+		&packet.PartyChanged{
+			PartyInfo: protocol.Option(packet.PartyInfo{PartyID: "party", PartyLeader: true}),
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

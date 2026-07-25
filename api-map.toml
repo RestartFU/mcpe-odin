@@ -674,6 +674,66 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Spawn_Particle_Effect"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientCacheBlobStatus"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Cache_Blob_Status"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientBoundDataDrivenUIShowScreen"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Data_Driven_UI_Show_Screen"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SubClientLogin"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Sub_Client_Login"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ScriptCustomEvent"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Script_Custom_Event"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.EmoteList"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Emote_List"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SendPartyDestinationCookie"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Send_Party_Destination_Cookie"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlayerToggleCrafterSlotRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Player_Toggle_Crafter_Slot_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientCameraAimAssist"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Camera_Aim_Assist"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ServerBoundDataDrivenScreenClosed"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Bound_Data_Driven_Screen_Closed"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PositionTrackingDBClientRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Position_Tracking_DB_Client_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PartyInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Party_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PartyChanged"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Party_Changed"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

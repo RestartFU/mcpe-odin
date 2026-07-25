@@ -675,6 +675,55 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 '{', '"', 'x', '"', ':', '1', '}',
             }),
         },
+        Client_Cache_Blob_Status{
+            miss_hashes = []u64{1, 0x0123_4567_89ab_cdef},
+            hit_hashes = []u64{2, 3},
+        },
+        Client_Bound_Data_Driven_UI_Show_Screen{
+            screen_id = "screen:test",
+            form_id = 42,
+            data_instance_id = protocol.option(u32(99)),
+        },
+        Sub_Client_Login{connection_request = []u8{1, 2, 3, 4}},
+        Script_Custom_Event{
+            event_name = "test:event",
+            event_data = []u8{4, 5, 6},
+        },
+        Emote_List{
+            player_runtime_id = u64(1) << 40 | 15,
+            emote_pieces = []protocol.UUID{protocol.UUID{}},
+        },
+        Send_Party_Destination_Cookie{
+            cookie = "opaque",
+            intent = "OptIn",
+            destination_name = "server",
+        },
+        Player_Toggle_Crafter_Slot_Request{
+            pos_x = -12,
+            pos_y = 64,
+            pos_z = 3456,
+            slot = 8,
+            disabled = true,
+        },
+        Client_Camera_Aim_Assist{
+            preset_id = "preset",
+            action = 1,
+            allow_aim_assist = true,
+        },
+        Server_Bound_Data_Driven_Screen_Closed{
+            form_id = 42,
+            close_reason = "userbusy",
+        },
+        Position_Tracking_DB_Client_Request{
+            request_action = 0,
+            tracking_id = -99,
+        },
+        Party_Changed{
+            party_info = protocol.option(Party_Info{
+                party_id = "party",
+                party_leader = true,
+            }),
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -732,6 +781,17 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDNPCRequest,
         IDPlayerAction,
         IDSpawnParticleEffect,
+        IDClientCacheBlobStatus,
+        IDClientBoundDataDrivenUIShowScreen,
+        IDSubClientLogin,
+        IDScriptCustomEvent,
+        IDEmoteList,
+        IDSendPartyDestinationCookie,
+        IDPlayerToggleCrafterSlotRequest,
+        IDClientCameraAimAssist,
+        IDServerBoundDataDrivenScreenClosed,
+        IDPositionTrackingDBClientRequest,
+        IDPartyChanged,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -829,6 +889,35 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             position = {1.25, 2.5, 3.75},
             particle_name = "minecraft:test",
             molang_variables = protocol.option([]u8{1, 2, 3}),
+        },
+        Client_Cache_Blob_Status{
+            miss_hashes = []u64{1, 2},
+            hit_hashes = []u64{3, 4},
+        },
+        Client_Bound_Data_Driven_UI_Show_Screen{
+            screen_id = "screen:test",
+            form_id = 42,
+            data_instance_id = protocol.option(u32(99)),
+        },
+        Script_Custom_Event{
+            event_name = "test:event",
+            event_data = []u8{4, 5, 6},
+        },
+        Send_Party_Destination_Cookie{
+            cookie = "opaque",
+            intent = "OptIn",
+            destination_name = "server",
+        },
+        Client_Camera_Aim_Assist{
+            preset_id = "preset",
+            action = 1,
+            allow_aim_assist = true,
+        },
+        Party_Changed{
+            party_info = protocol.option(Party_Info{
+                party_id = "party",
+                party_leader = true,
+            }),
         },
     }
     for original in packets {

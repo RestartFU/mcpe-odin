@@ -1174,6 +1174,11 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Locator_Bar"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.JigsawStructureData"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Jigsaw_Structure_Data"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

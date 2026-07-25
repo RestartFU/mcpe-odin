@@ -1796,6 +1796,15 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_jigsaw_structure_data",
+		&packet.JigsawStructureData{
+			StructureData: map[string]any{
+				"identifier": "village",
+			},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

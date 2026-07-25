@@ -1,6 +1,7 @@
 package gt_packet
 
 import "core:mem"
+import nbt "mcpe:gophertunnel/minecraft/nbt"
 import protocol "mcpe:gophertunnel/minecraft/protocol"
 import mcpe_runtime "mcpe:runtime"
 
@@ -132,6 +133,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDAwardAchievement,
          IDClientBoundCloseForm,
          IDServerBoundLoadingScreen,
+         IDJigsawStructureData,
          IDClientBoundDataDrivenUIReload,
          IDRefreshEntitlements,
          IDResourcePacksReadyForValidation,
@@ -551,6 +553,26 @@ write_payload :: proc(
     case Server_Bound_Loading_Screen:
         protocol.write_varint32(output, packet.type)
         write_optional_u32(output, packet.loading_screen_id)
+    case Jigsaw_Structure_Data:
+        if packet.structure_data == nil ||
+           packet.structure_data.tag != .Compound {
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write_jigsaw_structure_data",
+                "jigsaw structure data must be a compound",
+            )
+        }
+        encoded, encode_err := nbt.marshal(
+            packet.structure_data,
+            .Network_Little_Endian,
+            "",
+            output.allocator,
+        )
+        if encode_err != nil {
+            return encode_err
+        }
+        protocol.write_bytes(output, encoded)
+        delete(encoded, output.allocator)
     case Client_Bound_Data_Driven_UI_Reload,
          Refresh_Entitlements,
          Resource_Packs_Ready_For_Validation:
@@ -1534,6 +1556,31 @@ decode_packet :: proc(
         packet := Server_Bound_Loading_Screen{}
         packet.type = protocol.read_varint32(&input) or_return
         packet.loading_screen_id = read_optional_u32(&input) or_return
+        value = packet
+    case IDJigsawStructureData:
+        packet := Jigsaw_Structure_Data{}
+        root_name: string
+        payload := protocol.read_remaining_bytes(&input)
+        packet.structure_data, root_name, err = nbt.unmarshal(
+            payload,
+            .Network_Little_Endian,
+            false,
+            allocator,
+        )
+        delete(root_name, allocator)
+        if err != nil {
+            return
+        }
+        if packet.structure_data.tag != .Compound {
+            nbt.destroy_value(packet.structure_data, allocator)
+            free(packet.structure_data, allocator)
+            err = packet_error(
+                .Malformed,
+                "gophertunnel.packet.read_jigsaw_structure_data",
+                "jigsaw structure data must be a compound",
+            )
+            return
+        }
         value = packet
     case IDClientBoundDataDrivenUIReload:
         value = Client_Bound_Data_Driven_UI_Reload{}

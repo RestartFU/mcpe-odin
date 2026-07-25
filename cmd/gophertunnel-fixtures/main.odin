@@ -1970,6 +1970,21 @@ main :: proc() {
             }},
         },
     )
+    jigsaw_data := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("identifier", nbt.value_string("village")),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(jigsaw_data)
+        free(jigsaw_data)
+    }
+    emit_packet(
+        "packet_jigsaw_structure_data",
+        packet.Jigsaw_Structure_Data{structure_data = jigsaw_data},
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

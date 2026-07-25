@@ -1,11 +1,16 @@
 package gt_packet
 
+import nbt "mcpe:gophertunnel/minecraft/nbt"
 import protocol "mcpe:gophertunnel/minecraft/protocol"
 import mcpe_runtime "mcpe:runtime"
 
 Client_Bound_Data_Driven_UI_Reload :: struct {}
 Refresh_Entitlements :: struct {}
 Resource_Packs_Ready_For_Validation :: struct {}
+
+Jigsaw_Structure_Data :: struct {
+    structure_data: ^nbt.Value,
+}
 
 Ticking_Areas_Load_Status :: struct {
     preload: bool,

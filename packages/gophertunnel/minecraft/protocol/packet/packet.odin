@@ -1,6 +1,7 @@
 package gt_packet
 
 import "core:mem"
+import nbt "mcpe:gophertunnel/minecraft/nbt"
 import protocol "mcpe:gophertunnel/minecraft/protocol"
 import mcpe_runtime "mcpe:runtime"
 
@@ -107,6 +108,7 @@ Packet :: union {
     Award_Achievement,
     Client_Bound_Close_Form,
     Server_Bound_Loading_Screen,
+    Jigsaw_Structure_Data,
     Client_Bound_Data_Driven_UI_Reload,
     Refresh_Entitlements,
     Resource_Packs_Ready_For_Validation,
@@ -302,6 +304,7 @@ packet_id :: proc(value: Packet) -> (
     case Award_Achievement:           id = IDAwardAchievement
     case Client_Bound_Close_Form:     id = IDClientBoundCloseForm
     case Server_Bound_Loading_Screen: id = IDServerBoundLoadingScreen
+    case Jigsaw_Structure_Data:       id = IDJigsawStructureData
     case Client_Bound_Data_Driven_UI_Reload:
         id = IDClientBoundDataDrivenUIReload
     case Refresh_Entitlements:        id = IDRefreshEntitlements
@@ -727,6 +730,9 @@ destroy_packet :: proc(
         }
     case Server_Bound_Data_Store:
         protocol.destroy_data_store_update(packet.update, allocator)
+    case Jigsaw_Structure_Data:
+        nbt.destroy_value(packet.structure_data, allocator)
+        free(packet.structure_data, allocator)
     case Client_Bound_Data_Store:
         for update in packet.updates {
             protocol.destroy_data_store_change_entry(update, allocator)

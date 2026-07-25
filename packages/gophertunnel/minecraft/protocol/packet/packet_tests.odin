@@ -2,6 +2,7 @@ package gt_packet
 
 import "core:slice"
 import "core:testing"
+import nbt "mcpe:gophertunnel/minecraft/nbt"
 import protocol "mcpe:gophertunnel/minecraft/protocol"
 import mcpe_runtime "mcpe:runtime"
 
@@ -226,6 +227,47 @@ game_state_packets_round_trip :: proc(t: ^testing.T) {
         }
         destroy_packet(&decoded)
         delete(data)
+    }
+}
+
+@(test)
+jigsaw_structure_data_round_trip :: proc(t: ^testing.T) {
+    structure_data := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("identifier", nbt.value_string("village")),
+                nbt.named_value("weight", nbt.value_int(7)),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(structure_data)
+        free(structure_data)
+    }
+    encoded, encode_err := encode_packet(
+        Jigsaw_Structure_Data{structure_data = structure_data},
+    )
+    testing.expect(t, encode_err == nil)
+    if encode_err != nil {
+        mcpe_runtime.destroy_error(encode_err)
+        return
+    }
+    defer delete(encoded)
+    decoded, header, decode_err := decode_packet(encoded)
+    testing.expect(t, decode_err == nil)
+    if decode_err != nil {
+        mcpe_runtime.destroy_error(decode_err)
+        return
+    }
+    defer destroy_packet(&decoded)
+    testing.expect_value(t, header.packet_id, IDJigsawStructureData)
+    reencoded, reencode_err := encode_packet(decoded)
+    testing.expect(t, reencode_err == nil)
+    if reencode_err == nil {
+        testing.expect(t, slice.equal(encoded, reencoded))
+        delete(reencoded)
+    } else {
+        mcpe_runtime.destroy_error(reencode_err)
     }
 }
 

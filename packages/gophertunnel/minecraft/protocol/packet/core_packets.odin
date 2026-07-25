@@ -240,7 +240,11 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDDimensionData,
          IDServerStoreInfo,
          IDServerPresenceInfo,
-         IDCameraAimAssistActorPriority:
+         IDCameraAimAssistActorPriority,
+         IDCorrectPlayerMovePrediction,
+         IDUpdateAbilities,
+         IDClientCheatAbility,
+         IDContainerRegistryCleanup:
         return true
     }
     return false
@@ -1131,6 +1135,38 @@ write_payload :: proc(
         write_aim_assist_priorities(
             output,
             packet.priority_data,
+        ) or_return
+    case Correct_Player_Move_Prediction:
+        protocol.write_u8(output, packet.prediction_type)
+        protocol.write_vec3(output, packet.position)
+        protocol.write_vec3(output, packet.delta)
+        protocol.write_vec2(output, packet.rotation)
+        protocol.write_bool(
+            output,
+            packet.vehicle_angular_velocity.set,
+        )
+        if packet.vehicle_angular_velocity.set {
+            protocol.write_f32(
+                output,
+                packet.vehicle_angular_velocity.value,
+            )
+        }
+        protocol.write_bool(output, packet.on_ground)
+        protocol.write_varuint64(output, packet.tick)
+    case Update_Abilities:
+        protocol.write_ability_data(
+            output,
+            packet.ability_data,
+        ) or_return
+    case Client_Cheat_Ability:
+        protocol.write_ability_data(
+            output,
+            packet.ability_data,
+        ) or_return
+    case Container_Registry_Cleanup:
+        write_full_container_names(
+            output,
+            packet.removed_containers,
         ) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
@@ -2624,6 +2660,36 @@ decode_packet :: proc(
         packet := Camera_Aim_Assist_Actor_Priority{}
         packet.priority_data =
             read_aim_assist_priorities(&input) or_return
+        value = packet
+    case IDCorrectPlayerMovePrediction:
+        packet := Correct_Player_Move_Prediction{}
+        packet.prediction_type = protocol.read_u8(&input) or_return
+        packet.position = protocol.read_vec3(&input) or_return
+        packet.delta = protocol.read_vec3(&input) or_return
+        packet.rotation = protocol.read_vec2(&input) or_return
+        packet.vehicle_angular_velocity.set =
+            protocol.read_bool(&input) or_return
+        if packet.vehicle_angular_velocity.set {
+            packet.vehicle_angular_velocity.value =
+                protocol.read_f32(&input) or_return
+        }
+        packet.on_ground = protocol.read_bool(&input) or_return
+        packet.tick = protocol.read_varuint64(&input) or_return
+        value = packet
+    case IDUpdateAbilities:
+        packet := Update_Abilities{}
+        packet.ability_data =
+            protocol.read_ability_data(&input) or_return
+        value = packet
+    case IDClientCheatAbility:
+        packet := Client_Cheat_Ability{}
+        packet.ability_data =
+            protocol.read_ability_data(&input) or_return
+        value = packet
+    case IDContainerRegistryCleanup:
+        packet := Container_Registry_Cleanup{}
+        packet.removed_containers =
+            read_full_container_names(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

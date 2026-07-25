@@ -1578,6 +1578,46 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_correct_move_prediction",
+		&packet.CorrectPlayerMovePrediction{
+			PredictionType:         packet.PredictionTypeVehicle,
+			Position:               mgl32.Vec3{1.25, 2.5, 3.75},
+			Delta:                  mgl32.Vec3{-0.25, 0.5, 0.75},
+			Rotation:               mgl32.Vec2{45, 90},
+			VehicleAngularVelocity: protocol.Option(float32(1.5)),
+			OnGround:               true, Tick: 123456,
+		},
+		0, 0,
+	)
+	abilityData := protocol.AbilityData{
+		EntityUniqueID: -99, PlayerPermissions: 1, CommandPermissions: 2,
+		Layers: []protocol.AbilityLayer{{
+			Type:      protocol.AbilityLayerTypeBase,
+			Abilities: protocol.AbilityMayFly | protocol.AbilityFlying,
+			Values:    protocol.AbilityMayFly, FlySpeed: 0.05,
+			VerticalFlySpeed: 1, WalkSpeed: 0.1,
+		}},
+	}
+	emitPacket(
+		"packet_update_abilities",
+		&packet.UpdateAbilities{AbilityData: abilityData},
+		0, 0,
+	)
+	emitPacket(
+		"packet_client_cheat_ability",
+		&packet.ClientCheatAbility{AbilityData: abilityData},
+		0, 0,
+	)
+	emitPacket(
+		"packet_container_registry_cleanup",
+		&packet.ContainerRegistryCleanup{
+			RemovedContainers: []protocol.FullContainerName{{
+				ContainerID: 0, DynamicContainerID: protocol.Option(uint32(42)),
+			}},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

@@ -216,6 +216,10 @@ Packet :: union {
     Server_Store_Info,
     Server_Presence_Info,
     Camera_Aim_Assist_Actor_Priority,
+    Correct_Player_Move_Prediction,
+    Update_Abilities,
+    Client_Cheat_Ability,
+    Container_Registry_Cleanup,
     Unknown_Packet,
 }
 
@@ -414,6 +418,11 @@ packet_id :: proc(value: Packet) -> (
     case Server_Presence_Info:         id = IDServerPresenceInfo
     case Camera_Aim_Assist_Actor_Priority:
         id = IDCameraAimAssistActorPriority
+    case Correct_Player_Move_Prediction:
+        id = IDCorrectPlayerMovePrediction
+    case Update_Abilities:             id = IDUpdateAbilities
+    case Client_Cheat_Ability:         id = IDClientCheatAbility
+    case Container_Registry_Cleanup:   id = IDContainerRegistryCleanup
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -677,6 +686,12 @@ destroy_packet :: proc(
         }
     case Camera_Aim_Assist_Actor_Priority:
         delete(packet.priority_data, allocator)
+    case Update_Abilities:
+        delete(packet.ability_data.layers, allocator)
+    case Client_Cheat_Ability:
+        delete(packet.ability_data.layers, allocator)
+    case Container_Registry_Cleanup:
+        delete(packet.removed_containers, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

@@ -1009,6 +1009,41 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Camera_Aim_Assist_Actor_Prio
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.AbilityLayer"
+odin = "mcpe:gophertunnel/minecraft/protocol.Ability_Layer"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.AbilityData"
+odin = "mcpe:gophertunnel/minecraft/protocol.Ability_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.FullContainerName"
+odin = "mcpe:gophertunnel/minecraft/protocol.Full_Container_Name"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CorrectPlayerMovePrediction"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Correct_Player_Move_Prediction"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.UpdateAbilities"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Abilities"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientCheatAbility"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Cheat_Ability"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ContainerRegistryCleanup"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Container_Registry_Cleanup"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

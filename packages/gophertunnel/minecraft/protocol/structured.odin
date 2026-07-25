@@ -506,3 +506,93 @@ write_camera_aim_assist_actor_priority_data :: proc(
     write_i32(value, input.actor_index)
     write_i32(value, input.priority)
 }
+
+read_ability_layer :: proc(value: ^Reader) -> (
+    result: Ability_Layer,
+    err: mcpe_runtime.Error,
+) {
+    result.type = read_u16(value) or_return
+    result.abilities = read_u32(value) or_return
+    result.values = read_u32(value) or_return
+    result.fly_speed = read_f32(value) or_return
+    result.vertical_fly_speed = read_f32(value) or_return
+    result.walk_speed = read_f32(value) or_return
+    return
+}
+
+write_ability_layer :: proc(value: ^Writer, input: Ability_Layer) {
+    write_u16(value, input.type)
+    write_u32(value, input.abilities)
+    write_u32(value, input.values)
+    write_f32(value, input.fly_speed)
+    write_f32(value, input.vertical_fly_speed)
+    write_f32(value, input.walk_speed)
+}
+
+read_full_container_name :: proc(value: ^Reader) -> (
+    result: Full_Container_Name,
+    err: mcpe_runtime.Error,
+) {
+    result.container_id = read_u8(value) or_return
+    result.dynamic_container_id.set = read_bool(value) or_return
+    if result.dynamic_container_id.set {
+        result.dynamic_container_id.value = read_u32(value) or_return
+    }
+    return
+}
+
+write_full_container_name :: proc(
+    value: ^Writer,
+    input: Full_Container_Name,
+) {
+    write_u8(value, input.container_id)
+    write_bool(value, input.dynamic_container_id.set)
+    if input.dynamic_container_id.set {
+        write_u32(value, input.dynamic_container_id.value)
+    }
+}
+
+read_ability_data :: proc(value: ^Reader) -> (
+    result: Ability_Data,
+    err: mcpe_runtime.Error,
+) {
+    result.entity_unique_id = read_i64(value) or_return
+    result.player_permissions = read_u8(value) or_return
+    result.command_permissions = read_u8(value) or_return
+    count := read_u8(value) or_return
+    result.layers = make(
+        []Ability_Layer,
+        int(count),
+        value.allocator,
+    )
+    for &layer in result.layers {
+        layer, err = read_ability_layer(value)
+        if err != nil {
+            delete(result.layers, value.allocator)
+            result = {}
+            return
+        }
+    }
+    return
+}
+
+write_ability_data :: proc(
+    value: ^Writer,
+    input: Ability_Data,
+) -> mcpe_runtime.Error {
+    if len(input.layers) > 255 {
+        return codec_error(
+            .Limit_Exceeded,
+            "gophertunnel.protocol.write_ability_data",
+            "ability layer list exceeds uint8 length",
+        )
+    }
+    write_i64(value, input.entity_unique_id)
+    write_u8(value, input.player_permissions)
+    write_u8(value, input.command_permissions)
+    write_u8(value, u8(len(input.layers)))
+    for layer in input.layers {
+        write_ability_layer(value, layer)
+    }
+    return nil
+}

@@ -1029,6 +1029,51 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                     priority = 4,
                 }},
         },
+        Correct_Player_Move_Prediction{
+            prediction_type = Prediction_Type_Vehicle,
+            position = {1.25, 2.5, 3.75},
+            delta = {-0.25, 0.5, 0.75},
+            rotation = {45, 90},
+            vehicle_angular_velocity = protocol.option(f32(1.5)),
+            on_ground = true,
+            tick = 123456,
+        },
+        Update_Abilities{
+            ability_data = {
+                entity_unique_id = -99,
+                player_permissions = 1,
+                command_permissions = 2,
+                layers = []protocol.Ability_Layer{{
+                    type = protocol.Ability_Layer_Type_Base,
+                    abilities = u32(1 << 10) | u32(1 << 9),
+                    values = u32(1 << 10),
+                    fly_speed = 0.05,
+                    vertical_fly_speed = 1,
+                    walk_speed = 0.1,
+                }},
+            },
+        },
+        Client_Cheat_Ability{
+            ability_data = {
+                entity_unique_id = -99,
+                player_permissions = 1,
+                command_permissions = 2,
+                layers = []protocol.Ability_Layer{{
+                    type = protocol.Ability_Layer_Type_Base,
+                    abilities = u32(1 << 10) | u32(1 << 9),
+                    values = u32(1 << 10),
+                    fly_speed = 0.05,
+                    vertical_fly_speed = 1,
+                    walk_speed = 0.1,
+                }},
+            },
+        },
+        Container_Registry_Cleanup{
+            removed_containers = []protocol.Full_Container_Name{{
+                container_id = 0,
+                dynamic_container_id = protocol.option(u32(42)),
+            }},
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1140,6 +1185,10 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDServerStoreInfo,
         IDServerPresenceInfo,
         IDCameraAimAssistActorPriority,
+        IDCorrectPlayerMovePrediction,
+        IDUpdateAbilities,
+        IDClientCheatAbility,
+        IDContainerRegistryCleanup,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1466,6 +1515,27 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
                     actor_index = 3,
                     priority = 4,
                 }},
+        },
+        Update_Abilities{
+            ability_data = {
+                entity_unique_id = -99,
+                player_permissions = 1,
+                command_permissions = 2,
+                layers = []protocol.Ability_Layer{{
+                    type = protocol.Ability_Layer_Type_Base,
+                    abilities = u32(1 << 10) | u32(1 << 9),
+                    values = u32(1 << 10),
+                    fly_speed = 0.05,
+                    vertical_fly_speed = 1,
+                    walk_speed = 0.1,
+                }},
+            },
+        },
+        Container_Registry_Cleanup{
+            removed_containers = []protocol.Full_Container_Name{{
+                container_id = 0,
+                dynamic_container_id = protocol.option(u32(42)),
+            }},
         },
     }
     for original in packets {

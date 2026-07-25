@@ -96,6 +96,34 @@ Camera_Aim_Assist_Actor_Priority_Data :: struct {
     priority:       i32,
 }
 
+Ability_Layer_Type_Custom_Cache   :: u16(0)
+Ability_Layer_Type_Base           :: u16(1)
+Ability_Layer_Type_Spectator      :: u16(2)
+Ability_Layer_Type_Commands       :: u16(3)
+Ability_Layer_Type_Editor         :: u16(4)
+Ability_Layer_Type_Loading_Screen :: u16(5)
+
+Ability_Layer :: struct {
+    type:               u16,
+    abilities:          u32,
+    values:             u32,
+    fly_speed:          f32,
+    vertical_fly_speed: f32,
+    walk_speed:         f32,
+}
+
+Ability_Data :: struct {
+    entity_unique_id:    i64,
+    player_permissions:  u8,
+    command_permissions: u8,
+    layers:              []Ability_Layer,
+}
+
+Full_Container_Name :: struct {
+    container_id:         u8,
+    dynamic_container_id: Optional(u32),
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

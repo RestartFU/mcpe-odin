@@ -847,6 +847,31 @@ Camera_Aim_Assist_Actor_Priority :: struct {
     priority_data: []protocol.Camera_Aim_Assist_Actor_Priority_Data,
 }
 
+Prediction_Type_Player  :: u8(0)
+Prediction_Type_Vehicle :: u8(1)
+
+Correct_Player_Move_Prediction :: struct {
+    prediction_type:          u8,
+    position:                 protocol.Vec3,
+    delta:                    protocol.Vec3,
+    rotation:                 protocol.Vec2,
+    vehicle_angular_velocity: protocol.Optional(f32),
+    on_ground:                bool,
+    tick:                     u64,
+}
+
+Update_Abilities :: struct {
+    ability_data: protocol.Ability_Data,
+}
+
+Client_Cheat_Ability :: struct {
+    ability_data: protocol.Ability_Data,
+}
+
+Container_Registry_Cleanup :: struct {
+    removed_containers: []protocol.Full_Container_Name,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"
@@ -1517,6 +1542,54 @@ read_aim_assist_priorities :: proc(
     for &value in values {
         value, err =
             protocol.read_camera_aim_assist_actor_priority_data(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_full_container_names :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Full_Container_Name,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_full_container_names",
+            "container name list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_full_container_name(output, value)
+    }
+    return nil
+}
+
+read_full_container_names :: proc(
+    input: ^protocol.Reader,
+) -> (
+    values: []protocol.Full_Container_Name,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_full_container_names",
+            "container name list exceeds entry limit",
+        )
+    }
+    values = make(
+        []protocol.Full_Container_Name,
+        int(count),
+        input.allocator,
+    )
+    for &value in values {
+        value, err = protocol.read_full_container_name(input)
         if err != nil {
             delete(values, input.allocator)
             values = nil

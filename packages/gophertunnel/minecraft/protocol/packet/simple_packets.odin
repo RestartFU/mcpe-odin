@@ -68,6 +68,30 @@ Structure_Template_Data_Response :: struct {
     structure_template: ^nbt.Value,
 }
 
+Structure_Block_Data    :: i32(0)
+Structure_Block_Save    :: i32(1)
+Structure_Block_Load    :: i32(2)
+Structure_Block_Corner  :: i32(3)
+Structure_Block_Invalid :: i32(4)
+Structure_Block_Export  :: i32(5)
+
+Structure_Redstone_Save_Mode_Memory :: i32(0)
+Structure_Redstone_Save_Mode_Disk   :: i32(1)
+
+Structure_Block_Update :: struct {
+    position:                protocol.Block_Pos,
+    structure_name:          string,
+    filtered_structure_name: string,
+    data_field:              string,
+    include_players:         bool,
+    show_bounding_box:       bool,
+    structure_block_type:    i32,
+    settings:                protocol.Structure_Settings,
+    redstone_save_mode:      i32,
+    should_trigger:          bool,
+    waterlogged:             bool,
+}
+
 Script_Message :: struct {
     identifier: string,
     data:       []u8,

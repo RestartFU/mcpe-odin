@@ -2134,6 +2134,22 @@ main :: proc() {
                 packet.Structure_Template_Request_Export_From_Save,
         },
     )
+    emit_packet(
+        "packet_structure_block_update",
+        packet.Structure_Block_Update{
+            position = {-12, 64, 3456},
+            structure_name = "village",
+            filtered_structure_name = "village",
+            data_field = "minecraft:test",
+            include_players = true,
+            show_bounding_box = true,
+            structure_block_type = packet.Structure_Block_Export,
+            settings = structure_settings,
+            redstone_save_mode =
+                packet.Structure_Redstone_Save_Mode_Disk,
+            should_trigger = true,
+        },
+    )
     structure_template := nbt.new_value(
         nbt.value_compound(
             []nbt.Named_Value{

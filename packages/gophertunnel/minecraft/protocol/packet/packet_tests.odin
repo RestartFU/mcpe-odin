@@ -517,11 +517,30 @@ structure_template_packets_round_trip :: proc(t: ^testing.T) {
             success = false,
             response_type = Structure_Template_Response_Query,
         },
+        Structure_Block_Update{
+            position = {-12, 64, 3456},
+            structure_name = "village",
+            filtered_structure_name = "village",
+            data_field = "minecraft:test",
+            include_players = true,
+            show_bounding_box = true,
+            structure_block_type = Structure_Block_Export,
+            settings = {
+                palette_name = "default",
+                size = {16, 8, 16},
+                offset = {-8, 0, -8},
+                integrity = 1,
+            },
+            redstone_save_mode = Structure_Redstone_Save_Mode_Disk,
+            should_trigger = true,
+            waterlogged = false,
+        },
     }
     ids := [?]u32{
         IDStructureTemplateDataRequest,
         IDStructureTemplateDataResponse,
         IDStructureTemplateDataResponse,
+        IDStructureBlockUpdate,
     }
     for original, index in packets {
         encoded, encode_err := encode_packet(original)

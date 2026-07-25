@@ -122,6 +122,7 @@ Packet :: union {
     Map_Create_Locked_Copy,
     Structure_Template_Data_Request,
     Structure_Template_Data_Response,
+    Structure_Block_Update,
     Script_Message,
     Open_Sign,
     Client_Bound_Data_Driven_UI_Close_Screen,
@@ -332,6 +333,7 @@ packet_id :: proc(value: Packet) -> (
         id = IDStructureTemplateDataRequest
     case Structure_Template_Data_Response:
         id = IDStructureTemplateDataResponse
+    case Structure_Block_Update:      id = IDStructureBlockUpdate
     case Script_Message:              id = IDScriptMessage
     case Open_Sign:                   id = IDOpenSign
     case Client_Bound_Data_Driven_UI_Close_Screen:
@@ -562,6 +564,11 @@ destroy_packet :: proc(
         delete(packet.structure_name, allocator)
         nbt.destroy_value(packet.structure_template, allocator)
         free(packet.structure_template, allocator)
+    case Structure_Block_Update:
+        delete(packet.structure_name, allocator)
+        delete(packet.filtered_structure_name, allocator)
+        delete(packet.data_field, allocator)
+        protocol.destroy_structure_settings(packet.settings, allocator)
     case Available_Actor_Identifiers:
         delete(packet.serialised_entity_identifiers, allocator)
     case Current_Structure_Feature:

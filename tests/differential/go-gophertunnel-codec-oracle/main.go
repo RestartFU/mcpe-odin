@@ -1903,6 +1903,20 @@ func main() {
 		0, 0,
 	)
 	emitPacket(
+		"packet_structure_block_update",
+		&packet.StructureBlockUpdate{
+			Position: protocol.BlockPos{-12, 64, 3456},
+			StructureName: "village", FilteredStructureName: "village",
+			DataField: "minecraft:test", IncludePlayers: true,
+			ShowBoundingBox: true,
+			StructureBlockType: packet.StructureBlockExport,
+			Settings: structureSettings,
+			RedstoneSaveMode: packet.StructureRedstoneSaveModeDisk,
+			ShouldTrigger: true,
+		},
+		0, 0,
+	)
+	emitPacket(
 		"packet_structure_template_response",
 		&packet.StructureTemplateDataResponse{
 			StructureName: "village", Success: true,

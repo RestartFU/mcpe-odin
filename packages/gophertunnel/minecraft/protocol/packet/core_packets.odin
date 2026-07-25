@@ -147,6 +147,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDMapCreateLockedCopy,
          IDStructureTemplateDataRequest,
          IDStructureTemplateDataResponse,
+         IDStructureBlockUpdate,
          IDScriptMessage,
          IDOpenSign,
          IDClientBoundDataDrivenUICloseScreen,
@@ -635,6 +636,18 @@ write_payload :: proc(
             delete(encoded, output.allocator)
         }
         protocol.write_u8(output, packet.response_type)
+    case Structure_Block_Update:
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_string(output, packet.structure_name)
+        protocol.write_string(output, packet.filtered_structure_name)
+        protocol.write_string(output, packet.data_field)
+        protocol.write_bool(output, packet.include_players)
+        protocol.write_bool(output, packet.show_bounding_box)
+        protocol.write_varint32(output, packet.structure_block_type)
+        protocol.write_structure_settings(output, packet.settings)
+        protocol.write_varint32(output, packet.redstone_save_mode)
+        protocol.write_bool(output, packet.should_trigger)
+        protocol.write_bool(output, packet.waterlogged)
     case Script_Message:
         protocol.write_string(output, packet.identifier)
         protocol.write_byte_slice(output, packet.data)
@@ -1888,6 +1901,50 @@ decode_packet :: proc(
             delete(packet.structure_name, allocator)
             nbt.destroy_value(packet.structure_template, allocator)
             free(packet.structure_template, allocator)
+            return
+        }
+        value = packet
+    case IDStructureBlockUpdate:
+        packet := Structure_Block_Update{}
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.structure_name = protocol.read_string(&input) or_return
+        packet.filtered_structure_name, err =
+            protocol.read_string(&input)
+        if err == nil {
+            packet.data_field, err = protocol.read_string(&input)
+        }
+        if err == nil {
+            packet.include_players, err = protocol.read_bool(&input)
+        }
+        if err == nil {
+            packet.show_bounding_box, err = protocol.read_bool(&input)
+        }
+        if err == nil {
+            packet.structure_block_type, err =
+                protocol.read_varint32(&input)
+        }
+        if err == nil {
+            packet.settings, err =
+                protocol.read_structure_settings(&input)
+        }
+        if err == nil {
+            packet.redstone_save_mode, err =
+                protocol.read_varint32(&input)
+        }
+        if err == nil {
+            packet.should_trigger, err = protocol.read_bool(&input)
+        }
+        if err == nil {
+            packet.waterlogged, err = protocol.read_bool(&input)
+        }
+        if err != nil {
+            delete(packet.structure_name, allocator)
+            delete(packet.filtered_structure_name, allocator)
+            delete(packet.data_field, allocator)
+            protocol.destroy_structure_settings(
+                packet.settings,
+                allocator,
+            )
             return
         }
         value = packet

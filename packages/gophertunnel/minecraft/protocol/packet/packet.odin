@@ -203,6 +203,12 @@ Packet :: union {
     Animate_Entity,
     Set_Score,
     Set_Scoreboard_Identity,
+    Update_Block,
+    Update_Block_Synced,
+    Adventure_Settings,
+    Book_Edit,
+    Boss_Event,
+    Update_Soft_Enum,
     Unknown_Packet,
 }
 
@@ -387,6 +393,12 @@ packet_id :: proc(value: Packet) -> (
     case Animate_Entity:              id = IDAnimateEntity
     case Set_Score:                   id = IDSetScore
     case Set_Scoreboard_Identity:     id = IDSetScoreboardIdentity
+    case Update_Block:                id = IDUpdateBlock
+    case Update_Block_Synced:         id = IDUpdateBlockSynced
+    case Adventure_Settings:          id = IDAdventureSettings
+    case Book_Edit:                   id = IDBookEdit
+    case Boss_Event:                  id = IDBossEvent
+    case Update_Soft_Enum:            id = IDUpdateSoftEnum
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -595,6 +607,18 @@ destroy_packet :: proc(
         destroy_scoreboard_entries(packet.entries, allocator)
     case Set_Scoreboard_Identity:
         delete(packet.entries, allocator)
+    case Book_Edit:
+        delete(packet.text, allocator)
+        delete(packet.photo_name, allocator)
+        delete(packet.title, allocator)
+        delete(packet.author, allocator)
+        delete(packet.xuid, allocator)
+    case Boss_Event:
+        delete(packet.boss_bar_title, allocator)
+        delete(packet.filtered_boss_bar_title, allocator)
+    case Update_Soft_Enum:
+        delete(packet.enum_type, allocator)
+        destroy_string_slice(packet.options, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

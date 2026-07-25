@@ -909,6 +909,36 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Scoreboard_Identity"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.UpdateBlock"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Block"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.UpdateBlockSynced"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Block_Synced"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AdventureSettings"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Adventure_Settings"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.BookEdit"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Book_Edit"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.BossEvent"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Boss_Event"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.UpdateSoftEnum"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Soft_Enum"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

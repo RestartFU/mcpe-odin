@@ -1453,6 +1453,62 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_update_block",
+		&packet.UpdateBlock{
+			Position: protocol.BlockPos{-12, 64, 3456}, NewBlockRuntimeID: 42,
+			Flags: packet.BlockUpdateNetwork, Layer: 1,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_update_block_synced",
+		&packet.UpdateBlockSynced{
+			Position: protocol.BlockPos{-12, 64, 3456}, NewBlockRuntimeID: 42,
+			Flags: packet.BlockUpdateNetwork, Layer: 1,
+			EntityUniqueID: 1<<40 + 25,
+			TransitionType: packet.BlockToEntityTransition,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_adventure_settings",
+		&packet.AdventureSettings{
+			Flags:                   packet.AdventureFlagAllowFlight,
+			CommandPermissionLevel:  2,
+			ActionPermissions:       packet.ActionPermissionMine | packet.ActionPermissionBuild,
+			PermissionLevel:         packet.PermissionLevelMember,
+			CustomStoredPermissions: 7, PlayerUniqueID: -99,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_book_edit",
+		&packet.BookEdit{
+			InventorySlot: 2, ActionType: packet.BookActionReplacePage,
+			PageNumber: 3, Text: "hello", PhotoName: "photo.png",
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_boss_event",
+		&packet.BossEvent{
+			BossEntityUniqueID: -7, PlayerUniqueID: -99,
+			EventType: packet.BossEventShow, BossBarTitle: "Boss",
+			FilteredBossBarTitle: "Boss", HealthPercentage: 0.75,
+			Colour:  packet.BossEventColourPurple,
+			Overlay: packet.BossEventOverlayNotched10,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_update_soft_enum",
+		&packet.UpdateSoftEnum{
+			EnumType: "targets", Options: []string{"one", "two"},
+			ActionType: packet.SoftEnumActionSet,
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

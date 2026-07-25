@@ -227,7 +227,13 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDLevelSoundEvent,
          IDAnimateEntity,
          IDSetScore,
-         IDSetScoreboardIdentity:
+         IDSetScoreboardIdentity,
+         IDUpdateBlock,
+         IDUpdateBlockSynced,
+         IDAdventureSettings,
+         IDBookEdit,
+         IDBossEvent,
+         IDUpdateSoftEnum:
         return true
     }
     return false
@@ -1020,6 +1026,71 @@ write_payload :: proc(
             ) or_return
         case:
         }
+    case Update_Block:
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_varuint32(output, packet.new_block_runtime_id)
+        protocol.write_varuint32(output, packet.flags)
+        protocol.write_varuint32(output, packet.layer)
+    case Update_Block_Synced:
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_varuint32(output, packet.new_block_runtime_id)
+        protocol.write_varuint32(output, packet.flags)
+        protocol.write_varuint32(output, packet.layer)
+        protocol.write_varuint64(output, packet.entity_unique_id)
+        protocol.write_varuint64(output, packet.transition_type)
+    case Adventure_Settings:
+        protocol.write_varuint32(output, packet.flags)
+        protocol.write_varuint32(
+            output,
+            packet.command_permission_level,
+        )
+        protocol.write_varuint32(output, packet.action_permissions)
+        protocol.write_varuint32(output, packet.permission_level)
+        protocol.write_varuint32(
+            output,
+            packet.custom_stored_permissions,
+        )
+        protocol.write_i64(output, packet.player_unique_id)
+    case Book_Edit:
+        protocol.write_varint32(output, packet.inventory_slot)
+        protocol.write_varuint32(output, packet.action_type)
+        switch packet.action_type {
+        case Book_Action_Replace_Page, Book_Action_Add_Page:
+            protocol.write_varint32(output, packet.page_number)
+            protocol.write_string(output, packet.text)
+            protocol.write_string(output, packet.photo_name)
+        case Book_Action_Delete_Page:
+            protocol.write_varint32(output, packet.page_number)
+        case Book_Action_Swap_Pages:
+            protocol.write_varint32(output, packet.page_number)
+            protocol.write_varint32(
+                output,
+                packet.secondary_page_number,
+            )
+        case Book_Action_Sign:
+            protocol.write_string(output, packet.title)
+            protocol.write_string(output, packet.author)
+            protocol.write_string(output, packet.xuid)
+        case:
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write",
+                "unknown book edit action type",
+            )
+        }
+    case Boss_Event:
+        protocol.write_varint64(output, packet.boss_entity_unique_id)
+        protocol.write_varint64(output, packet.player_unique_id)
+        protocol.write_u8(output, packet.event_type)
+        protocol.write_string(output, packet.boss_bar_title)
+        protocol.write_string(output, packet.filtered_boss_bar_title)
+        protocol.write_f32(output, packet.health_percentage)
+        protocol.write_u8(output, packet.colour)
+        protocol.write_u8(output, packet.overlay)
+    case Update_Soft_Enum:
+        protocol.write_string(output, packet.enum_type)
+        write_string_slice(output, packet.options) or_return
+        protocol.write_u8(output, packet.action_type)
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2336,6 +2407,132 @@ decode_packet :: proc(
                     false,
                 ) or_return
         case:
+        }
+        value = packet
+    case IDUpdateBlock:
+        packet := Update_Block{}
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.new_block_runtime_id =
+            protocol.read_varuint32(&input) or_return
+        packet.flags = protocol.read_varuint32(&input) or_return
+        packet.layer = protocol.read_varuint32(&input) or_return
+        value = packet
+    case IDUpdateBlockSynced:
+        packet := Update_Block_Synced{}
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.new_block_runtime_id =
+            protocol.read_varuint32(&input) or_return
+        packet.flags = protocol.read_varuint32(&input) or_return
+        packet.layer = protocol.read_varuint32(&input) or_return
+        packet.entity_unique_id =
+            protocol.read_varuint64(&input) or_return
+        packet.transition_type =
+            protocol.read_varuint64(&input) or_return
+        value = packet
+    case IDAdventureSettings:
+        packet := Adventure_Settings{}
+        packet.flags = protocol.read_varuint32(&input) or_return
+        packet.command_permission_level =
+            protocol.read_varuint32(&input) or_return
+        packet.action_permissions =
+            protocol.read_varuint32(&input) or_return
+        packet.permission_level =
+            protocol.read_varuint32(&input) or_return
+        packet.custom_stored_permissions =
+            protocol.read_varuint32(&input) or_return
+        packet.player_unique_id = protocol.read_i64(&input) or_return
+        value = packet
+    case IDBookEdit:
+        packet := Book_Edit{}
+        packet.inventory_slot = protocol.read_varint32(&input) or_return
+        packet.action_type = protocol.read_varuint32(&input) or_return
+        switch packet.action_type {
+        case Book_Action_Replace_Page, Book_Action_Add_Page:
+            packet.page_number =
+                protocol.read_varint32(&input) or_return
+            packet.text = protocol.read_string(&input) or_return
+            packet.photo_name, err = protocol.read_string(&input)
+            if err != nil {
+                delete(packet.text, allocator)
+                return
+            }
+        case Book_Action_Delete_Page:
+            packet.page_number =
+                protocol.read_varint32(&input) or_return
+        case Book_Action_Swap_Pages:
+            packet.page_number =
+                protocol.read_varint32(&input) or_return
+            packet.secondary_page_number =
+                protocol.read_varint32(&input) or_return
+        case Book_Action_Sign:
+            packet.title = protocol.read_string(&input) or_return
+            packet.author, err = protocol.read_string(&input)
+            if err != nil {
+                delete(packet.title, allocator)
+                return
+            }
+            packet.xuid, err = protocol.read_string(&input)
+            if err != nil {
+                delete(packet.title, allocator)
+                delete(packet.author, allocator)
+                return
+            }
+        case:
+            err = packet_error(
+                .Malformed,
+                "gophertunnel.packet.decode",
+                "unknown book edit action type",
+            )
+            return
+        }
+        value = packet
+    case IDBossEvent:
+        packet := Boss_Event{}
+        packet.boss_entity_unique_id =
+            protocol.read_varint64(&input) or_return
+        packet.player_unique_id =
+            protocol.read_varint64(&input) or_return
+        packet.event_type = protocol.read_u8(&input) or_return
+        packet.boss_bar_title =
+            protocol.read_string(&input) or_return
+        packet.filtered_boss_bar_title, err =
+            protocol.read_string(&input)
+        if err != nil {
+            delete(packet.boss_bar_title, allocator)
+            return
+        }
+        packet.health_percentage, err = protocol.read_f32(&input)
+        if err != nil {
+            delete(packet.boss_bar_title, allocator)
+            delete(packet.filtered_boss_bar_title, allocator)
+            return
+        }
+        packet.colour, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.boss_bar_title, allocator)
+            delete(packet.filtered_boss_bar_title, allocator)
+            return
+        }
+        packet.overlay, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.boss_bar_title, allocator)
+            delete(packet.filtered_boss_bar_title, allocator)
+            return
+        }
+        value = packet
+    case IDUpdateSoftEnum:
+        packet := Update_Soft_Enum{}
+        packet.enum_type = protocol.read_string(&input) or_return
+        packet.options, err = read_string_slice(&input)
+        if err != nil {
+            delete(packet.enum_type, allocator)
+            return
+        }
+        packet.action_type, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.enum_type, allocator)
+            destroy_string_slice(packet.options, allocator)
+            return
         }
         value = packet
     case:

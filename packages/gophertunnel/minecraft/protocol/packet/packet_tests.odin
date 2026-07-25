@@ -933,6 +933,50 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 entity_unique_id = -99,
             }},
         },
+        Update_Block{
+            position = {-12, 64, 3456},
+            new_block_runtime_id = 42,
+            flags = Block_Update_Network,
+            layer = 1,
+        },
+        Update_Block_Synced{
+            position = {-12, 64, 3456},
+            new_block_runtime_id = 42,
+            flags = Block_Update_Network,
+            layer = 1,
+            entity_unique_id = u64(1) << 40 | 25,
+            transition_type = Block_To_Entity_Transition,
+        },
+        Adventure_Settings{
+            flags = u32(1 << 6),
+            command_permission_level = 2,
+            action_permissions = u32(1 << 0) | u32(1 << 7),
+            permission_level = 1,
+            custom_stored_permissions = 7,
+            player_unique_id = -99,
+        },
+        Book_Edit{
+            inventory_slot = 2,
+            action_type = Book_Action_Replace_Page,
+            page_number = 3,
+            text = "hello",
+            photo_name = "photo.png",
+        },
+        Boss_Event{
+            boss_entity_unique_id = -7,
+            player_unique_id = -99,
+            event_type = 0,
+            boss_bar_title = "Boss",
+            filtered_boss_bar_title = "Boss",
+            health_percentage = 0.75,
+            colour = 5,
+            overlay = 2,
+        },
+        Update_Soft_Enum{
+            enum_type = "targets",
+            options = []string{"one", "two"},
+            action_type = Soft_Enum_Action_Set,
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1031,6 +1075,12 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDAnimateEntity,
         IDSetScore,
         IDSetScoreboardIdentity,
+        IDUpdateBlock,
+        IDUpdateBlockSynced,
+        IDAdventureSettings,
+        IDBookEdit,
+        IDBossEvent,
+        IDUpdateSoftEnum,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1283,6 +1333,28 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
                 entry_id = 7,
                 entity_unique_id = -99,
             }},
+        },
+        Book_Edit{
+            inventory_slot = 2,
+            action_type = Book_Action_Replace_Page,
+            page_number = 3,
+            text = "hello",
+            photo_name = "photo.png",
+        },
+        Boss_Event{
+            boss_entity_unique_id = -7,
+            player_unique_id = -99,
+            event_type = 0,
+            boss_bar_title = "Boss",
+            filtered_boss_bar_title = "Boss",
+            health_percentage = 0.75,
+            colour = 5,
+            overlay = 2,
+        },
+        Update_Soft_Enum{
+            enum_type = "targets",
+            options = []string{"one", "two"},
+            action_type = Soft_Enum_Action_Set,
         },
     }
     for original in packets {

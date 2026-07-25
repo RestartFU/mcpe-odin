@@ -739,6 +739,78 @@ Set_Scoreboard_Identity :: struct {
     entries:     []protocol.Scoreboard_Identity_Entry,
 }
 
+Block_Update_Neighbours :: u32(1 << 0)
+Block_Update_Network    :: u32(1 << 1)
+Block_Update_No_Graphics :: u32(1 << 2)
+Block_Update_Priority   :: u32(1 << 3)
+
+Block_To_Entity_Transition :: u64(1)
+Entity_To_Block_Transition :: u64(2)
+
+Book_Action_Replace_Page :: u32(0)
+Book_Action_Add_Page     :: u32(1)
+Book_Action_Delete_Page  :: u32(2)
+Book_Action_Swap_Pages   :: u32(3)
+Book_Action_Sign         :: u32(4)
+
+Soft_Enum_Action_Add    :: u8(0)
+Soft_Enum_Action_Remove :: u8(1)
+Soft_Enum_Action_Set    :: u8(2)
+
+Update_Block :: struct {
+    position:             protocol.Block_Pos,
+    new_block_runtime_id: u32,
+    flags:                u32,
+    layer:                u32,
+}
+
+Update_Block_Synced :: struct {
+    position:             protocol.Block_Pos,
+    new_block_runtime_id: u32,
+    flags:                u32,
+    layer:                u32,
+    entity_unique_id:     u64,
+    transition_type:      u64,
+}
+
+Adventure_Settings :: struct {
+    flags:                    u32,
+    command_permission_level: u32,
+    action_permissions:       u32,
+    permission_level:         u32,
+    custom_stored_permissions: u32,
+    player_unique_id:         i64,
+}
+
+Book_Edit :: struct {
+    inventory_slot:        i32,
+    action_type:           u32,
+    page_number:           i32,
+    secondary_page_number: i32,
+    text:                  string,
+    photo_name:            string,
+    title:                 string,
+    author:                string,
+    xuid:                  string,
+}
+
+Boss_Event :: struct {
+    boss_entity_unique_id:   i64,
+    player_unique_id:        i64,
+    event_type:              u8,
+    boss_bar_title:          string,
+    filtered_boss_bar_title: string,
+    health_percentage:       f32,
+    colour:                  u8,
+    overlay:                 u8,
+}
+
+Update_Soft_Enum :: struct {
+    enum_type:   string,
+    options:     []string,
+    action_type: u8,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"

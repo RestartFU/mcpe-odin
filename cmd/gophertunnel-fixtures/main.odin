@@ -1578,6 +1578,68 @@ main :: proc() {
             entries = []protocol.Scoreboard_Identity_Entry{{entry_id = 7}},
         },
     )
+    emit_packet(
+        "packet_update_block",
+        packet.Update_Block{
+            position = {-12, 64, 3456},
+            new_block_runtime_id = 42,
+            flags = packet.Block_Update_Network,
+            layer = 1,
+        },
+    )
+    emit_packet(
+        "packet_update_block_synced",
+        packet.Update_Block_Synced{
+            position = {-12, 64, 3456},
+            new_block_runtime_id = 42,
+            flags = packet.Block_Update_Network,
+            layer = 1,
+            entity_unique_id = u64(1) << 40 | 25,
+            transition_type = packet.Block_To_Entity_Transition,
+        },
+    )
+    emit_packet(
+        "packet_adventure_settings",
+        packet.Adventure_Settings{
+            flags = u32(1 << 6),
+            command_permission_level = 2,
+            action_permissions = u32(1 << 0) | u32(1 << 7),
+            permission_level = 1,
+            custom_stored_permissions = 7,
+            player_unique_id = -99,
+        },
+    )
+    emit_packet(
+        "packet_book_edit",
+        packet.Book_Edit{
+            inventory_slot = 2,
+            action_type = packet.Book_Action_Replace_Page,
+            page_number = 3,
+            text = "hello",
+            photo_name = "photo.png",
+        },
+    )
+    emit_packet(
+        "packet_boss_event",
+        packet.Boss_Event{
+            boss_entity_unique_id = -7,
+            player_unique_id = -99,
+            event_type = 0,
+            boss_bar_title = "Boss",
+            filtered_boss_bar_title = "Boss",
+            health_percentage = 0.75,
+            colour = 5,
+            overlay = 2,
+        },
+    )
+    emit_packet(
+        "packet_update_soft_enum",
+        packet.Update_Soft_Enum{
+            enum_type = "targets",
+            options = []string{"one", "two"},
+            action_type = packet.Soft_Enum_Action_Set,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

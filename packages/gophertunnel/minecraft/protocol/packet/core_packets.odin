@@ -174,7 +174,19 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDRequestPermissions,
          IDUpdateAdventureSettings,
          IDUpdateClientInputLocks,
-         IDUpdateClientOptions:
+         IDUpdateClientOptions,
+         IDActorEvent,
+         IDAgentAction,
+         IDBlockEvent,
+         IDCameraShake,
+         IDCodeBuilderSource,
+         IDEmote,
+         IDGameTestRequest,
+         IDLabTable,
+         IDLecternUpdate,
+         IDNPCRequest,
+         IDPlayerAction,
+         IDSpawnParticleEffect:
         return true
     }
     return false
@@ -608,6 +620,78 @@ write_payload :: proc(
         protocol.write_bool(output, packet.filter_profanity.set)
         if packet.filter_profanity.set {
             protocol.write_bool(output, packet.filter_profanity.value)
+        }
+    case Actor_Event:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_u8(output, packet.event_type)
+        protocol.write_varint32(output, packet.event_data)
+        protocol.write_bool(output, packet.fire_at_position.set)
+        if packet.fire_at_position.set {
+            protocol.write_vec3(output, packet.fire_at_position.value)
+        }
+    case Agent_Action:
+        protocol.write_string(output, packet.identifier)
+        protocol.write_i32(output, packet.action)
+        protocol.write_byte_slice(output, packet.response)
+    case Block_Event:
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_varint32(output, packet.event_type)
+        protocol.write_varint32(output, packet.event_data)
+    case Camera_Shake:
+        protocol.write_f32(output, packet.intensity)
+        protocol.write_f32(output, packet.duration)
+        protocol.write_u8(output, packet.type)
+        protocol.write_u8(output, packet.action)
+    case Code_Builder_Source:
+        protocol.write_u8(output, packet.operation)
+        protocol.write_u8(output, packet.category)
+        protocol.write_u8(output, packet.code_status)
+    case Emote:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_string(output, packet.emote_id)
+        protocol.write_varuint32(output, packet.emote_length)
+        protocol.write_string(output, packet.xuid)
+        protocol.write_string(output, packet.platform_id)
+        protocol.write_u8(output, packet.flags)
+    case Game_Test_Request:
+        protocol.write_varint32(output, packet.max_tests_per_batch)
+        protocol.write_varint32(output, packet.repetitions)
+        protocol.write_u8(output, packet.rotation)
+        protocol.write_bool(output, packet.stop_on_error)
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_varint32(output, packet.tests_per_row)
+        protocol.write_string(output, packet.name)
+    case Lab_Table:
+        protocol.write_u8(output, packet.action_type)
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_u8(output, packet.reaction_type)
+    case Lectern_Update:
+        protocol.write_u8(output, packet.page)
+        protocol.write_u8(output, packet.page_count)
+        protocol.write_block_pos(output, packet.position)
+    case NPC_Request:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_u8(output, packet.request_type)
+        protocol.write_string(output, packet.command_string)
+        protocol.write_u8(output, packet.action_type)
+        protocol.write_string(output, packet.scene_name)
+    case Player_Action:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_varint32(output, packet.action_type)
+        protocol.write_block_pos(output, packet.block_position)
+        protocol.write_block_pos(output, packet.result_position)
+        protocol.write_varint32(output, packet.block_face)
+    case Spawn_Particle_Effect:
+        protocol.write_u8(output, packet.dimension)
+        protocol.write_varint64(output, packet.entity_unique_id)
+        protocol.write_vec3(output, packet.position)
+        protocol.write_string(output, packet.particle_name)
+        protocol.write_bool(output, packet.molang_variables.set)
+        if packet.molang_variables.set {
+            protocol.write_byte_slice(
+                output,
+                packet.molang_variables.value,
+            )
         }
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
@@ -1175,6 +1259,151 @@ decode_packet :: proc(
         if packet.filter_profanity.set {
             packet.filter_profanity.value =
                 protocol.read_bool(&input) or_return
+        }
+        value = packet
+    case IDActorEvent:
+        packet := Actor_Event{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.event_type = protocol.read_u8(&input) or_return
+        packet.event_data = protocol.read_varint32(&input) or_return
+        packet.fire_at_position.set =
+            protocol.read_bool(&input) or_return
+        if packet.fire_at_position.set {
+            packet.fire_at_position.value =
+                protocol.read_vec3(&input) or_return
+        }
+        value = packet
+    case IDAgentAction:
+        packet := Agent_Action{}
+        packet.identifier = protocol.read_string(&input) or_return
+        packet.action, err = protocol.read_i32(&input)
+        if err != nil {
+            delete(packet.identifier, allocator)
+            return
+        }
+        packet.response, err = protocol.read_byte_slice(&input)
+        if err != nil {
+            delete(packet.identifier, allocator)
+            return
+        }
+        value = packet
+    case IDBlockEvent:
+        packet := Block_Event{}
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.event_type = protocol.read_varint32(&input) or_return
+        packet.event_data = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDCameraShake:
+        packet := Camera_Shake{}
+        packet.intensity = protocol.read_f32(&input) or_return
+        packet.duration = protocol.read_f32(&input) or_return
+        packet.type = protocol.read_u8(&input) or_return
+        packet.action = protocol.read_u8(&input) or_return
+        value = packet
+    case IDCodeBuilderSource:
+        packet := Code_Builder_Source{}
+        packet.operation = protocol.read_u8(&input) or_return
+        packet.category = protocol.read_u8(&input) or_return
+        packet.code_status = protocol.read_u8(&input) or_return
+        value = packet
+    case IDEmote:
+        packet := Emote{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.emote_id = protocol.read_string(&input) or_return
+        packet.emote_length, err = protocol.read_varuint32(&input)
+        if err != nil {
+            delete(packet.emote_id, allocator)
+            return
+        }
+        packet.xuid, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.emote_id, allocator)
+            return
+        }
+        packet.platform_id, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.emote_id, allocator)
+            delete(packet.xuid, allocator)
+            return
+        }
+        packet.flags, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.emote_id, allocator)
+            delete(packet.xuid, allocator)
+            delete(packet.platform_id, allocator)
+            return
+        }
+        value = packet
+    case IDGameTestRequest:
+        packet := Game_Test_Request{}
+        packet.max_tests_per_batch =
+            protocol.read_varint32(&input) or_return
+        packet.repetitions = protocol.read_varint32(&input) or_return
+        packet.rotation = protocol.read_u8(&input) or_return
+        packet.stop_on_error = protocol.read_bool(&input) or_return
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.tests_per_row = protocol.read_varint32(&input) or_return
+        packet.name = protocol.read_string(&input) or_return
+        value = packet
+    case IDLabTable:
+        packet := Lab_Table{}
+        packet.action_type = protocol.read_u8(&input) or_return
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.reaction_type = protocol.read_u8(&input) or_return
+        value = packet
+    case IDLecternUpdate:
+        packet := Lectern_Update{}
+        packet.page = protocol.read_u8(&input) or_return
+        packet.page_count = protocol.read_u8(&input) or_return
+        packet.position = protocol.read_block_pos(&input) or_return
+        value = packet
+    case IDNPCRequest:
+        packet := NPC_Request{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.request_type = protocol.read_u8(&input) or_return
+        packet.command_string = protocol.read_string(&input) or_return
+        packet.action_type, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.command_string, allocator)
+            return
+        }
+        packet.scene_name, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.command_string, allocator)
+            return
+        }
+        value = packet
+    case IDPlayerAction:
+        packet := Player_Action{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.action_type = protocol.read_varint32(&input) or_return
+        packet.block_position = protocol.read_block_pos(&input) or_return
+        packet.result_position = protocol.read_block_pos(&input) or_return
+        packet.block_face = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDSpawnParticleEffect:
+        packet := Spawn_Particle_Effect{}
+        packet.dimension = protocol.read_u8(&input) or_return
+        packet.entity_unique_id =
+            protocol.read_varint64(&input) or_return
+        packet.position = protocol.read_vec3(&input) or_return
+        packet.particle_name = protocol.read_string(&input) or_return
+        packet.molang_variables.set, err = protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.particle_name, allocator)
+            return
+        }
+        if packet.molang_variables.set {
+            packet.molang_variables.value, err =
+                protocol.read_byte_slice(&input)
+            if err != nil {
+                delete(packet.particle_name, allocator)
+                return
+            }
         }
         value = packet
     case:

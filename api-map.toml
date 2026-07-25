@@ -614,6 +614,66 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Client_Options"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ActorEvent"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Actor_Event"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AgentAction"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Agent_Action"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.BlockEvent"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Block_Event"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CameraShake"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Camera_Shake"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CodeBuilderSource"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Code_Builder_Source"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Emote"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Emote"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.GameTestRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Game_Test_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.LabTable"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Lab_Table"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.LecternUpdate"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Lectern_Update"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.NPCRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.NPC_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlayerAction"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Player_Action"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SpawnParticleEffect"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Spawn_Particle_Effect"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

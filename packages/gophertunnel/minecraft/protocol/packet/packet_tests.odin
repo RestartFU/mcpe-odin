@@ -602,6 +602,79 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             graphics_mode = protocol.option(Graphics_Mode_Advanced),
             filter_profanity = protocol.option(true),
         },
+        Actor_Event{
+            entity_runtime_id = u64(1) << 40 | 11,
+            event_type = 2,
+            event_data = -3,
+            fire_at_position = protocol.option(protocol.Vec3{1, 2, 3}),
+        },
+        Agent_Action{
+            identifier = "action-id",
+            action = 4,
+            response = []u8{1, 2, 3},
+        },
+        Block_Event{
+            position = {-12, 64, 3456},
+            event_type = 1,
+            event_data = 1,
+        },
+        Camera_Shake{
+            intensity = 2.5,
+            duration = 4.25,
+            type = 1,
+            action = 0,
+        },
+        Code_Builder_Source{operation = 2, category = 1, code_status = 5},
+        Emote{
+            entity_runtime_id = u64(1) << 40 | 12,
+            emote_length = 80,
+            emote_id = "emote-id",
+            xuid = "1234",
+            platform_id = "platform",
+            flags = 3,
+        },
+        Game_Test_Request{
+            name = "test:name",
+            rotation = 2,
+            repetitions = 3,
+            position = {-12, 64, 3456},
+            stop_on_error = true,
+            tests_per_row = 4,
+            max_tests_per_batch = 5,
+        },
+        Lab_Table{
+            action_type = 1,
+            position = {-12, 64, 3456},
+            reaction_type = 7,
+        },
+        Lectern_Update{
+            page = 2,
+            page_count = 10,
+            position = {-12, 64, 3456},
+        },
+        NPC_Request{
+            entity_runtime_id = u64(1) << 40 | 13,
+            request_type = 1,
+            command_string = "/say hello",
+            action_type = 2,
+            scene_name = "scene",
+        },
+        Player_Action{
+            entity_runtime_id = u64(1) << 40 | 14,
+            action_type = -2,
+            block_position = {-12, 64, 3456},
+            result_position = {-11, 65, 3457},
+            block_face = 3,
+        },
+        Spawn_Particle_Effect{
+            dimension = 2,
+            entity_unique_id = -1,
+            position = {1.25, 2.5, 3.75},
+            particle_name = "minecraft:test",
+            molang_variables = protocol.option([]u8{
+                '{', '"', 'x', '"', ':', '1', '}',
+            }),
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -647,6 +720,18 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDUpdateAdventureSettings,
         IDUpdateClientInputLocks,
         IDUpdateClientOptions,
+        IDActorEvent,
+        IDAgentAction,
+        IDBlockEvent,
+        IDCameraShake,
+        IDCodeBuilderSource,
+        IDEmote,
+        IDGameTestRequest,
+        IDLabTable,
+        IDLecternUpdate,
+        IDNPCRequest,
+        IDPlayerAction,
+        IDSpawnParticleEffect,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -717,6 +802,33 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             name = "test:name",
             succeeded = false,
             error = "failed",
+        },
+        Agent_Action{
+            identifier = "action-id",
+            action = 4,
+            response = []u8{1, 2, 3},
+        },
+        Emote{
+            entity_runtime_id = 12,
+            emote_length = 80,
+            emote_id = "emote-id",
+            xuid = "1234",
+            platform_id = "platform",
+            flags = 3,
+        },
+        NPC_Request{
+            entity_runtime_id = 13,
+            request_type = 1,
+            command_string = "/say hello",
+            action_type = 2,
+            scene_name = "scene",
+        },
+        Spawn_Particle_Effect{
+            dimension = 2,
+            entity_unique_id = -1,
+            position = {1.25, 2.5, 3.75},
+            particle_name = "minecraft:test",
+            molang_variables = protocol.option([]u8{1, 2, 3}),
         },
     }
     for original in packets {

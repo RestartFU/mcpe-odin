@@ -1061,6 +1061,119 @@ main :: proc() {
             filter_profanity = protocol.option(true),
         },
     )
+    emit_packet(
+        "packet_actor_event",
+        packet.Actor_Event{
+            entity_runtime_id = u64(1) << 40 | 11,
+            event_type = 2,
+            event_data = -3,
+            fire_at_position = protocol.option(protocol.Vec3{1, 2, 3}),
+        },
+    )
+    emit_packet(
+        "packet_agent_action",
+        packet.Agent_Action{
+            identifier = "action-id",
+            action = 4,
+            response = []u8{1, 2, 3},
+        },
+    )
+    emit_packet(
+        "packet_block_event",
+        packet.Block_Event{
+            position = {-12, 64, 3456},
+            event_type = 1,
+            event_data = 1,
+        },
+    )
+    emit_packet(
+        "packet_camera_shake",
+        packet.Camera_Shake{
+            intensity = 2.5,
+            duration = 4.25,
+            type = 1,
+            action = 0,
+        },
+    )
+    emit_packet(
+        "packet_code_builder_source",
+        packet.Code_Builder_Source{
+            operation = 2,
+            category = 1,
+            code_status = 5,
+        },
+    )
+    emit_packet(
+        "packet_emote",
+        packet.Emote{
+            entity_runtime_id = u64(1) << 40 | 12,
+            emote_length = 80,
+            emote_id = "emote-id",
+            xuid = "1234",
+            platform_id = "platform",
+            flags = 3,
+        },
+    )
+    emit_packet(
+        "packet_game_test_request",
+        packet.Game_Test_Request{
+            name = "test:name",
+            rotation = 2,
+            repetitions = 3,
+            position = {-12, 64, 3456},
+            stop_on_error = true,
+            tests_per_row = 4,
+            max_tests_per_batch = 5,
+        },
+    )
+    emit_packet(
+        "packet_lab_table",
+        packet.Lab_Table{
+            action_type = 1,
+            position = {-12, 64, 3456},
+            reaction_type = 7,
+        },
+    )
+    emit_packet(
+        "packet_lectern_update",
+        packet.Lectern_Update{
+            page = 2,
+            page_count = 10,
+            position = {-12, 64, 3456},
+        },
+    )
+    emit_packet(
+        "packet_npc_request",
+        packet.NPC_Request{
+            entity_runtime_id = u64(1) << 40 | 13,
+            request_type = 1,
+            command_string = "/say hello",
+            action_type = 2,
+            scene_name = "scene",
+        },
+    )
+    emit_packet(
+        "packet_player_action",
+        packet.Player_Action{
+            entity_runtime_id = u64(1) << 40 | 14,
+            action_type = -2,
+            block_position = {-12, 64, 3456},
+            result_position = {-11, 65, 3457},
+            block_face = 3,
+        },
+    )
+    emit_packet(
+        "packet_spawn_particle",
+        packet.Spawn_Particle_Effect{
+            dimension = 2,
+            entity_unique_id = -1,
+            position = {1.25, 2.5, 3.75},
+            particle_name = "minecraft:test",
+            molang_variables = protocol.option(
+                transmute([]u8)string(`{"x":1}`),
+            ),
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

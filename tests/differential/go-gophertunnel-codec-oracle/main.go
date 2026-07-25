@@ -1006,6 +1006,93 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_actor_event",
+		&packet.ActorEvent{
+			EntityRuntimeID: 1<<40 + 11, EventType: packet.ActorEventHurt,
+			EventData: -3, FireAtPosition: protocol.Option(mgl32.Vec3{1, 2, 3}),
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_agent_action",
+		&packet.AgentAction{Identifier: "action-id", Action: 4, Response: []byte{1, 2, 3}},
+		0, 0,
+	)
+	emitPacket(
+		"packet_block_event",
+		&packet.BlockEvent{
+			Position: protocol.BlockPos{-12, 64, 3456},
+			EventType: packet.BlockEventChangeChestState, EventData: 1,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_camera_shake",
+		&packet.CameraShake{Intensity: 2.5, Duration: 4.25, Type: 1, Action: 0},
+		0, 0,
+	)
+	emitPacket(
+		"packet_code_builder_source",
+		&packet.CodeBuilderSource{Operation: 2, Category: 1, CodeStatus: 5},
+		0, 0,
+	)
+	emitPacket(
+		"packet_emote",
+		&packet.Emote{
+			EntityRuntimeID: 1<<40 + 12, EmoteLength: 80,
+			EmoteID: "emote-id", XUID: "1234", PlatformID: "platform", Flags: 3,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_game_test_request",
+		&packet.GameTestRequest{
+			Name: "test:name", Rotation: 2, Repetitions: 3,
+			Position: protocol.BlockPos{-12, 64, 3456}, StopOnError: true,
+			TestsPerRow: 4, MaxTestsPerBatch: 5,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_lab_table",
+		&packet.LabTable{
+			ActionType: 1, Position: protocol.BlockPos{-12, 64, 3456},
+			ReactionType: 7,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_lectern_update",
+		&packet.LecternUpdate{Page: 2, PageCount: 10, Position: protocol.BlockPos{-12, 64, 3456}},
+		0, 0,
+	)
+	emitPacket(
+		"packet_npc_request",
+		&packet.NPCRequest{
+			EntityRuntimeID: 1<<40 + 13, RequestType: 1,
+			CommandString: "/say hello", ActionType: 2, SceneName: "scene",
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_player_action",
+		&packet.PlayerAction{
+			EntityRuntimeID: 1<<40 + 14, ActionType: -2,
+			BlockPosition: protocol.BlockPos{-12, 64, 3456},
+			ResultPosition: protocol.BlockPos{-11, 65, 3457}, BlockFace: 3,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_spawn_particle",
+		&packet.SpawnParticleEffect{
+			Dimension: 2, EntityUniqueID: -1, Position: mgl32.Vec3{1.25, 2.5, 3.75},
+			ParticleName: "minecraft:test",
+			MoLangVariables: protocol.Option([]byte(`{"x":1}`)),
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

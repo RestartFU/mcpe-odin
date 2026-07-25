@@ -296,3 +296,90 @@ Update_Client_Options :: struct {
     graphics_mode:    protocol.Optional(u8),
     filter_profanity: protocol.Optional(bool),
 }
+
+Actor_Event :: struct {
+    entity_runtime_id: u64,
+    event_type:        u8,
+    event_data:        i32,
+    fire_at_position:  protocol.Optional(protocol.Vec3),
+}
+
+Agent_Action :: struct {
+    identifier: string,
+    action:     i32,
+    response:   []u8,
+}
+
+Block_Event :: struct {
+    position:   protocol.Block_Pos,
+    event_type: i32,
+    event_data: i32,
+}
+
+Camera_Shake :: struct {
+    intensity: f32,
+    duration:  f32,
+    type:      u8,
+    action:    u8,
+}
+
+Code_Builder_Source :: struct {
+    operation:   u8,
+    category:    u8,
+    code_status: u8,
+}
+
+Emote :: struct {
+    entity_runtime_id: u64,
+    emote_length:      u32,
+    emote_id:          string,
+    xuid:              string,
+    platform_id:       string,
+    flags:             u8,
+}
+
+Game_Test_Request :: struct {
+    name:                string,
+    rotation:            u8,
+    repetitions:         i32,
+    position:            protocol.Block_Pos,
+    stop_on_error:       bool,
+    tests_per_row:       i32,
+    max_tests_per_batch: i32,
+}
+
+Lab_Table :: struct {
+    action_type:   u8,
+    position:      protocol.Block_Pos,
+    reaction_type: u8,
+}
+
+Lectern_Update :: struct {
+    page:       u8,
+    page_count: u8,
+    position:   protocol.Block_Pos,
+}
+
+NPC_Request :: struct {
+    entity_runtime_id: u64,
+    request_type:      u8,
+    command_string:    string,
+    action_type:       u8,
+    scene_name:        string,
+}
+
+Player_Action :: struct {
+    entity_runtime_id: u64,
+    action_type:       i32,
+    block_position:    protocol.Block_Pos,
+    result_position:   protocol.Block_Pos,
+    block_face:        i32,
+}
+
+Spawn_Particle_Effect :: struct {
+    dimension:       u8,
+    entity_unique_id: i64,
+    position:        protocol.Vec3,
+    particle_name:   string,
+    molang_variables: protocol.Optional([]u8),
+}

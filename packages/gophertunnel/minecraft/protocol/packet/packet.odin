@@ -150,6 +150,18 @@ Packet :: union {
     Update_Adventure_Settings,
     Update_Client_Input_Locks,
     Update_Client_Options,
+    Actor_Event,
+    Agent_Action,
+    Block_Event,
+    Camera_Shake,
+    Code_Builder_Source,
+    Emote,
+    Game_Test_Request,
+    Lab_Table,
+    Lectern_Update,
+    NPC_Request,
+    Player_Action,
+    Spawn_Particle_Effect,
     Unknown_Packet,
 }
 
@@ -271,6 +283,18 @@ packet_id :: proc(value: Packet) -> (
     case Update_Adventure_Settings:   id = IDUpdateAdventureSettings
     case Update_Client_Input_Locks:   id = IDUpdateClientInputLocks
     case Update_Client_Options:       id = IDUpdateClientOptions
+    case Actor_Event:                 id = IDActorEvent
+    case Agent_Action:                id = IDAgentAction
+    case Block_Event:                 id = IDBlockEvent
+    case Camera_Shake:                id = IDCameraShake
+    case Code_Builder_Source:         id = IDCodeBuilderSource
+    case Emote:                       id = IDEmote
+    case Game_Test_Request:           id = IDGameTestRequest
+    case Lab_Table:                   id = IDLabTable
+    case Lectern_Update:              id = IDLecternUpdate
+    case NPC_Request:                 id = IDNPCRequest
+    case Player_Action:               id = IDPlayerAction
+    case Spawn_Particle_Effect:       id = IDSpawnParticleEffect
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -392,6 +416,23 @@ destroy_packet :: proc(
         delete(packet.identifier, allocator)
     case Packet_Violation_Warning:
         delete(packet.violation_context, allocator)
+    case Agent_Action:
+        delete(packet.identifier, allocator)
+        delete(packet.response, allocator)
+    case Emote:
+        delete(packet.emote_id, allocator)
+        delete(packet.xuid, allocator)
+        delete(packet.platform_id, allocator)
+    case Game_Test_Request:
+        delete(packet.name, allocator)
+    case NPC_Request:
+        delete(packet.command_string, allocator)
+        delete(packet.scene_name, allocator)
+    case Spawn_Particle_Effect:
+        delete(packet.particle_name, allocator)
+        if packet.molang_variables.set {
+            delete(packet.molang_variables.value, allocator)
+        }
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

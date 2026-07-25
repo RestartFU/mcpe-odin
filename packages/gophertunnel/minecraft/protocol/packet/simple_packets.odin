@@ -872,6 +872,10 @@ Container_Registry_Cleanup :: struct {
     removed_containers: []protocol.Full_Container_Name,
 }
 
+Game_Rules_Changed :: struct {
+    game_rules: []protocol.Game_Rule,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"
@@ -1591,6 +1595,51 @@ read_full_container_names :: proc(
     for &value in values {
         value, err = protocol.read_full_container_name(input)
         if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_game_rules :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Game_Rule,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_game_rules",
+            "game rule list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_game_rule(output, value) or_return
+    }
+    return nil
+}
+
+read_game_rules :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Game_Rule,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_game_rules",
+            "game rule list exceeds entry limit",
+        )
+    }
+    values = make([]protocol.Game_Rule, int(count), input.allocator)
+    for &value, index in values {
+        value, err = protocol.read_game_rule(input)
+        if err != nil {
+            for previous in values[:index] {
+                delete(previous.name, input.allocator)
+            }
             delete(values, input.allocator)
             values = nil
             return

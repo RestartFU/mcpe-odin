@@ -124,6 +124,18 @@ Full_Container_Name :: struct {
     dynamic_container_id: Optional(u32),
 }
 
+Game_Rule_Value :: union {
+    bool,
+    u32,
+    f32,
+}
+
+Game_Rule :: struct {
+    name:                      string,
+    can_be_modified_by_player: bool,
+    value:                     Game_Rule_Value,
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

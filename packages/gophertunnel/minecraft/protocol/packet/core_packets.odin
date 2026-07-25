@@ -244,7 +244,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDCorrectPlayerMovePrediction,
          IDUpdateAbilities,
          IDClientCheatAbility,
-         IDContainerRegistryCleanup:
+         IDContainerRegistryCleanup,
+         IDGameRulesChanged:
         return true
     }
     return false
@@ -1168,6 +1169,8 @@ write_payload :: proc(
             output,
             packet.removed_containers,
         ) or_return
+    case Game_Rules_Changed:
+        write_game_rules(output, packet.game_rules) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2690,6 +2693,10 @@ decode_packet :: proc(
         packet := Container_Registry_Cleanup{}
         packet.removed_containers =
             read_full_container_names(&input) or_return
+        value = packet
+    case IDGameRulesChanged:
+        packet := Game_Rules_Changed{}
+        packet.game_rules = read_game_rules(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

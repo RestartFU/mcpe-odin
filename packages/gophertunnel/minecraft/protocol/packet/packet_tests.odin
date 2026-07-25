@@ -1074,6 +1074,20 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 dynamic_container_id = protocol.option(u32(42)),
             }},
         },
+        Game_Rules_Changed{
+            game_rules = []protocol.Game_Rule{
+                {
+                    name = "showcoordinates",
+                    can_be_modified_by_player = true,
+                    value = true,
+                },
+                {name = "randomtickspeed", value = u32(3)},
+                {
+                    name = "playerssleepingpercentage",
+                    value = f32(50.5),
+                },
+            },
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1189,6 +1203,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDUpdateAbilities,
         IDClientCheatAbility,
         IDContainerRegistryCleanup,
+        IDGameRulesChanged,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1536,6 +1551,20 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
                 container_id = 0,
                 dynamic_container_id = protocol.option(u32(42)),
             }},
+        },
+        Game_Rules_Changed{
+            game_rules = []protocol.Game_Rule{
+                {
+                    name = "showcoordinates",
+                    can_be_modified_by_player = true,
+                    value = true,
+                },
+                {name = "randomtickspeed", value = u32(3)},
+                {
+                    name = "playerssleepingpercentage",
+                    value = f32(50.5),
+                },
+            },
         },
     }
     for original in packets {

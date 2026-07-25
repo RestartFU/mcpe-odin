@@ -596,3 +596,87 @@ write_ability_data :: proc(
     }
     return nil
 }
+
+read_game_rule :: proc(value: ^Reader) -> (
+    result: Game_Rule,
+    err: mcpe_runtime.Error,
+) {
+    result.name = read_string(value) or_return
+    result.can_be_modified_by_player, err = read_bool(value)
+    if err != nil {
+        delete(result.name, value.allocator)
+        result = {}
+        return
+    }
+    rule_type, read_err := read_varuint32(value)
+    if read_err != nil {
+        delete(result.name, value.allocator)
+        result = {}
+        err = read_err
+        return
+    }
+    switch rule_type {
+    case 1:
+        rule_value, value_err := read_bool(value)
+        if value_err != nil {
+            delete(result.name, value.allocator)
+            result = {}
+            err = value_err
+            return
+        }
+        result.value = rule_value
+    case 2:
+        rule_value, value_err := read_u32(value)
+        if value_err != nil {
+            delete(result.name, value.allocator)
+            result = {}
+            err = value_err
+            return
+        }
+        result.value = rule_value
+    case 3:
+        rule_value, value_err := read_f32(value)
+        if value_err != nil {
+            delete(result.name, value.allocator)
+            result = {}
+            err = value_err
+            return
+        }
+        result.value = rule_value
+    case:
+        delete(result.name, value.allocator)
+        result = {}
+        err = codec_error(
+            .Malformed,
+            "gophertunnel.protocol.read_game_rule",
+            "unknown game rule type",
+        )
+    }
+    return
+}
+
+write_game_rule :: proc(
+    value: ^Writer,
+    input: Game_Rule,
+) -> mcpe_runtime.Error {
+    write_string(value, input.name)
+    write_bool(value, input.can_be_modified_by_player)
+    switch rule_value in input.value {
+    case bool:
+        write_varuint32(value, 1)
+        write_bool(value, rule_value)
+    case u32:
+        write_varuint32(value, 2)
+        write_u32(value, rule_value)
+    case f32:
+        write_varuint32(value, 3)
+        write_f32(value, rule_value)
+    case:
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.write_game_rule",
+            "nil game rule value",
+        )
+    }
+    return nil
+}

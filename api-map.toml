@@ -1044,6 +1044,16 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Container_Registry_Cleanup"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.GameRule"
+odin = "mcpe:gophertunnel/minecraft/protocol.Game_Rule"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.GameRulesChanged"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Game_Rules_Changed"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

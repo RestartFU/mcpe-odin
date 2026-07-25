@@ -1755,6 +1755,23 @@ main :: proc() {
             }},
         },
     )
+    emit_packet(
+        "packet_game_rules_changed",
+        packet.Game_Rules_Changed{
+            game_rules = []protocol.Game_Rule{
+                {
+                    name = "showcoordinates",
+                    can_be_modified_by_player = true,
+                    value = true,
+                },
+                {name = "randomtickspeed", value = u32(3)},
+                {
+                    name = "playerssleepingpercentage",
+                    value = f32(50.5),
+                },
+            },
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

@@ -1618,6 +1618,17 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_game_rules_changed",
+		&packet.GameRulesChanged{
+			GameRules: []protocol.GameRule{
+				{Name: "showcoordinates", CanBeModifiedByPlayer: true, Value: true},
+				{Name: "randomtickspeed", Value: uint32(3)},
+				{Name: "playerssleepingpercentage", Value: float32(50.5)},
+			},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

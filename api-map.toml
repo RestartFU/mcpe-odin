@@ -1079,6 +1079,36 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Bound_Data_Store"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.DataStorePropertyValue"
+odin = "mcpe:gophertunnel/minecraft/protocol.Data_Store_Property_Value"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.DataStoreMapEntry"
+odin = "mcpe:gophertunnel/minecraft/protocol.Data_Store_Map_Entry"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.DataStoreChange"
+odin = "mcpe:gophertunnel/minecraft/protocol.Data_Store_Change"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.DataStoreRemoval"
+odin = "mcpe:gophertunnel/minecraft/protocol.Data_Store_Removal"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.DataStoreChangeEntry"
+odin = "mcpe:gophertunnel/minecraft/protocol.Data_Store_Change_Entry"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientBoundDataStore"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Data_Store"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

@@ -168,6 +168,51 @@ Data_Store_Update :: struct {
     path_update_count:     u32,
 }
 
+Data_Store_Property_Type_None   :: i32(0)
+Data_Store_Property_Type_Bool   :: i32(1)
+Data_Store_Property_Type_Int64  :: i32(2)
+Data_Store_Property_Type_Double :: i32(3)
+Data_Store_Property_Type_String :: i32(4)
+Data_Store_Property_Type_List   :: i32(5)
+Data_Store_Property_Type_Map    :: i32(6)
+
+Data_Store_Property_Value :: struct {
+    type:         i32,
+    bool_value:   bool,
+    int64_value:  i64,
+    double_value: f64,
+    string_value: string,
+    list_value:   []Data_Store_Property_Value,
+    map_value:    []Data_Store_Map_Entry,
+}
+
+Data_Store_Map_Entry :: struct {
+    key:   string,
+    value: Data_Store_Property_Value,
+}
+
+Data_Store_Change :: struct {
+    data_store_name: string,
+    property:        string,
+    update_count:    u32,
+    new_value:       Data_Store_Property_Value,
+}
+
+Data_Store_Removal :: struct {
+    data_store_name: string,
+}
+
+Data_Store_Change_Type_Update  :: u32(0)
+Data_Store_Change_Type_Change  :: u32(1)
+Data_Store_Change_Type_Removal :: u32(2)
+
+Data_Store_Change_Entry :: struct {
+    change_type: u32,
+    update:      Data_Store_Update,
+    change:      Data_Store_Change,
+    removal:     Data_Store_Removal,
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

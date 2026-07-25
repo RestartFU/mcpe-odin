@@ -890,6 +890,10 @@ Server_Bound_Data_Store :: struct {
     update: protocol.Data_Store_Update,
 }
 
+Client_Bound_Data_Store :: struct {
+    updates: []protocol.Data_Store_Change_Entry,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"
@@ -1653,6 +1657,81 @@ read_game_rules :: proc(input: ^protocol.Reader) -> (
         if err != nil {
             for previous in values[:index] {
                 delete(previous.name, input.allocator)
+            }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_data_store_changes :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Data_Store_Change_Entry,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_data_store_changes",
+            "data store change list exceeds entry limit",
+        )
+    }
+    if len(values) > protocol.MAX_DATA_STORE_NODES {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_data_store_changes",
+            "data store change list exceeds node budget",
+        )
+    }
+    remaining_nodes := protocol.MAX_DATA_STORE_NODES - len(values)
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_data_store_change_entry(
+            output,
+            value,
+            &remaining_nodes,
+        ) or_return
+    }
+    return nil
+}
+
+read_data_store_changes :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Data_Store_Change_Entry,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_data_store_changes",
+            "data store change list exceeds entry limit",
+        )
+    }
+    if int(count) > protocol.MAX_DATA_STORE_NODES {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_data_store_changes",
+            "data store change list exceeds node budget",
+        )
+    }
+    remaining_nodes := protocol.MAX_DATA_STORE_NODES - int(count)
+    values = make(
+        []protocol.Data_Store_Change_Entry,
+        int(count),
+        input.allocator,
+    )
+    for &value, index in values {
+        value, err = protocol.read_data_store_change_entry(
+            input,
+            &remaining_nodes,
+        )
+        if err != nil {
+            for previous in values[:index] {
+                protocol.destroy_data_store_change_entry(
+                    previous,
+                    input.allocator,
+                )
             }
             delete(values, input.allocator)
             values = nil

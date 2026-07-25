@@ -1843,6 +1843,58 @@ main :: proc() {
             },
         },
     )
+    emit_packet(
+        "packet_client_data_store",
+        packet.Client_Bound_Data_Store{
+            updates = []protocol.Data_Store_Change_Entry{
+                {
+                    change_type = protocol.Data_Store_Change_Type_Update,
+                    update = {
+                        data_store_name = "settings",
+                        property = "mode",
+                        path = "ui",
+                        control_type = protocol.Data_Store_Control_String,
+                        string_value = "hard",
+                        property_update_count = 2,
+                        path_update_count = 3,
+                    },
+                },
+                {
+                    change_type = protocol.Data_Store_Change_Type_Change,
+                    change = {
+                        data_store_name = "state",
+                        property = "nested",
+                        update_count = 4,
+                        new_value = {
+                            type = protocol.Data_Store_Property_Type_Map,
+                            map_value = []protocol.Data_Store_Map_Entry{{
+                                key = "items",
+                                value = {
+                                    type =
+                                        protocol.Data_Store_Property_Type_List,
+                                    list_value =
+                                        []protocol.Data_Store_Property_Value{
+                                            {
+                                                type = protocol.Data_Store_Property_Type_String,
+                                                string_value = "one",
+                                            },
+                                            {
+                                                type = protocol.Data_Store_Property_Type_Int64,
+                                                int64_value = -7,
+                                            },
+                                        },
+                                },
+                            }},
+                        },
+                    },
+                },
+                {
+                    change_type = protocol.Data_Store_Change_Type_Removal,
+                    removal = {data_store_name = "old"},
+                },
+            },
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

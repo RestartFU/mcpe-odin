@@ -1104,6 +1104,43 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 path_update_count = 3,
             },
         },
+        Client_Bound_Data_Store{
+            updates = []protocol.Data_Store_Change_Entry{
+                {
+                    change_type = protocol.Data_Store_Change_Type_Update,
+                    update = {
+                        data_store_name = "settings",
+                        property = "mode",
+                        path = "ui",
+                        control_type = protocol.Data_Store_Control_String,
+                        string_value = "hard",
+                        property_update_count = 2,
+                        path_update_count = 3,
+                    },
+                },
+                {
+                    change_type = protocol.Data_Store_Change_Type_Change,
+                    change = {
+                        data_store_name = "state",
+                        property = "nested",
+                        update_count = 4,
+                        new_value = {
+                            type = protocol.Data_Store_Property_Type_List,
+                            list_value =
+                                []protocol.Data_Store_Property_Value{{
+                                    type =
+                                        protocol.Data_Store_Property_Type_String,
+                                    string_value = "one",
+                                }},
+                        },
+                    },
+                },
+                {
+                    change_type = protocol.Data_Store_Change_Type_Removal,
+                    removal = {data_store_name = "old"},
+                },
+            },
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1223,6 +1260,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDServerBoundPackSettingChange,
         IDRequestAbility,
         IDServerBoundDataStore,
+        IDClientBoundDataStore,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1600,6 +1638,39 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
                 path_update_count = 3,
             },
         },
+        Client_Bound_Data_Store{
+            updates = []protocol.Data_Store_Change_Entry{
+                {
+                    change_type = protocol.Data_Store_Change_Type_Update,
+                    update = {
+                        data_store_name = "settings",
+                        property = "mode",
+                        path = "ui",
+                        control_type = protocol.Data_Store_Control_String,
+                        string_value = "hard",
+                        property_update_count = 2,
+                        path_update_count = 3,
+                    },
+                },
+                {
+                    change_type = protocol.Data_Store_Change_Type_Change,
+                    change = {
+                        data_store_name = "state",
+                        property = "nested",
+                        update_count = 4,
+                        new_value = {
+                            type = protocol.Data_Store_Property_Type_List,
+                            list_value =
+                                []protocol.Data_Store_Property_Value{{
+                                    type =
+                                        protocol.Data_Store_Property_Type_String,
+                                    string_value = "one",
+                                }},
+                        },
+                    },
+                },
+            },
+        },
     }
     for original in packets {
         encoded, encode_err := encode_packet(original)
@@ -1616,6 +1687,45 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             mcpe_runtime.destroy_error(decode_err)
         }
         delete(encoded)
+    }
+}
+
+@(test)
+client_bound_data_store_encode_enforces_node_budget :: proc(t: ^testing.T) {
+    children := make(
+        []protocol.Data_Store_Property_Value,
+        protocol.MAX_COLLECTION_ELEMENTS,
+    )
+    for &child in children {
+        child.type = protocol.Data_Store_Property_Type_List
+        child.list_value = make(
+            []protocol.Data_Store_Property_Value,
+            65,
+        )
+    }
+    defer {
+        for child in children {
+            delete(child.list_value)
+        }
+        delete(children)
+    }
+    packet: Packet = Client_Bound_Data_Store{
+        updates = []protocol.Data_Store_Change_Entry{{
+            change_type = protocol.Data_Store_Change_Type_Change,
+            change = {
+                new_value = {
+                    type = protocol.Data_Store_Property_Type_List,
+                    list_value = children,
+                },
+            },
+        }},
+    }
+    data, err := encode_packet(packet)
+    testing.expect(t, err != nil)
+    delete(data)
+    if err != nil {
+        testing.expect_value(t, err.kind, mcpe_runtime.Error_Kind.Limit_Exceeded)
+        mcpe_runtime.destroy_error(err)
     }
 }
 

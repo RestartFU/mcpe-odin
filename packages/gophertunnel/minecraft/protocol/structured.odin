@@ -878,3 +878,331 @@ write_data_store_update :: proc(
     write_u32(value, input.path_update_count)
     return nil
 }
+
+MAX_DATA_STORE_DEPTH :: 64
+MAX_DATA_STORE_NODES :: 64 * 1024
+
+destroy_data_store_property_value :: proc(
+    property: Data_Store_Property_Value,
+    allocator := context.allocator,
+) {
+    delete(property.string_value, allocator)
+    for child in property.list_value {
+        destroy_data_store_property_value(child, allocator)
+    }
+    delete(property.list_value, allocator)
+    for entry in property.map_value {
+        delete(entry.key, allocator)
+        destroy_data_store_property_value(entry.value, allocator)
+    }
+    delete(property.map_value, allocator)
+}
+
+read_data_store_property_value :: proc(
+    value: ^Reader,
+    remaining_nodes: ^int,
+    depth: int = 0,
+) -> (
+    result: Data_Store_Property_Value,
+    err: mcpe_runtime.Error,
+) {
+    if depth > MAX_DATA_STORE_DEPTH {
+        return {}, codec_error(
+            .Limit_Exceeded,
+            "gophertunnel.protocol.read_data_store_property_value",
+            "data store nesting exceeds depth limit",
+        )
+    }
+    result.type = read_i32(value) or_return
+    switch result.type {
+    case Data_Store_Property_Type_None:
+    case Data_Store_Property_Type_Bool:
+        result.bool_value = read_bool(value) or_return
+    case Data_Store_Property_Type_Int64:
+        result.int64_value = read_i64(value) or_return
+    case Data_Store_Property_Type_Double:
+        result.double_value = read_f64(value) or_return
+    case Data_Store_Property_Type_String:
+        result.string_value = read_string(value) or_return
+    case Data_Store_Property_Type_List:
+        count := read_varuint32(value) or_return
+        if count > MAX_COLLECTION_ELEMENTS {
+            return {}, codec_error(
+                .Limit_Exceeded,
+                "gophertunnel.protocol.read_data_store_property_value",
+                "data store list exceeds entry limit",
+            )
+        }
+        if int(count) > remaining_nodes^ {
+            return {}, codec_error(
+                .Limit_Exceeded,
+                "gophertunnel.protocol.read_data_store_property_value",
+                "data store value exceeds node budget",
+            )
+        }
+        remaining_nodes^ -= int(count)
+        result.list_value = make(
+            []Data_Store_Property_Value,
+            int(count),
+            value.allocator,
+        )
+        for &child, index in result.list_value {
+            child, err =
+                read_data_store_property_value(
+                    value,
+                    remaining_nodes,
+                    depth + 1,
+                )
+            if err != nil {
+                for previous in result.list_value[:index] {
+                    destroy_data_store_property_value(
+                        previous,
+                        value.allocator,
+                    )
+                }
+                delete(result.list_value, value.allocator)
+                result = {}
+                return
+            }
+        }
+    case Data_Store_Property_Type_Map:
+        count := read_varuint32(value) or_return
+        if count > MAX_COLLECTION_ELEMENTS {
+            return {}, codec_error(
+                .Limit_Exceeded,
+                "gophertunnel.protocol.read_data_store_property_value",
+                "data store map exceeds entry limit",
+            )
+        }
+        if int(count) > remaining_nodes^ {
+            return {}, codec_error(
+                .Limit_Exceeded,
+                "gophertunnel.protocol.read_data_store_property_value",
+                "data store value exceeds node budget",
+            )
+        }
+        remaining_nodes^ -= int(count)
+        result.map_value = make(
+            []Data_Store_Map_Entry,
+            int(count),
+            value.allocator,
+        )
+        for &entry, index in result.map_value {
+            entry.key, err = read_string(value)
+            if err != nil {
+                for previous in result.map_value[:index] {
+                    delete(previous.key, value.allocator)
+                    destroy_data_store_property_value(
+                        previous.value,
+                        value.allocator,
+                    )
+                }
+                delete(result.map_value, value.allocator)
+                result = {}
+                return
+            }
+            entry.value, err =
+                read_data_store_property_value(
+                    value,
+                    remaining_nodes,
+                    depth + 1,
+                )
+            if err != nil {
+                delete(entry.key, value.allocator)
+                for previous in result.map_value[:index] {
+                    delete(previous.key, value.allocator)
+                    destroy_data_store_property_value(
+                        previous.value,
+                        value.allocator,
+                    )
+                }
+                delete(result.map_value, value.allocator)
+                result = {}
+                return
+            }
+        }
+    case:
+        err = codec_error(
+            .Malformed,
+            "gophertunnel.protocol.read_data_store_property_value",
+            "unknown data store property type",
+        )
+    }
+    return
+}
+
+write_data_store_property_value :: proc(
+    value: ^Writer,
+    property: Data_Store_Property_Value,
+    remaining_nodes: ^int,
+    depth: int = 0,
+) -> mcpe_runtime.Error {
+    if depth > MAX_DATA_STORE_DEPTH {
+        return codec_error(
+            .Limit_Exceeded,
+            "gophertunnel.protocol.write_data_store_property_value",
+            "data store nesting exceeds depth limit",
+        )
+    }
+    write_i32(value, property.type)
+    switch property.type {
+    case Data_Store_Property_Type_None:
+    case Data_Store_Property_Type_Bool:
+        write_bool(value, property.bool_value)
+    case Data_Store_Property_Type_Int64:
+        write_i64(value, property.int64_value)
+    case Data_Store_Property_Type_Double:
+        write_f64(value, property.double_value)
+    case Data_Store_Property_Type_String:
+        write_string(value, property.string_value)
+    case Data_Store_Property_Type_List:
+        if len(property.list_value) > MAX_COLLECTION_ELEMENTS {
+            return codec_error(
+                .Limit_Exceeded,
+                "gophertunnel.protocol.write_data_store_property_value",
+                "data store list exceeds entry limit",
+            )
+        }
+        if len(property.list_value) > remaining_nodes^ {
+            return codec_error(
+                .Limit_Exceeded,
+                "gophertunnel.protocol.write_data_store_property_value",
+                "data store value exceeds node budget",
+            )
+        }
+        remaining_nodes^ -= len(property.list_value)
+        write_varuint32(value, u32(len(property.list_value)))
+        for child in property.list_value {
+            write_data_store_property_value(
+                value,
+                child,
+                remaining_nodes,
+                depth + 1,
+            ) or_return
+        }
+    case Data_Store_Property_Type_Map:
+        if len(property.map_value) > MAX_COLLECTION_ELEMENTS {
+            return codec_error(
+                .Limit_Exceeded,
+                "gophertunnel.protocol.write_data_store_property_value",
+                "data store map exceeds entry limit",
+            )
+        }
+        if len(property.map_value) > remaining_nodes^ {
+            return codec_error(
+                .Limit_Exceeded,
+                "gophertunnel.protocol.write_data_store_property_value",
+                "data store value exceeds node budget",
+            )
+        }
+        remaining_nodes^ -= len(property.map_value)
+        write_varuint32(value, u32(len(property.map_value)))
+        for entry in property.map_value {
+            write_string(value, entry.key)
+            write_data_store_property_value(
+                value,
+                entry.value,
+                remaining_nodes,
+                depth + 1,
+            ) or_return
+        }
+    case:
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.write_data_store_property_value",
+            "unknown data store property type",
+        )
+    }
+    return nil
+}
+
+destroy_data_store_change_entry :: proc(
+    entry: Data_Store_Change_Entry,
+    allocator := context.allocator,
+) {
+    switch entry.change_type {
+    case Data_Store_Change_Type_Update:
+        destroy_data_store_update(entry.update, allocator)
+    case Data_Store_Change_Type_Change:
+        delete(entry.change.data_store_name, allocator)
+        delete(entry.change.property, allocator)
+        destroy_data_store_property_value(
+            entry.change.new_value,
+            allocator,
+        )
+    case Data_Store_Change_Type_Removal:
+        delete(entry.removal.data_store_name, allocator)
+    case:
+    }
+}
+
+read_data_store_change_entry :: proc(
+    value: ^Reader,
+    remaining_nodes: ^int,
+) -> (
+    result: Data_Store_Change_Entry,
+    err: mcpe_runtime.Error,
+) {
+    result.change_type = read_varuint32(value) or_return
+    switch result.change_type {
+    case Data_Store_Change_Type_Update:
+        result.update = read_data_store_update(value) or_return
+    case Data_Store_Change_Type_Change:
+        result.change.data_store_name = read_string(value) or_return
+        result.change.property, err = read_string(value)
+        if err == nil {
+            result.change.update_count, err = read_u32(value)
+        }
+        if err == nil {
+            result.change.new_value, err =
+                read_data_store_property_value(
+                    value,
+                    remaining_nodes,
+                )
+        }
+        if err != nil {
+            destroy_data_store_change_entry(result, value.allocator)
+            result = {}
+        }
+    case Data_Store_Change_Type_Removal:
+        result.removal.data_store_name =
+            read_string(value) or_return
+    case:
+        err = codec_error(
+            .Malformed,
+            "gophertunnel.protocol.read_data_store_change_entry",
+            "unknown data store change type",
+        )
+    }
+    return
+}
+
+write_data_store_change_entry :: proc(
+    value: ^Writer,
+    entry: Data_Store_Change_Entry,
+    remaining_nodes: ^int,
+) -> mcpe_runtime.Error {
+    write_varuint32(value, entry.change_type)
+    switch entry.change_type {
+    case Data_Store_Change_Type_Update:
+        write_data_store_update(value, entry.update) or_return
+    case Data_Store_Change_Type_Change:
+        write_string(value, entry.change.data_store_name)
+        write_string(value, entry.change.property)
+        write_u32(value, entry.change.update_count)
+        write_data_store_property_value(
+            value,
+            entry.change.new_value,
+            remaining_nodes,
+        ) or_return
+    case Data_Store_Change_Type_Removal:
+        write_string(value, entry.removal.data_store_name)
+    case:
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.write_data_store_change_entry",
+            "unknown data store change type",
+        )
+    }
+    return nil
+}

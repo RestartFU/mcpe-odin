@@ -1696,6 +1696,46 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_client_data_store",
+		&packet.ClientBoundDataStore{
+			Updates: []protocol.DataStoreChangeEntry{
+				{
+					ChangeType: protocol.DataStoreChangeTypeUpdate,
+					Update: protocol.DataStoreUpdate{
+						DataStoreName: "settings", Property: "mode", Path: "ui",
+						ControlType: protocol.DataStoreControlString,
+						StringValue: "hard", PropertyUpdateCount: 2,
+						PathUpdateCount: 3,
+					},
+				},
+				{
+					ChangeType: protocol.DataStoreChangeTypeChange,
+					Change: protocol.DataStoreChange{
+						DataStoreName: "state", Property: "nested", UpdateCount: 4,
+						NewValue: protocol.DataStorePropertyValue{
+							Type: protocol.DataStorePropertyTypeMap,
+							MapValue: []protocol.DataStoreMapEntry{{
+								Key: "items",
+								Value: protocol.DataStorePropertyValue{
+									Type: protocol.DataStorePropertyTypeList,
+									ListValue: []protocol.DataStorePropertyValue{
+										{Type: protocol.DataStorePropertyTypeString, StringValue: "one"},
+										{Type: protocol.DataStorePropertyTypeInt64, Int64Value: -7},
+									},
+								},
+							}},
+						},
+					},
+				},
+				{
+					ChangeType: protocol.DataStoreChangeTypeRemoval,
+					Removal:    protocol.DataStoreRemoval{DataStoreName: "old"},
+				},
+			},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

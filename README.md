@@ -103,7 +103,7 @@ encoding and decoding also share a 65,536-node heap-amplification ceiling.
 `nbt.dump` reproduces upstream's human-readable tagged tree format.
 
 The protocol `packet` slice includes header/sub-client framing, a tagged
-`Packet` union, unknown-payload preservation, and 176 login, network, and game
+`Packet` union, unknown-payload preservation, and 177 login, network, and game
 state packet codecs for protocol 1001. `protocol.Optional(T)` preserves
 presence separately from zero values for newer packet fields. Pinned-Go
 differential fixtures cover every modeled packet plus uncompressed batch

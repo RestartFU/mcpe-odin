@@ -194,6 +194,146 @@ write_parameter_keyframe_value :: proc(
     write_vec3(value, input.value)
 }
 
+destroy_waypoint :: proc(
+    waypoint: Waypoint,
+    allocator := context.allocator,
+) {
+    if waypoint.texture_path.set {
+        delete(waypoint.texture_path.value, allocator)
+    }
+}
+
+read_waypoint_world_position :: proc(value: ^Reader) -> (
+    result: Waypoint_World_Position,
+    err: mcpe_runtime.Error,
+) {
+    result.position = read_vec3(value) or_return
+    result.dimension_id = read_varint32(value) or_return
+    return
+}
+
+write_waypoint_world_position :: proc(
+    value: ^Writer,
+    input: Waypoint_World_Position,
+) {
+    write_vec3(value, input.position)
+    write_varint32(value, input.dimension_id)
+}
+
+read_waypoint :: proc(value: ^Reader) -> (
+    result: Waypoint,
+    err: mcpe_runtime.Error,
+) {
+    result.update_flag = read_u32(value) or_return
+    result.visible.set, err = read_bool(value)
+    if err == nil && result.visible.set {
+        result.visible.value, err = read_bool(value)
+    }
+    if err == nil {
+        result.world_position.set, err = read_bool(value)
+    }
+    if err == nil && result.world_position.set {
+        result.world_position.value, err =
+            read_waypoint_world_position(value)
+    }
+    if err == nil {
+        result.texture_path.set, err = read_bool(value)
+    }
+    if err == nil && result.texture_path.set {
+        result.texture_path.value, err = read_string(value)
+    }
+    if err == nil {
+        result.icon_size.set, err = read_bool(value)
+    }
+    if err == nil && result.icon_size.set {
+        result.icon_size.value, err = read_vec2(value)
+    }
+    if err == nil {
+        result.color.set, err = read_bool(value)
+    }
+    if err == nil && result.color.set {
+        result.color.value, err = read_i32(value)
+    }
+    if err == nil {
+        result.client_position_authority.set, err = read_bool(value)
+    }
+    if err == nil && result.client_position_authority.set {
+        result.client_position_authority.value, err = read_bool(value)
+    }
+    if err == nil {
+        result.actor_unique_id.set, err = read_bool(value)
+    }
+    if err == nil && result.actor_unique_id.set {
+        result.actor_unique_id.value, err = read_varint64(value)
+    }
+    if err != nil {
+        destroy_waypoint(result, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_waypoint :: proc(
+    value: ^Writer,
+    input: Waypoint,
+) {
+    write_u32(value, input.update_flag)
+    write_bool(value, input.visible.set)
+    if input.visible.set {
+        write_bool(value, input.visible.value)
+    }
+    write_bool(value, input.world_position.set)
+    if input.world_position.set {
+        write_waypoint_world_position(
+            value,
+            input.world_position.value,
+        )
+    }
+    write_bool(value, input.texture_path.set)
+    if input.texture_path.set {
+        write_string(value, input.texture_path.value)
+    }
+    write_bool(value, input.icon_size.set)
+    if input.icon_size.set {
+        write_vec2(value, input.icon_size.value)
+    }
+    write_bool(value, input.color.set)
+    if input.color.set {
+        write_i32(value, input.color.value)
+    }
+    write_bool(value, input.client_position_authority.set)
+    if input.client_position_authority.set {
+        write_bool(value, input.client_position_authority.value)
+    }
+    write_bool(value, input.actor_unique_id.set)
+    if input.actor_unique_id.set {
+        write_varint64(value, input.actor_unique_id.value)
+    }
+}
+
+read_locator_bar_waypoint :: proc(value: ^Reader) -> (
+    result: Locator_Bar_Waypoint,
+    err: mcpe_runtime.Error,
+) {
+    result.group_handle = read_uuid(value) or_return
+    result.waypoint = read_waypoint(value) or_return
+    result.action, err = read_u8(value)
+    if err != nil {
+        destroy_waypoint(result.waypoint, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_locator_bar_waypoint :: proc(
+    value: ^Writer,
+    input: Locator_Bar_Waypoint,
+) {
+    write_uuid(value, input.group_handle)
+    write_waypoint(value, input.waypoint)
+    write_u8(value, input.action)
+}
+
 read_vec2 :: proc(value: ^Reader) -> (result: Vec2, err: mcpe_runtime.Error) {
     for &component in result {
         component = read_f32(value) or_return

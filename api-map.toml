@@ -1154,6 +1154,26 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Graphics_Override_Parameter"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.WaypointWorldPosition"
+odin = "mcpe:gophertunnel/minecraft/protocol.Waypoint_World_Position"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.Waypoint"
+odin = "mcpe:gophertunnel/minecraft/protocol.Waypoint"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.LocatorBarWaypoint"
+odin = "mcpe:gophertunnel/minecraft/protocol.Locator_Bar_Waypoint"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.LocatorBar"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Locator_Bar"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

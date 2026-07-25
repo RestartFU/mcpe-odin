@@ -65,7 +65,7 @@ disconnect_hidden_screen_omits_messages :: proc(t: ^testing.T) {
 @(test)
 unknown_packets_preserve_raw_payload :: proc(t: ^testing.T) {
     original: Packet = Unknown_Packet{
-        packet_id = 0x155,
+        packet_id = 0x1ff,
         payload = []u8{1, 2, 3, 4},
     }
     data, encode_err := encode_packet(original)
@@ -82,7 +82,7 @@ unknown_packets_preserve_raw_payload :: proc(t: ^testing.T) {
         return
     }
     defer destroy_packet(&decoded)
-    testing.expect_value(t, header.packet_id, u32(0x155))
+    testing.expect_value(t, header.packet_id, u32(0x1ff))
     #partial switch packet in decoded {
     case Unknown_Packet:
         testing.expect(t, slice.equal(packet.payload, []u8{1, 2, 3, 4}))
@@ -1187,6 +1187,34 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 protocol.Graphics_Override_Parameter_Type_Sun_Color,
             reset = false,
         },
+        Locator_Bar{
+            waypoints = []protocol.Locator_Bar_Waypoint{{
+                group_handle = {},
+                waypoint = {
+                    update_flag =
+                        protocol.Waypoint_Update_Flag_Visible |
+                        protocol.Waypoint_Update_Flag_Position |
+                        protocol.Waypoint_Update_Flag_Texture_ID |
+                        protocol.Waypoint_Update_Flag_Color |
+                        protocol.Waypoint_Update_Flag_Client_Position_Authority |
+                        protocol.Waypoint_Update_Flag_Actor_Unique_ID,
+                    visible = protocol.option(true),
+                    world_position = protocol.option(
+                        protocol.Waypoint_World_Position{
+                            position = {1.25, 64, -3.5},
+                            dimension_id = 1,
+                        },
+                    ),
+                    texture_path =
+                        protocol.option(string("textures/ui/waypoint")),
+                    icon_size = protocol.option(protocol.Vec2{16, 16}),
+                    color = protocol.option(i32(0x112233)),
+                    client_position_authority = protocol.option(false),
+                    actor_unique_id = protocol.option(i64(-99)),
+                },
+                action = protocol.Waypoint_Action_Add,
+            }},
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1309,6 +1337,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDServerBoundDataStore,
         IDClientBoundDataStore,
         IDGraphicsOverrideParameter,
+        IDLocatorBar,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1728,6 +1757,15 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             player_identifier = protocol.option(string("player")),
             parameter_type =
                 protocol.Graphics_Override_Parameter_Type_Sun_Color,
+        },
+        Locator_Bar{
+            waypoints = []protocol.Locator_Bar_Waypoint{{
+                waypoint = {
+                    texture_path =
+                        protocol.option(string("textures/ui/waypoint")),
+                },
+                action = protocol.Waypoint_Action_Add,
+            }},
         },
     }
     for original in packets {

@@ -227,6 +227,7 @@ Packet :: union {
     Server_Bound_Data_Store,
     Client_Bound_Data_Store,
     Graphics_Override_Parameter,
+    Locator_Bar,
     Unknown_Packet,
 }
 
@@ -439,6 +440,7 @@ packet_id :: proc(value: Packet) -> (
     case Server_Bound_Data_Store:      id = IDServerBoundDataStore
     case Client_Bound_Data_Store:      id = IDClientBoundDataStore
     case Graphics_Override_Parameter:  id = IDGraphicsOverrideParameter
+    case Locator_Bar:                  id = IDLocatorBar
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -732,6 +734,11 @@ destroy_packet :: proc(
         delete(packet.updates, allocator)
     case Graphics_Override_Parameter:
         destroy_graphics_override_parameter(packet, allocator)
+    case Locator_Bar:
+        for waypoint in packet.waypoints {
+            protocol.destroy_waypoint(waypoint.waypoint, allocator)
+        }
+        delete(packet.waypoints, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

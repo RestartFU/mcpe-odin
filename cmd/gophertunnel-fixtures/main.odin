@@ -1939,6 +1939,37 @@ main :: proc() {
             reset = false,
         },
     )
+    emit_packet(
+        "packet_locator_bar",
+        packet.Locator_Bar{
+            waypoints = []protocol.Locator_Bar_Waypoint{{
+                group_handle = pack_uuid,
+                waypoint = {
+                    update_flag =
+                        protocol.Waypoint_Update_Flag_Visible |
+                        protocol.Waypoint_Update_Flag_Position |
+                        protocol.Waypoint_Update_Flag_Texture_ID |
+                        protocol.Waypoint_Update_Flag_Color |
+                        protocol.Waypoint_Update_Flag_Client_Position_Authority |
+                        protocol.Waypoint_Update_Flag_Actor_Unique_ID,
+                    visible = protocol.option(true),
+                    world_position = protocol.option(
+                        protocol.Waypoint_World_Position{
+                            position = {1.25, 64, -3.5},
+                            dimension_id = 1,
+                        },
+                    ),
+                    texture_path =
+                        protocol.option(string("textures/ui/waypoint")),
+                    icon_size = protocol.option(protocol.Vec2{16, 16}),
+                    color = protocol.option(i32(0x112233)),
+                    client_position_authority = protocol.option(false),
+                    actor_unique_id = protocol.option(i64(-99)),
+                },
+                action = protocol.Waypoint_Action_Add,
+            }},
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

@@ -904,6 +904,10 @@ Graphics_Override_Parameter :: struct {
     reset:             bool,
 }
 
+Locator_Bar :: struct {
+    waypoints: []protocol.Locator_Bar_Waypoint,
+}
+
 destroy_graphics_override_parameter :: proc(
     packet: Graphics_Override_Parameter,
     allocator := context.allocator,
@@ -1818,6 +1822,58 @@ read_parameter_keyframe_values :: proc(input: ^protocol.Reader) -> (
     for &value in values {
         value, err = protocol.read_parameter_keyframe_value(input)
         if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_locator_bar_waypoints :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Locator_Bar_Waypoint,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_locator_bar_waypoints",
+            "locator bar waypoints exceed entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_locator_bar_waypoint(output, value)
+    }
+    return nil
+}
+
+read_locator_bar_waypoints :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Locator_Bar_Waypoint,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_locator_bar_waypoints",
+            "locator bar waypoints exceed entry limit",
+        )
+    }
+    values = make(
+        []protocol.Locator_Bar_Waypoint,
+        int(count),
+        input.allocator,
+    )
+    for &value, index in values {
+        value, err = protocol.read_locator_bar_waypoint(input)
+        if err != nil {
+            for previous in values[:index] {
+                protocol.destroy_waypoint(
+                    previous.waypoint,
+                    input.allocator,
+                )
+            }
             delete(values, input.allocator)
             values = nil
             return

@@ -72,6 +72,45 @@ Parameter_Keyframe_Value :: struct {
     value: Vec3,
 }
 
+Waypoint_Action_None   :: u8(0)
+Waypoint_Action_Add    :: u8(1)
+Waypoint_Action_Remove :: u8(2)
+Waypoint_Action_Update :: u8(3)
+
+Waypoint_Update_Flag_Visible                   :: u32(1 << 0)
+Waypoint_Update_Flag_Position                  :: u32(1 << 1)
+Waypoint_Update_Flag_Texture_ID                :: u32(1 << 2)
+Waypoint_Update_Flag_Color                     :: u32(1 << 3)
+Waypoint_Update_Flag_Client_Position_Authority :: u32(1 << 4)
+Waypoint_Update_Flag_Actor_Unique_ID           :: u32(1 << 5)
+
+Waypoint_Texture_Square       :: i32(2)
+Waypoint_Texture_Circle       :: i32(3)
+Waypoint_Texture_Small_Square :: i32(4)
+Waypoint_Texture_Small_Star   :: i32(5)
+
+Waypoint_World_Position :: struct {
+    position:     Vec3,
+    dimension_id: i32,
+}
+
+Waypoint :: struct {
+    update_flag:               u32,
+    visible:                   Optional(bool),
+    world_position:            Optional(Waypoint_World_Position),
+    texture_path:              Optional(string),
+    icon_size:                 Optional(Vec2),
+    color:                     Optional(i32),
+    client_position_authority: Optional(bool),
+    actor_unique_id:           Optional(i64),
+}
+
+Locator_Bar_Waypoint :: struct {
+    group_handle: UUID,
+    waypoint:     Waypoint,
+    action:       u8,
+}
+
 Entity_Link_Remove    :: u8(0)
 Entity_Link_Rider     :: u8(1)
 Entity_Link_Passenger :: u8(2)

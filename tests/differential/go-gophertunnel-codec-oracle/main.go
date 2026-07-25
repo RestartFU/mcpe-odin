@@ -1769,6 +1769,33 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_locator_bar",
+		&packet.LocatorBar{
+			Waypoints: []protocol.LocatorBarWaypoint{{
+				GroupHandle: packUUID,
+				Waypoint: protocol.Waypoint{
+					UpdateFlag: protocol.WaypointUpdateFlagVisible |
+						protocol.WaypointUpdateFlagPosition |
+						protocol.WaypointUpdateFlagTextureID |
+						protocol.WaypointUpdateFlagColour |
+						protocol.WaypointUpdateFlagClientPositionAuthority |
+						protocol.WaypointUpdateFlagActorUniqueID,
+					Visible: protocol.Option(true),
+					WorldPosition: protocol.Option(protocol.WaypointWorldPosition{
+						Position: mgl32.Vec3{1.25, 64, -3.5}, DimensionID: 1,
+					}),
+					TexturePath: protocol.Option("textures/ui/waypoint"),
+					IconSize: protocol.Option(mgl32.Vec2{16, 16}),
+					Colour: protocol.Option(int32(0x112233)),
+					ClientPositionAuthority: protocol.Option(false),
+					ActorUniqueID: protocol.Option(int64(-99)),
+				},
+				Action: protocol.WaypointActionAdd,
+			}},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

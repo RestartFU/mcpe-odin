@@ -251,7 +251,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDRequestAbility,
          IDServerBoundDataStore,
          IDClientBoundDataStore,
-         IDGraphicsOverrideParameter:
+         IDGraphicsOverrideParameter,
+         IDLocatorBar:
         return true
     }
     return false
@@ -1233,6 +1234,8 @@ write_payload :: proc(
         }
         protocol.write_u8(output, packet.parameter_type)
         protocol.write_bool(output, packet.reset)
+    case Locator_Bar:
+        write_locator_bar_waypoints(output, packet.waypoints) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2869,6 +2872,10 @@ decode_packet :: proc(
             destroy_graphics_override_parameter(packet, allocator)
             return
         }
+        value = packet
+    case IDLocatorBar:
+        packet := Locator_Bar{}
+        packet.waypoints = read_locator_bar_waypoints(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

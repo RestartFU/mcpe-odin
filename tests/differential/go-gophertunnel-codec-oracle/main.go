@@ -1653,6 +1653,16 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_request_ability_bool",
+		&packet.RequestAbility{Ability: packet.AbilityFlying, Value: true},
+		0, 0,
+	)
+	emitPacket(
+		"packet_request_ability_float",
+		&packet.RequestAbility{Ability: packet.AbilityFlySpeed, Value: float32(0.15)},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

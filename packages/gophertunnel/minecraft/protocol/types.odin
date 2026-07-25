@@ -147,6 +147,11 @@ Pack_Setting :: struct {
     value: Pack_Setting_Value,
 }
 
+Ability_Value :: union {
+    bool,
+    f32,
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

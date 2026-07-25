@@ -881,6 +881,11 @@ Server_Bound_Pack_Setting_Change :: struct {
     pack_setting: protocol.Pack_Setting,
 }
 
+Request_Ability :: struct {
+    ability: i32,
+    value:   protocol.Ability_Value,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"

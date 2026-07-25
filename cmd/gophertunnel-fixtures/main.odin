@@ -1793,6 +1793,14 @@ main :: proc() {
             pack_setting = {name = "mode", value = "hard"},
         },
     )
+    emit_packet(
+        "packet_request_ability_bool",
+        packet.Request_Ability{ability = 9, value = true},
+    )
+    emit_packet(
+        "packet_request_ability_float",
+        packet.Request_Ability{ability = 13, value = f32(0.15)},
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

@@ -757,3 +757,46 @@ write_pack_setting :: proc(
     }
     return nil
 }
+
+read_ability_value :: proc(value: ^Reader) -> (
+    result: Ability_Value,
+    err: mcpe_runtime.Error,
+) {
+    value_type := read_u8(value) or_return
+    bool_value := read_bool(value) or_return
+    float_value := read_f32(value) or_return
+    switch value_type {
+    case 1: result = bool_value
+    case 2: result = float_value
+    case:
+        err = codec_error(
+            .Malformed,
+            "gophertunnel.protocol.read_ability_value",
+            "unknown ability value type",
+        )
+    }
+    return
+}
+
+write_ability_value :: proc(
+    value: ^Writer,
+    input: Ability_Value,
+) -> mcpe_runtime.Error {
+    switch ability_value in input {
+    case bool:
+        write_u8(value, 1)
+        write_bool(value, ability_value)
+        write_f32(value, 0)
+    case f32:
+        write_u8(value, 2)
+        write_bool(value, false)
+        write_f32(value, ability_value)
+    case:
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.write_ability_value",
+            "nil ability value",
+        )
+    }
+    return nil
+}

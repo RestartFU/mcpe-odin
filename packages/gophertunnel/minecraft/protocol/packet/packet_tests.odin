@@ -1092,6 +1092,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             pack_id = {},
             pack_setting = {name = "mode", value = "hard"},
         },
+        Request_Ability{ability = 9, value = true},
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1209,6 +1210,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDContainerRegistryCleanup,
         IDGameRulesChanged,
         IDServerBoundPackSettingChange,
+        IDRequestAbility,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)

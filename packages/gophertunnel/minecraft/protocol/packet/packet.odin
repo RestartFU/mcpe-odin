@@ -222,6 +222,7 @@ Packet :: union {
     Container_Registry_Cleanup,
     Game_Rules_Changed,
     Server_Bound_Pack_Setting_Change,
+    Request_Ability,
     Unknown_Packet,
 }
 
@@ -428,6 +429,7 @@ packet_id :: proc(value: Packet) -> (
     case Game_Rules_Changed:           id = IDGameRulesChanged
     case Server_Bound_Pack_Setting_Change:
         id = IDServerBoundPackSettingChange
+    case Request_Ability:              id = IDRequestAbility
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(

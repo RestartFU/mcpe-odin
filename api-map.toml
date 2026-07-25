@@ -1064,6 +1064,11 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Bound_Pack_Setting_Ch
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.RequestAbility"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Request_Ability"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

@@ -389,6 +389,71 @@ odin = "mcpe:gophertunnel/minecraft/protocol/login.generate_device_id"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientBoundDataDrivenUIReload"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Data_Driven_UI_Reload"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.RefreshEntitlements"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Refresh_Entitlements"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ResourcePacksReadyForValidation"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Resource_Packs_Ready_For_Validation"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.TickingAreasLoadStatus"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Ticking_Areas_Load_Status"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AddBehaviourTree"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Add_Behaviour_Tree"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientStartItemCooldown"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Start_Item_Cooldown"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.RemoveVolumeEntity"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Remove_Volume_Entity"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.OnScreenTextureAnimation"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.On_Screen_Texture_Animation"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AutomationClientConnect"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Automation_Client_Connect"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PhotoInfoRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Photo_Info_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.MapCreateLockedCopy"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Map_Create_Locked_Copy"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ScriptMessage"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Script_Message"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.OpenSign"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Open_Sign"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

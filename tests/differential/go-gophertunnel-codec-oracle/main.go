@@ -754,6 +754,54 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket("packet_ui_reload", &packet.ClientBoundDataDrivenUIReload{}, 0, 0)
+	emitPacket("packet_refresh_entitlements", &packet.RefreshEntitlements{}, 0, 0)
+	emitPacket("packet_packs_ready_validation", &packet.ResourcePacksReadyForValidation{}, 0, 0)
+	emitPacket("packet_ticking_areas", &packet.TickingAreasLoadStatus{Preload: true}, 0, 0)
+	emitPacket("packet_behaviour_tree", &packet.AddBehaviourTree{BehaviourTree: "tree"}, 0, 0)
+	emitPacket(
+		"packet_item_cooldown",
+		&packet.ClientStartItemCooldown{Category: "ender_pearl", Duration: -20},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_remove_volume",
+		&packet.RemoveVolumeEntity{EntityRuntimeID: 12345, Dimension: -1},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_screen_animation",
+		&packet.OnScreenTextureAnimation{AnimationType: 0x12345678},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_automation_connect",
+		&packet.AutomationClientConnect{ServerURI: "localhost:8000/ws"},
+		0,
+		0,
+	)
+	emitPacket("packet_photo_info", &packet.PhotoInfoRequest{PhotoID: -123456789}, 0, 0)
+	emitPacket(
+		"packet_map_locked_copy",
+		&packet.MapCreateLockedCopy{OriginalMapID: -7, NewMapID: 9001},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_script_message",
+		&packet.ScriptMessage{Identifier: "mcpe:test", Data: []byte{0, 1, 2, 255}},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_open_sign",
+		&packet.OpenSign{Position: protocol.BlockPos{-12, 64, 3456}, FrontSide: true},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

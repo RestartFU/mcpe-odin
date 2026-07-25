@@ -131,7 +131,20 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDRequestNetworkSettings,
          IDAwardAchievement,
          IDClientBoundCloseForm,
-         IDServerBoundLoadingScreen:
+         IDServerBoundLoadingScreen,
+         IDClientBoundDataDrivenUIReload,
+         IDRefreshEntitlements,
+         IDResourcePacksReadyForValidation,
+         IDTickingAreasLoadStatus,
+         IDAddBehaviourTree,
+         IDClientStartItemCooldown,
+         IDRemoveVolumeEntity,
+         IDOnScreenTextureAnimation,
+         IDAutomationClientConnect,
+         IDPhotoInfoRequest,
+         IDMapCreateLockedCopy,
+         IDScriptMessage,
+         IDOpenSign:
         return true
     }
     return false
@@ -430,6 +443,34 @@ write_payload :: proc(
     case Server_Bound_Loading_Screen:
         protocol.write_varint32(output, packet.type)
         write_optional_u32(output, packet.loading_screen_id)
+    case Client_Bound_Data_Driven_UI_Reload,
+         Refresh_Entitlements,
+         Resource_Packs_Ready_For_Validation:
+    case Ticking_Areas_Load_Status:
+        protocol.write_bool(output, packet.preload)
+    case Add_Behaviour_Tree:
+        protocol.write_string(output, packet.behaviour_tree)
+    case Client_Start_Item_Cooldown:
+        protocol.write_string(output, packet.category)
+        protocol.write_varint32(output, packet.duration)
+    case Remove_Volume_Entity:
+        protocol.write_varuint32(output, packet.entity_runtime_id)
+        protocol.write_varint32(output, packet.dimension)
+    case On_Screen_Texture_Animation:
+        protocol.write_u32(output, packet.animation_type)
+    case Automation_Client_Connect:
+        protocol.write_string(output, packet.server_uri)
+    case Photo_Info_Request:
+        protocol.write_varint64(output, packet.photo_id)
+    case Map_Create_Locked_Copy:
+        protocol.write_varint64(output, packet.original_map_id)
+        protocol.write_varint64(output, packet.new_map_id)
+    case Script_Message:
+        protocol.write_string(output, packet.identifier)
+        protocol.write_byte_slice(output, packet.data)
+    case Open_Sign:
+        protocol.write_block_pos(output, packet.position)
+        protocol.write_bool(output, packet.front_side)
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -728,6 +769,68 @@ decode_packet :: proc(
         packet := Server_Bound_Loading_Screen{}
         packet.type = protocol.read_varint32(&input) or_return
         packet.loading_screen_id = read_optional_u32(&input) or_return
+        value = packet
+    case IDClientBoundDataDrivenUIReload:
+        value = Client_Bound_Data_Driven_UI_Reload{}
+    case IDRefreshEntitlements:
+        value = Refresh_Entitlements{}
+    case IDResourcePacksReadyForValidation:
+        value = Resource_Packs_Ready_For_Validation{}
+    case IDTickingAreasLoadStatus:
+        packet := Ticking_Areas_Load_Status{}
+        packet.preload = protocol.read_bool(&input) or_return
+        value = packet
+    case IDAddBehaviourTree:
+        packet := Add_Behaviour_Tree{}
+        packet.behaviour_tree = protocol.read_string(&input) or_return
+        value = packet
+    case IDClientStartItemCooldown:
+        packet := Client_Start_Item_Cooldown{}
+        packet.category = protocol.read_string(&input) or_return
+        packet.duration, err = protocol.read_varint32(&input)
+        if err != nil {
+            delete(packet.category, allocator)
+            packet.category = ""
+            return
+        }
+        value = packet
+    case IDRemoveVolumeEntity:
+        packet := Remove_Volume_Entity{}
+        packet.entity_runtime_id =
+            protocol.read_varuint32(&input) or_return
+        packet.dimension = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDOnScreenTextureAnimation:
+        packet := On_Screen_Texture_Animation{}
+        packet.animation_type = protocol.read_u32(&input) or_return
+        value = packet
+    case IDAutomationClientConnect:
+        packet := Automation_Client_Connect{}
+        packet.server_uri = protocol.read_string(&input) or_return
+        value = packet
+    case IDPhotoInfoRequest:
+        packet := Photo_Info_Request{}
+        packet.photo_id = protocol.read_varint64(&input) or_return
+        value = packet
+    case IDMapCreateLockedCopy:
+        packet := Map_Create_Locked_Copy{}
+        packet.original_map_id = protocol.read_varint64(&input) or_return
+        packet.new_map_id = protocol.read_varint64(&input) or_return
+        value = packet
+    case IDScriptMessage:
+        packet := Script_Message{}
+        packet.identifier = protocol.read_string(&input) or_return
+        packet.data, err = protocol.read_byte_slice(&input)
+        if err != nil {
+            delete(packet.identifier, allocator)
+            packet.identifier = ""
+            return
+        }
+        value = packet
+    case IDOpenSign:
+        packet := Open_Sign{}
+        packet.position = protocol.read_block_pos(&input) or_return
+        packet.front_side = protocol.read_bool(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

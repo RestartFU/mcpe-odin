@@ -774,6 +774,77 @@ main :: proc() {
             suppress_output = true,
         },
     )
+    emit_packet(
+        "packet_ui_reload",
+        packet.Client_Bound_Data_Driven_UI_Reload{},
+    )
+    emit_packet(
+        "packet_refresh_entitlements",
+        packet.Refresh_Entitlements{},
+    )
+    emit_packet(
+        "packet_packs_ready_validation",
+        packet.Resource_Packs_Ready_For_Validation{},
+    )
+    emit_packet(
+        "packet_ticking_areas",
+        packet.Ticking_Areas_Load_Status{preload = true},
+    )
+    emit_packet(
+        "packet_behaviour_tree",
+        packet.Add_Behaviour_Tree{behaviour_tree = "tree"},
+    )
+    emit_packet(
+        "packet_item_cooldown",
+        packet.Client_Start_Item_Cooldown{
+            category = "ender_pearl",
+            duration = -20,
+        },
+    )
+    emit_packet(
+        "packet_remove_volume",
+        packet.Remove_Volume_Entity{
+            entity_runtime_id = 12345,
+            dimension = -1,
+        },
+    )
+    emit_packet(
+        "packet_screen_animation",
+        packet.On_Screen_Texture_Animation{
+            animation_type = 0x1234_5678,
+        },
+    )
+    emit_packet(
+        "packet_automation_connect",
+        packet.Automation_Client_Connect{
+            server_uri = "localhost:8000/ws",
+        },
+    )
+    emit_packet(
+        "packet_photo_info",
+        packet.Photo_Info_Request{photo_id = -123_456_789},
+    )
+    emit_packet(
+        "packet_map_locked_copy",
+        packet.Map_Create_Locked_Copy{
+            original_map_id = -7,
+            new_map_id = 9001,
+        },
+    )
+    emit_packet(
+        "packet_script_message",
+        packet.Script_Message{
+            identifier = "mcpe:test",
+            data = []u8{0, 1, 2, 255},
+        },
+    )
+    emit_packet(
+        "packet_open_sign",
+        packet.Open_Sign{
+            position = {-12, 64, 3456},
+            front_side = true,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

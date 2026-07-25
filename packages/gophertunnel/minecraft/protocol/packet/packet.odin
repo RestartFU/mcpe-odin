@@ -107,6 +107,19 @@ Packet :: union {
     Award_Achievement,
     Client_Bound_Close_Form,
     Server_Bound_Loading_Screen,
+    Client_Bound_Data_Driven_UI_Reload,
+    Refresh_Entitlements,
+    Resource_Packs_Ready_For_Validation,
+    Ticking_Areas_Load_Status,
+    Add_Behaviour_Tree,
+    Client_Start_Item_Cooldown,
+    Remove_Volume_Entity,
+    On_Screen_Texture_Animation,
+    Automation_Client_Connect,
+    Photo_Info_Request,
+    Map_Create_Locked_Copy,
+    Script_Message,
+    Open_Sign,
     Unknown_Packet,
 }
 
@@ -181,6 +194,21 @@ packet_id :: proc(value: Packet) -> (
     case Award_Achievement:           id = IDAwardAchievement
     case Client_Bound_Close_Form:     id = IDClientBoundCloseForm
     case Server_Bound_Loading_Screen: id = IDServerBoundLoadingScreen
+    case Client_Bound_Data_Driven_UI_Reload:
+        id = IDClientBoundDataDrivenUIReload
+    case Refresh_Entitlements:        id = IDRefreshEntitlements
+    case Resource_Packs_Ready_For_Validation:
+        id = IDResourcePacksReadyForValidation
+    case Ticking_Areas_Load_Status:   id = IDTickingAreasLoadStatus
+    case Add_Behaviour_Tree:          id = IDAddBehaviourTree
+    case Client_Start_Item_Cooldown:  id = IDClientStartItemCooldown
+    case Remove_Volume_Entity:        id = IDRemoveVolumeEntity
+    case On_Screen_Texture_Animation: id = IDOnScreenTextureAnimation
+    case Automation_Client_Connect:   id = IDAutomationClientConnect
+    case Photo_Info_Request:          id = IDPhotoInfoRequest
+    case Map_Create_Locked_Copy:      id = IDMapCreateLockedCopy
+    case Script_Message:              id = IDScriptMessage
+    case Open_Sign:                   id = IDOpenSign
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -260,6 +288,15 @@ destroy_packet :: proc(
     case Toast_Request:
         delete(packet.title, allocator)
         delete(packet.message, allocator)
+    case Add_Behaviour_Tree:
+        delete(packet.behaviour_tree, allocator)
+    case Client_Start_Item_Cooldown:
+        delete(packet.category, allocator)
+    case Automation_Client_Connect:
+        delete(packet.server_uri, allocator)
+    case Script_Message:
+        delete(packet.identifier, allocator)
+        delete(packet.data, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

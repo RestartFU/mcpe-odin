@@ -467,6 +467,90 @@ resource_pack_transfer_packets_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+simple_packets_round_trip :: proc(t: ^testing.T) {
+    packets := [?]Packet{
+        Client_Bound_Data_Driven_UI_Reload{},
+        Refresh_Entitlements{},
+        Resource_Packs_Ready_For_Validation{},
+        Ticking_Areas_Load_Status{preload = true},
+        Add_Behaviour_Tree{behaviour_tree = "tree"},
+        Client_Start_Item_Cooldown{
+            category = "ender_pearl",
+            duration = -20,
+        },
+        Remove_Volume_Entity{
+            entity_runtime_id = 12345,
+            dimension = -1,
+        },
+        On_Screen_Texture_Animation{animation_type = 0x1234_5678},
+        Automation_Client_Connect{server_uri = "localhost:8000/ws"},
+        Photo_Info_Request{photo_id = -123_456_789},
+        Map_Create_Locked_Copy{
+            original_map_id = -7,
+            new_map_id = 9001,
+        },
+        Script_Message{
+            identifier = "mcpe:test",
+            data = []u8{0, 1, 2, 255},
+        },
+        Open_Sign{position = {-12, 64, 3456}, front_side = true},
+    }
+    ids := [?]u32{
+        IDClientBoundDataDrivenUIReload,
+        IDRefreshEntitlements,
+        IDResourcePacksReadyForValidation,
+        IDTickingAreasLoadStatus,
+        IDAddBehaviourTree,
+        IDClientStartItemCooldown,
+        IDRemoveVolumeEntity,
+        IDOnScreenTextureAnimation,
+        IDAutomationClientConnect,
+        IDPhotoInfoRequest,
+        IDMapCreateLockedCopy,
+        IDScriptMessage,
+        IDOpenSign,
+    }
+    for original, index in packets {
+        data, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, header, decode_err := decode_packet(data)
+        testing.expect(t, decode_err == nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+            delete(data)
+            continue
+        }
+        testing.expect_value(t, header.packet_id, ids[index])
+        reencoded, reencode_err := encode_packet(decoded)
+        testing.expect(t, reencode_err == nil)
+        if reencode_err == nil {
+            testing.expect(t, slice.equal(data, reencoded))
+            delete(reencoded)
+        } else {
+            mcpe_runtime.destroy_error(reencode_err)
+        }
+        destroy_packet(&decoded)
+        delete(data)
+    }
+}
+
+@(test)
+item_cooldown_decode_cleans_partial_string :: proc(t: ^testing.T) {
+    decoded, _, err := decode_packet(
+        []u8{0xb0, 0x01, 0x01, 'x', 0x80},
+    )
+    testing.expect(t, decoded == nil)
+    testing.expect(t, err != nil)
+    if err != nil {
+        mcpe_runtime.destroy_error(err)
+    }
+}
+
+@(test)
 resource_pack_response_entry_count_is_bounded :: proc(t: ^testing.T) {
     decoded, _, err := decode_packet(
         []u8{

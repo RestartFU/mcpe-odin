@@ -175,6 +175,7 @@ Packet :: union {
     Client_Camera_Aim_Assist,
     Server_Bound_Data_Driven_Screen_Closed,
     Position_Tracking_DB_Client_Request,
+    Position_Tracking_DB_Server_Broadcast,
     Party_Changed,
     Party_Destination_Cookie_Response,
     Client_Bound_Control_Scheme_Set,
@@ -382,6 +383,8 @@ packet_id :: proc(value: Packet) -> (
         id = IDServerBoundDataDrivenScreenClosed
     case Position_Tracking_DB_Client_Request:
         id = IDPositionTrackingDBClientRequest
+    case Position_Tracking_DB_Server_Broadcast:
+        id = IDPositionTrackingDBServerBroadcast
     case Party_Changed:               id = IDPartyChanged
     case Party_Destination_Cookie_Response:
         id = IDPartyDestinationCookieResponse
@@ -722,6 +725,9 @@ destroy_packet :: proc(
         delete(packet.ability_data.layers, allocator)
     case Client_Movement_Prediction_Sync:
         delete(packet.actor_flags.words, allocator)
+    case Position_Tracking_DB_Server_Broadcast:
+        nbt.destroy_value(packet.payload, allocator)
+        free(packet.payload, allocator)
     case Container_Registry_Cleanup:
         delete(packet.removed_containers, allocator)
     case Game_Rules_Changed:

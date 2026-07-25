@@ -272,6 +272,56 @@ jigsaw_structure_data_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+position_tracking_broadcast_round_trip :: proc(t: ^testing.T) {
+    payload := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("status", nbt.value_byte(0)),
+                nbt.named_value("dim", nbt.value_int(1)),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(payload)
+        free(payload)
+    }
+    encoded, encode_err := encode_packet(
+        Position_Tracking_DB_Server_Broadcast{
+            broadcast_action =
+                Position_Tracking_DB_Broadcast_Action_Update,
+            tracking_id = 42,
+            payload = payload,
+        },
+    )
+    testing.expect(t, encode_err == nil)
+    if encode_err != nil {
+        mcpe_runtime.destroy_error(encode_err)
+        return
+    }
+    defer delete(encoded)
+    decoded, header, decode_err := decode_packet(encoded)
+    testing.expect(t, decode_err == nil)
+    if decode_err != nil {
+        mcpe_runtime.destroy_error(decode_err)
+        return
+    }
+    defer destroy_packet(&decoded)
+    testing.expect_value(
+        t,
+        header.packet_id,
+        IDPositionTrackingDBServerBroadcast,
+    )
+    reencoded, reencode_err := encode_packet(decoded)
+    testing.expect(t, reencode_err == nil)
+    if reencode_err == nil {
+        testing.expect(t, slice.equal(encoded, reencoded))
+        delete(reencoded)
+    } else {
+        mcpe_runtime.destroy_error(reencode_err)
+    }
+}
+
+@(test)
 dimension_packets_round_trip_optional_loading_screen_id :: proc(
     t: ^testing.T,
 ) {

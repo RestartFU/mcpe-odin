@@ -1816,6 +1816,15 @@ func main() {
 		0, 0,
 	)
 	emitPacket(
+		"packet_position_tracking_broadcast",
+		&packet.PositionTrackingDBServerBroadcast{
+			BroadcastAction: packet.PositionTrackingDBBroadcastActionUpdate,
+			TrackingID: 42,
+			Payload: map[string]any{"status": uint8(0)},
+		},
+		0, 0,
+	)
+	emitPacket(
 		"packet_sync_world_clocks_state",
 		&packet.SyncWorldClocks{
 			PayloadType: protocol.ClockPayloadTypeSyncState,

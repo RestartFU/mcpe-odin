@@ -200,6 +200,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDClientCameraAimAssist,
          IDServerBoundDataDrivenScreenClosed,
          IDPositionTrackingDBClientRequest,
+         IDPositionTrackingDBServerBroadcast,
          IDPartyChanged,
          IDPartyDestinationCookieResponse,
          IDClientBoundControlSchemeSet,
@@ -820,6 +821,27 @@ write_payload :: proc(
     case Position_Tracking_DB_Client_Request:
         protocol.write_u8(output, packet.request_action)
         protocol.write_varint32(output, packet.tracking_id)
+    case Position_Tracking_DB_Server_Broadcast:
+        protocol.write_u8(output, packet.broadcast_action)
+        protocol.write_varint32(output, packet.tracking_id)
+        if packet.payload == nil || packet.payload.tag != .Compound {
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write_position_tracking_broadcast",
+                "position tracking payload must be a compound",
+            )
+        }
+        encoded, encode_err := nbt.marshal(
+            packet.payload,
+            .Network_Little_Endian,
+            "",
+            output.allocator,
+        )
+        if encode_err != nil {
+            return encode_err
+        }
+        protocol.write_bytes(output, encoded)
+        delete(encoded, output.allocator)
     case Party_Changed:
         protocol.write_bool(output, packet.party_info.set)
         if packet.party_info.set {
@@ -2122,6 +2144,33 @@ decode_packet :: proc(
         packet := Position_Tracking_DB_Client_Request{}
         packet.request_action = protocol.read_u8(&input) or_return
         packet.tracking_id = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDPositionTrackingDBServerBroadcast:
+        packet := Position_Tracking_DB_Server_Broadcast{}
+        packet.broadcast_action = protocol.read_u8(&input) or_return
+        packet.tracking_id = protocol.read_varint32(&input) or_return
+        root_name: string
+        payload := protocol.read_remaining_bytes(&input)
+        packet.payload, root_name, err = nbt.unmarshal(
+            payload,
+            .Network_Little_Endian,
+            false,
+            allocator,
+        )
+        delete(root_name, allocator)
+        if err != nil {
+            return
+        }
+        if packet.payload.tag != .Compound {
+            nbt.destroy_value(packet.payload, allocator)
+            free(packet.payload, allocator)
+            err = packet_error(
+                .Malformed,
+                "gophertunnel.packet.read_position_tracking_broadcast",
+                "position tracking payload must be a compound",
+            )
+            return
+        }
         value = packet
     case IDPartyChanged:
         packet := Party_Changed{}

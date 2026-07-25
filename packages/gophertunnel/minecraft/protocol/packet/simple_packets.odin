@@ -448,6 +448,16 @@ Position_Tracking_DB_Client_Request :: struct {
     tracking_id:    i32,
 }
 
+Position_Tracking_DB_Broadcast_Action_Update    :: u8(0)
+Position_Tracking_DB_Broadcast_Action_Destroy   :: u8(1)
+Position_Tracking_DB_Broadcast_Action_Not_Found :: u8(2)
+
+Position_Tracking_DB_Server_Broadcast :: struct {
+    broadcast_action: u8,
+    tracking_id:      i32,
+    payload:          ^nbt.Value,
+}
+
 Party_Info :: struct {
     party_id:     string,
     party_leader: bool,

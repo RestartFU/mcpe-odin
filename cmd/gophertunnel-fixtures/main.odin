@@ -1994,6 +1994,26 @@ main :: proc() {
         "packet_jigsaw_structure_data",
         packet.Jigsaw_Structure_Data{structure_data = jigsaw_data},
     )
+    tracking_payload := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("status", nbt.value_byte(0)),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(tracking_payload)
+        free(tracking_payload)
+    }
+    emit_packet(
+        "packet_position_tracking_broadcast",
+        packet.Position_Tracking_DB_Server_Broadcast{
+            broadcast_action =
+                packet.Position_Tracking_DB_Broadcast_Action_Update,
+            tracking_id = 42,
+            payload = tracking_payload,
+        },
+    )
     emit_packet(
         "packet_sync_world_clocks_state",
         packet.Sync_World_Clocks{

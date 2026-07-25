@@ -193,6 +193,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDClientCacheMissResponse,
          IDClientBoundDebugRenderer,
          IDSyncActorProperty,
+         IDAddVolumeEntity,
          IDClientBoundDataDrivenUIShowScreen,
          IDSubClientLogin,
          IDScriptCustomEvent,
@@ -831,6 +832,33 @@ write_payload :: proc(
         }
         protocol.write_bytes(output, encoded)
         delete(encoded, output.allocator)
+    case Add_Volume_Entity:
+        protocol.write_varuint32(output, packet.entity_runtime_id)
+        if packet.entity_metadata == nil ||
+           packet.entity_metadata.tag != .Compound {
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write_add_volume_entity",
+                "volume entity metadata must be a compound",
+            )
+        }
+        encoded, encode_err := nbt.marshal(
+            packet.entity_metadata,
+            .Network_Little_Endian,
+            "",
+            output.allocator,
+        )
+        if encode_err != nil {
+            return encode_err
+        }
+        protocol.write_bytes(output, encoded)
+        delete(encoded, output.allocator)
+        protocol.write_string(output, packet.encoding_identifier)
+        protocol.write_string(output, packet.instance_identifier)
+        protocol.write_block_pos(output, packet.bounds[0])
+        protocol.write_block_pos(output, packet.bounds[1])
+        protocol.write_varint32(output, packet.dimension)
+        protocol.write_string(output, packet.engine_version)
     case Client_Bound_Data_Driven_UI_Show_Screen:
         protocol.write_string(output, packet.screen_id)
         protocol.write_u32(output, packet.form_id)
@@ -2169,6 +2197,63 @@ decode_packet :: proc(
                 "gophertunnel.packet.read_sync_actor_property",
                 "actor property data must be a compound",
             )
+            return
+        }
+        value = packet
+    case IDAddVolumeEntity:
+        packet := Add_Volume_Entity{}
+        packet.entity_runtime_id =
+            protocol.read_varuint32(&input) or_return
+        root_name: string
+        consumed: int
+        packet.entity_metadata, root_name, consumed, err =
+            nbt.unmarshal_prefix(
+                protocol.peek_remaining_bytes(&input),
+                .Network_Little_Endian,
+                false,
+                allocator,
+            )
+        delete(root_name, allocator)
+        if err != nil {
+            return
+        }
+        if packet.entity_metadata.tag != .Compound {
+            nbt.destroy_value(packet.entity_metadata, allocator)
+            free(packet.entity_metadata, allocator)
+            err = packet_error(
+                .Malformed,
+                "gophertunnel.packet.read_add_volume_entity",
+                "volume entity metadata must be a compound",
+            )
+            return
+        }
+        _, err = protocol.read_bytes(&input, consumed)
+        if err == nil {
+            packet.encoding_identifier, err =
+                protocol.read_string(&input)
+        }
+        if err == nil {
+            packet.instance_identifier, err =
+                protocol.read_string(&input)
+        }
+        if err == nil {
+            packet.bounds[0], err = protocol.read_block_pos(&input)
+        }
+        if err == nil {
+            packet.bounds[1], err = protocol.read_block_pos(&input)
+        }
+        if err == nil {
+            packet.dimension, err = protocol.read_varint32(&input)
+        }
+        if err == nil {
+            packet.engine_version, err = protocol.read_string(&input)
+        }
+        if err != nil {
+            nbt.destroy_value(packet.entity_metadata, allocator)
+            free(packet.entity_metadata, allocator)
+            delete(packet.encoding_identifier, allocator)
+            delete(packet.instance_identifier, allocator)
+            delete(packet.engine_version, allocator)
             return
         }
         value = packet

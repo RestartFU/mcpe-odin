@@ -870,7 +870,7 @@ read_payload :: proc(
     return
 }
 
-unmarshal :: proc(
+unmarshal_prefix :: proc(
     data: []u8,
     encoding: Encoding = .Network_Little_Endian,
     allow_zero: bool = false,
@@ -878,6 +878,7 @@ unmarshal :: proc(
 ) -> (
     value: ^Value,
     root_name: string,
+    consumed: int,
     err: mcpe_runtime.Error,
 ) {
     input := protocol.reader(data, 0, true, allocator)
@@ -886,6 +887,7 @@ unmarshal :: proc(
     if root_tag == .End && allow_zero {
         value = new(Value, allocator)
         value.tag = .Compound
+        consumed = input.offset
         return
     }
     if !tag_valid(root_tag) || root_tag == .End {
@@ -905,5 +907,25 @@ unmarshal :: proc(
         root_name = ""
         return
     }
+    consumed = input.offset
+    return
+}
+
+unmarshal :: proc(
+    data: []u8,
+    encoding: Encoding = .Network_Little_Endian,
+    allow_zero: bool = false,
+    allocator: mem.Allocator = context.allocator,
+) -> (
+    value: ^Value,
+    root_name: string,
+    err: mcpe_runtime.Error,
+) {
+    value, root_name, _, err = unmarshal_prefix(
+        data,
+        encoding,
+        allow_zero,
+        allocator,
+    )
     return
 }

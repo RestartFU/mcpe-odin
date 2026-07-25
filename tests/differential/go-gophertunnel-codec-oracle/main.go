@@ -1849,6 +1849,22 @@ func main() {
 		0, 0,
 	)
 	emitPacket(
+		"packet_add_volume_entity",
+		&packet.AddVolumeEntity{
+			EntityRuntimeID: 42,
+			EntityMetadata: map[string]any{"active": uint8(1)},
+			EncodingIdentifier: "custom:volume",
+			InstanceIdentifier: "fog:test",
+			Bounds: [2]protocol.BlockPos{
+				{-12, 64, -20},
+				{12, 80, 20},
+			},
+			Dimension: 1,
+			EngineVersion: "1.26.30",
+		},
+		0, 0,
+	)
+	emitPacket(
 		"packet_sync_world_clocks_state",
 		&packet.SyncWorldClocks{
 			PayloadType: protocol.ClockPayloadTypeSyncState,

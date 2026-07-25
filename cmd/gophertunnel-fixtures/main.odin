@@ -2050,6 +2050,29 @@ main :: proc() {
             property_data = actor_property_data,
         },
     )
+    volume_metadata := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("active", nbt.value_byte(1)),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(volume_metadata)
+        free(volume_metadata)
+    }
+    emit_packet(
+        "packet_add_volume_entity",
+        packet.Add_Volume_Entity{
+            entity_runtime_id = 42,
+            entity_metadata = volume_metadata,
+            encoding_identifier = "custom:volume",
+            instance_identifier = "fog:test",
+            bounds = {{-12, 64, -20}, {12, 80, 20}},
+            dimension = 1,
+            engine_version = "1.26.30",
+        },
+    )
     emit_packet(
         "packet_sync_world_clocks_state",
         packet.Sync_World_Clocks{

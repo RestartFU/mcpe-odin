@@ -416,6 +416,16 @@ Sync_Actor_Property :: struct {
     property_data: ^nbt.Value,
 }
 
+Add_Volume_Entity :: struct {
+    entity_runtime_id:   u32,
+    entity_metadata:     ^nbt.Value,
+    encoding_identifier: string,
+    instance_identifier: string,
+    bounds:              [2]protocol.Block_Pos,
+    dimension:           i32,
+    engine_version:      string,
+}
+
 Client_Bound_Data_Driven_UI_Show_Screen :: struct {
     screen_id:        string,
     form_id:          u32,

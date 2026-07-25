@@ -290,6 +290,21 @@ read_remaining_bytes :: proc(value: ^Reader) -> []u8 {
     return result
 }
 
+peek_remaining_bytes :: proc(value: ^Reader) -> []u8 {
+    return value.data[value.offset:]
+}
+
+read_bytes :: proc(value: ^Reader, count: int) -> (
+    result: []u8,
+    err: mcpe_runtime.Error,
+) {
+    return reader_take(
+        value,
+        count,
+        "gophertunnel.protocol.read_bytes",
+    )
+}
+
 write_u8 :: proc(value: ^Writer, input: u8) {
     append(&value.data, input)
 }

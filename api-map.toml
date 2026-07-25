@@ -1224,6 +1224,11 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Sync_Actor_Property"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AddVolumeEntity"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Add_Volume_Entity"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

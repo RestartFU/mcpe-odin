@@ -363,6 +363,54 @@ sync_actor_property_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+add_volume_entity_round_trip :: proc(t: ^testing.T) {
+    metadata := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("active", nbt.value_byte(1)),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(metadata)
+        free(metadata)
+    }
+    encoded, encode_err := encode_packet(
+        Add_Volume_Entity{
+            entity_runtime_id = 42,
+            entity_metadata = metadata,
+            encoding_identifier = "custom:volume",
+            instance_identifier = "fog:test",
+            bounds = {{-12, 64, -20}, {12, 80, 20}},
+            dimension = 1,
+            engine_version = "1.26.30",
+        },
+    )
+    testing.expect(t, encode_err == nil)
+    if encode_err != nil {
+        mcpe_runtime.destroy_error(encode_err)
+        return
+    }
+    defer delete(encoded)
+    decoded, header, decode_err := decode_packet(encoded)
+    testing.expect(t, decode_err == nil)
+    if decode_err != nil {
+        mcpe_runtime.destroy_error(decode_err)
+        return
+    }
+    defer destroy_packet(&decoded)
+    testing.expect_value(t, header.packet_id, IDAddVolumeEntity)
+    reencoded, reencode_err := encode_packet(decoded)
+    testing.expect(t, reencode_err == nil)
+    if reencode_err == nil {
+        testing.expect(t, slice.equal(encoded, reencoded))
+        delete(reencoded)
+    } else {
+        mcpe_runtime.destroy_error(reencode_err)
+    }
+}
+
+@(test)
 dimension_packets_round_trip_optional_loading_screen_id :: proc(
     t: ^testing.T,
 ) {

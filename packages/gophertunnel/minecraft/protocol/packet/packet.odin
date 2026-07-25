@@ -168,6 +168,7 @@ Packet :: union {
     Client_Cache_Miss_Response,
     Client_Bound_Debug_Renderer,
     Sync_Actor_Property,
+    Add_Volume_Entity,
     Client_Bound_Data_Driven_UI_Show_Screen,
     Sub_Client_Login,
     Script_Custom_Event,
@@ -373,6 +374,7 @@ packet_id :: proc(value: Packet) -> (
     case Client_Cache_Miss_Response:  id = IDClientCacheMissResponse
     case Client_Bound_Debug_Renderer: id = IDClientBoundDebugRenderer
     case Sync_Actor_Property:         id = IDSyncActorProperty
+    case Add_Volume_Entity:           id = IDAddVolumeEntity
     case Client_Bound_Data_Driven_UI_Show_Screen:
         id = IDClientBoundDataDrivenUIShowScreen
     case Sub_Client_Login:            id = IDSubClientLogin
@@ -606,6 +608,12 @@ destroy_packet :: proc(
     case Sync_Actor_Property:
         nbt.destroy_value(packet.property_data, allocator)
         free(packet.property_data, allocator)
+    case Add_Volume_Entity:
+        nbt.destroy_value(packet.entity_metadata, allocator)
+        free(packet.entity_metadata, allocator)
+        delete(packet.encoding_identifier, allocator)
+        delete(packet.instance_identifier, allocator)
+        delete(packet.engine_version, allocator)
     case Client_Bound_Data_Driven_UI_Show_Screen:
         delete(packet.screen_id, allocator)
     case Sub_Client_Login:

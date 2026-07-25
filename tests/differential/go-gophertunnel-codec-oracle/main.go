@@ -1112,6 +1112,23 @@ func main() {
 		0, 0,
 	)
 	emitPacket(
+		"packet_debug_renderer_clear",
+		&packet.ClientBoundDebugRenderer{
+			Type: packet.ClientBoundDebugRendererClear,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_debug_renderer_cube",
+		&packet.ClientBoundDebugRenderer{
+			Type: packet.ClientBoundDebugRendererAddCube,
+			Text: "spawn", Position: mgl32.Vec3{1.25, 64, -3.5},
+			Red: 1, Green: 0.5, Blue: 0.25, Alpha: 0.75,
+			Duration: 5000,
+		},
+		0, 0,
+	)
+	emitPacket(
 		"packet_data_ui_show",
 		&packet.ClientBoundDataDrivenUIShowScreen{
 			ScreenID: "screen:test", FormID: 42,

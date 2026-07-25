@@ -1191,6 +1191,25 @@ main :: proc() {
         },
     )
     emit_packet(
+        "packet_debug_renderer_clear",
+        packet.Client_Bound_Debug_Renderer{
+            type = packet.Client_Bound_Debug_Renderer_Clear,
+        },
+    )
+    emit_packet(
+        "packet_debug_renderer_cube",
+        packet.Client_Bound_Debug_Renderer{
+            type = packet.Client_Bound_Debug_Renderer_Add_Cube,
+            text = "spawn",
+            position = {1.25, 64, -3.5},
+            red = 1,
+            green = 0.5,
+            blue = 0.25,
+            alpha = 0.75,
+            duration = 5000,
+        },
+    )
+    emit_packet(
         "packet_data_ui_show",
         packet.Client_Bound_Data_Driven_UI_Show_Screen{
             screen_id = "screen:test",

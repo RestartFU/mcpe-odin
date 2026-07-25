@@ -398,6 +398,20 @@ Client_Cache_Miss_Response :: struct {
     blobs: []protocol.Cache_Blob,
 }
 
+Client_Bound_Debug_Renderer_Clear    :: u32(0)
+Client_Bound_Debug_Renderer_Add_Cube :: u32(1)
+
+Client_Bound_Debug_Renderer :: struct {
+    type:     u32,
+    text:     string,
+    position: protocol.Vec3,
+    red:      f32,
+    green:    f32,
+    blue:     f32,
+    alpha:    f32,
+    duration: u64,
+}
+
 Client_Bound_Data_Driven_UI_Show_Screen :: struct {
     screen_id:        string,
     form_id:          u32,

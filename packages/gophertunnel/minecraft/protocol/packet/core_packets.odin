@@ -191,6 +191,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDSpawnParticleEffect,
          IDClientCacheBlobStatus,
          IDClientCacheMissResponse,
+         IDClientBoundDebugRenderer,
          IDClientBoundDataDrivenUIShowScreen,
          IDSubClientLogin,
          IDScriptCustomEvent,
@@ -789,6 +790,26 @@ write_payload :: proc(
         write_u64_slice(output, packet.hit_hashes) or_return
     case Client_Cache_Miss_Response:
         write_cache_blobs(output, packet.blobs) or_return
+    case Client_Bound_Debug_Renderer:
+        switch packet.type {
+        case Client_Bound_Debug_Renderer_Clear:
+            protocol.write_string(output, "cleardebugmarkers")
+        case Client_Bound_Debug_Renderer_Add_Cube:
+            protocol.write_string(output, "adddebugmarkercube")
+            protocol.write_string(output, packet.text)
+            protocol.write_vec3(output, packet.position)
+            protocol.write_f32(output, packet.red)
+            protocol.write_f32(output, packet.green)
+            protocol.write_f32(output, packet.blue)
+            protocol.write_f32(output, packet.alpha)
+            protocol.write_u64(output, packet.duration)
+        case:
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write_client_bound_debug_renderer",
+                "unknown debug renderer type",
+            )
+        }
     case Client_Bound_Data_Driven_UI_Show_Screen:
         protocol.write_string(output, packet.screen_id)
         protocol.write_u32(output, packet.form_id)
@@ -2063,6 +2084,47 @@ decode_packet :: proc(
     case IDClientCacheMissResponse:
         packet := Client_Cache_Miss_Response{}
         packet.blobs = read_cache_blobs(&input) or_return
+        value = packet
+    case IDClientBoundDebugRenderer:
+        packet := Client_Bound_Debug_Renderer{}
+        renderer_type := protocol.read_string(&input) or_return
+        switch renderer_type {
+        case "cleardebugmarkers":
+            packet.type = Client_Bound_Debug_Renderer_Clear
+        case "adddebugmarkercube":
+            packet.type = Client_Bound_Debug_Renderer_Add_Cube
+        case:
+            delete(renderer_type, allocator)
+            return nil, {}, packet_error(
+                .Malformed,
+                "gophertunnel.packet.read_client_bound_debug_renderer",
+                "unknown debug renderer type",
+            )
+        }
+        delete(renderer_type, allocator)
+        if packet.type == Client_Bound_Debug_Renderer_Add_Cube {
+            packet.text = protocol.read_string(&input) or_return
+            packet.position, err = protocol.read_vec3(&input)
+            if err == nil {
+                packet.red, err = protocol.read_f32(&input)
+            }
+            if err == nil {
+                packet.green, err = protocol.read_f32(&input)
+            }
+            if err == nil {
+                packet.blue, err = protocol.read_f32(&input)
+            }
+            if err == nil {
+                packet.alpha, err = protocol.read_f32(&input)
+            }
+            if err == nil {
+                packet.duration, err = protocol.read_u64(&input)
+            }
+            if err != nil {
+                delete(packet.text, allocator)
+                return
+            }
+        }
         value = packet
     case IDClientBoundDataDrivenUIShowScreen:
         packet := Client_Bound_Data_Driven_UI_Show_Screen{}

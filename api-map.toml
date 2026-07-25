@@ -1214,6 +1214,11 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Position_Tracking_DB_Server_
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientBoundDebugRenderer"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Debug_Renderer"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

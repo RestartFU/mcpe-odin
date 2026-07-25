@@ -1917,6 +1917,19 @@ func main() {
 		0, 0,
 	)
 	emitPacket(
+		"packet_command_request",
+		&packet.CommandRequest{
+			CommandLine: "say hello",
+			CommandOrigin: protocol.CommandOrigin{
+				Origin: protocol.CommandOriginScript,
+				UUID: packUUID, RequestID: "request-42",
+				PlayerUniqueID: -99,
+			},
+			Version: "1",
+		},
+		0, 0,
+	)
+	emitPacket(
 		"packet_structure_template_response",
 		&packet.StructureTemplateDataResponse{
 			StructureName: "village", Success: true,

@@ -38,7 +38,7 @@ varuint32_matches_minecraft_vectors :: proc(t: ^testing.T) {
         testing.expect_value(t, remaining(&source), 0)
         writer_destroy(&output)
     }
-}
+    }
 
 @(test)
 signed_varints_round_trip_boundaries :: proc(t: ^testing.T) {
@@ -326,7 +326,7 @@ bitset_round_trip_and_bounds :: proc(t: ^testing.T) {
         if load_err != nil {
             mcpe_runtime.destroy_error(load_err)
         }
-    }
+}
 
     overflow := reader([]u8{0x80})
     invalid, overflow_err := read_bitset(&overflow, 7)
@@ -339,5 +339,36 @@ bitset_round_trip_and_bounds :: proc(t: ^testing.T) {
             mcpe_runtime.Error_Kind.Malformed,
         )
         mcpe_runtime.destroy_error(overflow_err)
+    }
+}
+
+@(test)
+command_origins_round_trip :: proc(t: ^testing.T) {
+    for origin := u32(0); origin <= Command_Origin_Executor; origin += 1 {
+        output := writer()
+        value := Command_Origin{
+            origin = origin,
+            request_id = "request",
+            player_unique_id = -99,
+        }
+        write_err := write_command_origin(&output, value)
+        testing.expect(t, write_err == nil)
+        if write_err != nil {
+            mcpe_runtime.destroy_error(write_err)
+            writer_destroy(&output)
+            continue
+        }
+        input := reader(writer_bytes(&output))
+        decoded, read_err := read_command_origin(&input)
+        testing.expect(t, read_err == nil)
+        if read_err == nil {
+            testing.expect_value(t, decoded.origin, origin)
+            testing.expect_value(t, decoded.request_id, "request")
+            testing.expect_value(t, decoded.player_unique_id, i64(-99))
+            destroy_command_origin(decoded)
+        } else {
+            mcpe_runtime.destroy_error(read_err)
+        }
+        writer_destroy(&output)
     }
 }

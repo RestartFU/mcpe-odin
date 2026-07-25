@@ -123,6 +123,7 @@ Packet :: union {
     Structure_Template_Data_Request,
     Structure_Template_Data_Response,
     Structure_Block_Update,
+    Command_Request,
     Script_Message,
     Open_Sign,
     Client_Bound_Data_Driven_UI_Close_Screen,
@@ -334,6 +335,7 @@ packet_id :: proc(value: Packet) -> (
     case Structure_Template_Data_Response:
         id = IDStructureTemplateDataResponse
     case Structure_Block_Update:      id = IDStructureBlockUpdate
+    case Command_Request:             id = IDCommandRequest
     case Script_Message:              id = IDScriptMessage
     case Open_Sign:                   id = IDOpenSign
     case Client_Bound_Data_Driven_UI_Close_Screen:
@@ -569,6 +571,10 @@ destroy_packet :: proc(
         delete(packet.filtered_structure_name, allocator)
         delete(packet.data_field, allocator)
         protocol.destroy_structure_settings(packet.settings, allocator)
+    case Command_Request:
+        delete(packet.command_line, allocator)
+        protocol.destroy_command_origin(packet.command_origin, allocator)
+        delete(packet.version, allocator)
     case Available_Actor_Identifiers:
         delete(packet.serialised_entity_identifiers, allocator)
     case Current_Structure_Feature:

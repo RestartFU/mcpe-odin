@@ -173,6 +173,30 @@ Structure_Settings :: struct {
     pivot:                         Vec3,
 }
 
+Command_Origin_Player                      :: u32(0)
+Command_Origin_Block                       :: u32(1)
+Command_Origin_Minecart_Block              :: u32(2)
+Command_Origin_Dev_Console                 :: u32(3)
+Command_Origin_Test                        :: u32(4)
+Command_Origin_Automation_Player           :: u32(5)
+Command_Origin_Client_Automation           :: u32(6)
+Command_Origin_Dedicated_Server            :: u32(7)
+Command_Origin_Entity                      :: u32(8)
+Command_Origin_Virtual                     :: u32(9)
+Command_Origin_Game_Argument               :: u32(10)
+Command_Origin_Entity_Server               :: u32(11)
+Command_Origin_Precompiled                 :: u32(12)
+Command_Origin_Game_Director_Entity_Server :: u32(13)
+Command_Origin_Script                      :: u32(14)
+Command_Origin_Executor                    :: u32(15)
+
+Command_Origin :: struct {
+    origin:           u32,
+    uuid:             UUID,
+    request_id:       string,
+    player_unique_id: i64,
+}
+
 Entity_Link_Remove    :: u8(0)
 Entity_Link_Rider     :: u8(1)
 Entity_Link_Passenger :: u8(2)

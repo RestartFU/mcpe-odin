@@ -2150,6 +2150,19 @@ main :: proc() {
             should_trigger = true,
         },
     )
+    emit_packet(
+        "packet_command_request",
+        packet.Command_Request{
+            command_line = "say hello",
+            command_origin = {
+                origin = protocol.Command_Origin_Script,
+                uuid = pack_uuid,
+                request_id = "request-42",
+                player_unique_id = -99,
+            },
+            version = "1",
+        },
+    )
     structure_template := nbt.new_value(
         nbt.value_compound(
             []nbt.Named_Value{

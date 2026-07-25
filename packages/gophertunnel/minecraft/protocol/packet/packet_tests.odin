@@ -571,6 +571,43 @@ structure_template_packets_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+command_request_round_trip :: proc(t: ^testing.T) {
+    original: Packet = Command_Request{
+        command_line = "say hello",
+        command_origin = {
+            origin = protocol.Command_Origin_Script,
+            request_id = "request-42",
+            player_unique_id = -99,
+        },
+        internal = false,
+        version = "1",
+    }
+    encoded, encode_err := encode_packet(original)
+    testing.expect(t, encode_err == nil)
+    if encode_err != nil {
+        mcpe_runtime.destroy_error(encode_err)
+        return
+    }
+    defer delete(encoded)
+    decoded, header, decode_err := decode_packet(encoded)
+    testing.expect(t, decode_err == nil)
+    if decode_err != nil {
+        mcpe_runtime.destroy_error(decode_err)
+        return
+    }
+    defer destroy_packet(&decoded)
+    testing.expect_value(t, header.packet_id, IDCommandRequest)
+    reencoded, reencode_err := encode_packet(decoded)
+    testing.expect(t, reencode_err == nil)
+    if reencode_err == nil {
+        testing.expect(t, slice.equal(encoded, reencoded))
+        delete(reencoded)
+    } else {
+        mcpe_runtime.destroy_error(reencode_err)
+    }
+}
+
+@(test)
 dimension_packets_round_trip_optional_loading_screen_id :: proc(
     t: ^testing.T,
 ) {

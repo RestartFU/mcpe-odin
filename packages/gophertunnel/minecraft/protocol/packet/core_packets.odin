@@ -148,6 +148,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDStructureTemplateDataRequest,
          IDStructureTemplateDataResponse,
          IDStructureBlockUpdate,
+         IDCommandRequest,
          IDScriptMessage,
          IDOpenSign,
          IDClientBoundDataDrivenUICloseScreen,
@@ -648,6 +649,14 @@ write_payload :: proc(
         protocol.write_varint32(output, packet.redstone_save_mode)
         protocol.write_bool(output, packet.should_trigger)
         protocol.write_bool(output, packet.waterlogged)
+    case Command_Request:
+        protocol.write_string(output, packet.command_line)
+        protocol.write_command_origin(
+            output,
+            packet.command_origin,
+        ) or_return
+        protocol.write_bool(output, packet.internal)
+        protocol.write_string(output, packet.version)
     case Script_Message:
         protocol.write_string(output, packet.identifier)
         protocol.write_byte_slice(output, packet.data)
@@ -1945,6 +1954,27 @@ decode_packet :: proc(
                 packet.settings,
                 allocator,
             )
+            return
+        }
+        value = packet
+    case IDCommandRequest:
+        packet := Command_Request{}
+        packet.command_line = protocol.read_string(&input) or_return
+        packet.command_origin, err =
+            protocol.read_command_origin(&input)
+        if err == nil {
+            packet.internal, err = protocol.read_bool(&input)
+        }
+        if err == nil {
+            packet.version, err = protocol.read_string(&input)
+        }
+        if err != nil {
+            delete(packet.command_line, allocator)
+            protocol.destroy_command_origin(
+                packet.command_origin,
+                allocator,
+            )
+            delete(packet.version, allocator)
             return
         }
         value = packet

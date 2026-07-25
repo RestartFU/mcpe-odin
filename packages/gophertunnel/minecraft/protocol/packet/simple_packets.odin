@@ -92,6 +92,13 @@ Structure_Block_Update :: struct {
     waterlogged:             bool,
 }
 
+Command_Request :: struct {
+    command_line:   string,
+    command_origin: protocol.Command_Origin,
+    internal:       bool,
+    version:        string,
+}
+
 Script_Message :: struct {
     identifier: string,
     data:       []u8,

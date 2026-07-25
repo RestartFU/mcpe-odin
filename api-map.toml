@@ -1259,6 +1259,16 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Structure_Block_Update"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.CommandOrigin"
+odin = "mcpe:gophertunnel/minecraft/protocol.Command_Origin"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CommandRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Command_Request"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

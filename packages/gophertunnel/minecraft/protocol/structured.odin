@@ -586,6 +586,113 @@ write_structure_settings :: proc(
     write_vec3(value, input.pivot)
 }
 
+command_origin_string :: proc(origin: u32) -> (
+    result: string,
+    err: mcpe_runtime.Error,
+) {
+    switch origin {
+    case Command_Origin_Player:                      result = "player"
+    case Command_Origin_Block:                       result = "commandblock"
+    case Command_Origin_Minecart_Block:
+        result = "minecartcommandblock"
+    case Command_Origin_Dev_Console:                 result = "devconsole"
+    case Command_Origin_Test:                        result = "test"
+    case Command_Origin_Automation_Player:
+        result = "automationplayer"
+    case Command_Origin_Client_Automation:
+        result = "clientautomation"
+    case Command_Origin_Dedicated_Server:
+        result = "dedicatedserver"
+    case Command_Origin_Entity:                      result = "entity"
+    case Command_Origin_Virtual:                     result = "virtual"
+    case Command_Origin_Game_Argument:               result = "gameargument"
+    case Command_Origin_Entity_Server:               result = "entityserver"
+    case Command_Origin_Precompiled:                 result = "precompiled"
+    case Command_Origin_Game_Director_Entity_Server:
+        result = "gamedirectorentityserver"
+    case Command_Origin_Script:                      result = "scripting"
+    case Command_Origin_Executor:                    result = "executecontext"
+    case:
+        err = codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.command_origin_string",
+            "unknown command origin",
+        )
+    }
+    return
+}
+
+command_origin_from_string :: proc(origin: string) -> (
+    result: u32,
+    err: mcpe_runtime.Error,
+) {
+    switch origin {
+    case "player":                     result = Command_Origin_Player
+    case "commandblock":               result = Command_Origin_Block
+    case "minecartcommandblock":       result = Command_Origin_Minecart_Block
+    case "devconsole":                 result = Command_Origin_Dev_Console
+    case "test":                       result = Command_Origin_Test
+    case "automationplayer":           result = Command_Origin_Automation_Player
+    case "clientautomation":           result = Command_Origin_Client_Automation
+    case "dedicatedserver":            result = Command_Origin_Dedicated_Server
+    case "entity":                     result = Command_Origin_Entity
+    case "virtual":                    result = Command_Origin_Virtual
+    case "gameargument":               result = Command_Origin_Game_Argument
+    case "entityserver":               result = Command_Origin_Entity_Server
+    case "precompiled":                result = Command_Origin_Precompiled
+    case "gamedirectorentityserver":
+        result = Command_Origin_Game_Director_Entity_Server
+    case "scripting":                  result = Command_Origin_Script
+    case "executecontext":             result = Command_Origin_Executor
+    case:
+        err = codec_error(
+            .Malformed,
+            "gophertunnel.protocol.command_origin_from_string",
+            "unknown command origin",
+        )
+    }
+    return
+}
+
+destroy_command_origin :: proc(
+    origin: Command_Origin,
+    allocator := context.allocator,
+) {
+    delete(origin.request_id, allocator)
+}
+
+read_command_origin :: proc(value: ^Reader) -> (
+    result: Command_Origin,
+    err: mcpe_runtime.Error,
+) {
+    encoded_origin := read_string(value) or_return
+    result.origin, err = command_origin_from_string(encoded_origin)
+    delete(encoded_origin, value.allocator)
+    if err != nil {
+        return
+    }
+    result.uuid = read_uuid(value) or_return
+    result.request_id = read_string(value) or_return
+    result.player_unique_id, err = read_i64(value)
+    if err != nil {
+        destroy_command_origin(result, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_command_origin :: proc(
+    value: ^Writer,
+    input: Command_Origin,
+) -> mcpe_runtime.Error {
+    encoded_origin := command_origin_string(input.origin) or_return
+    write_string(value, encoded_origin)
+    write_uuid(value, input.uuid)
+    write_string(value, input.request_id)
+    write_i64(value, input.player_unique_id)
+    return nil
+}
+
 read_vec2 :: proc(value: ^Reader) -> (result: Vec2, err: mcpe_runtime.Error) {
     for &component in result {
         component = read_f32(value) or_return

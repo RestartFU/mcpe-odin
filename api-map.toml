@@ -824,6 +824,46 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Network_Chunk_Publisher_Upda
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.EntityLink"
+odin = "mcpe:gophertunnel/minecraft/protocol.Entity_Link"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.PixelRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol.Pixel_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.PlayerArmourDamageEntry"
+odin = "mcpe:gophertunnel/minecraft/protocol.Player_Armour_Damage_Entry"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AddPainting"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Add_Painting"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Animate"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Animate"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetActorLink"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Actor_Link"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.MapInfoRequest"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Map_Info_Request"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlayerArmourDamage"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Player_Armour_Damage"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

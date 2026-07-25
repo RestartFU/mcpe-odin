@@ -1316,6 +1316,55 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_add_painting",
+		&packet.AddPainting{
+			EntityUniqueID: -99, EntityRuntimeID: 1<<40 + 21,
+			Position:  mgl32.Vec3{1.25, 2.5, 3.75},
+			Direction: 2, Title: "Kebab",
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_animate",
+		&packet.Animate{
+			ActionType:      packet.AnimateActionSwingArm,
+			EntityRuntimeID: 1<<40 + 22, Data: 1.25,
+			SwingSource: packet.AnimateSwingSourceAttack,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_set_actor_link",
+		&packet.SetActorLink{
+			EntityLink: protocol.EntityLink{
+				RiddenEntityUniqueID: -7, RiderEntityUniqueID: -99,
+				Type: protocol.EntityLinkRider, Immediate: true,
+				RiderInitiated: true, VehicleAngularVelocity: 1.5,
+			},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_map_info_request",
+		&packet.MapInfoRequest{
+			MapID: -99,
+			ClientPixels: []protocol.PixelRequest{{
+				Colour: color.RGBA{R: 1, G: 2, B: 3, A: 4}, Index: 300,
+			}},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_player_armour_damage",
+		&packet.PlayerArmourDamage{
+			List: []protocol.PlayerArmourDamageEntry{
+				{ArmourSlot: 0, Damage: 7},
+				{ArmourSlot: 3, Damage: -2},
+			},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

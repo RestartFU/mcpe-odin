@@ -191,6 +191,11 @@ Packet :: union {
     Move_Actor_Delta,
     Container_Open,
     Network_Chunk_Publisher_Update,
+    Add_Painting,
+    Animate,
+    Set_Actor_Link,
+    Map_Info_Request,
+    Player_Armour_Damage,
     Unknown_Packet,
 }
 
@@ -363,6 +368,11 @@ packet_id :: proc(value: Packet) -> (
     case Container_Open:              id = IDContainerOpen
     case Network_Chunk_Publisher_Update:
         id = IDNetworkChunkPublisherUpdate
+    case Add_Painting:                id = IDAddPainting
+    case Animate:                     id = IDAnimate
+    case Set_Actor_Link:              id = IDSetActorLink
+    case Map_Info_Request:            id = IDMapInfoRequest
+    case Player_Armour_Damage:        id = IDPlayerArmourDamage
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -542,6 +552,12 @@ destroy_packet :: proc(
         delete(packet.sound_name, allocator)
     case Network_Chunk_Publisher_Update:
         delete(packet.saved_chunks, allocator)
+    case Add_Painting:
+        delete(packet.title, allocator)
+    case Map_Info_Request:
+        delete(packet.client_pixels, allocator)
+    case Player_Armour_Damage:
+        delete(packet.list, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

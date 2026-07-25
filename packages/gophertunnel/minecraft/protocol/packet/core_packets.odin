@@ -215,7 +215,12 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDMoveActorAbsolute,
          IDMoveActorDelta,
          IDContainerOpen,
-         IDNetworkChunkPublisherUpdate:
+         IDNetworkChunkPublisherUpdate,
+         IDAddPainting,
+         IDAnimate,
+         IDSetActorLink,
+         IDMapInfoRequest,
+         IDPlayerArmourDamage:
         return true
     }
     return false
@@ -898,6 +903,33 @@ write_payload :: proc(
         protocol.write_block_pos(output, packet.position)
         protocol.write_varuint32(output, packet.radius)
         write_chunk_pos_slice_u32(output, packet.saved_chunks) or_return
+    case Add_Painting:
+        protocol.write_varint64(output, packet.entity_unique_id)
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_vec3(output, packet.position)
+        protocol.write_varint32(output, packet.direction)
+        protocol.write_string(output, packet.title)
+    case Animate:
+        protocol.write_u8(output, packet.action_type)
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_f32(output, packet.data)
+        protocol.write_bool(output, packet.swing_source != 0)
+        if packet.swing_source != 0 {
+            protocol.write_string(
+                output,
+                animate_swing_source_string(packet.swing_source),
+            )
+        }
+    case Set_Actor_Link:
+        protocol.write_entity_link(output, packet.entity_link)
+    case Map_Info_Request:
+        protocol.write_varint64(output, packet.map_id)
+        write_pixel_request_slice_u32(
+            output,
+            packet.client_pixels,
+        ) or_return
+    case Player_Armour_Damage:
+        write_armour_damage_slice(output, packet.list) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -1955,6 +1987,48 @@ decode_packet :: proc(
         packet.radius = protocol.read_varuint32(&input) or_return
         packet.saved_chunks =
             read_chunk_pos_slice_u32(&input) or_return
+        value = packet
+    case IDAddPainting:
+        packet := Add_Painting{}
+        packet.entity_unique_id =
+            protocol.read_varint64(&input) or_return
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.position = protocol.read_vec3(&input) or_return
+        packet.direction = protocol.read_varint32(&input) or_return
+        packet.title = protocol.read_string(&input) or_return
+        value = packet
+    case IDAnimate:
+        packet := Animate{}
+        packet.action_type = protocol.read_u8(&input) or_return
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.data = protocol.read_f32(&input) or_return
+        has_swing_source := protocol.read_bool(&input) or_return
+        if has_swing_source {
+            swing_source := protocol.read_string(&input) or_return
+            packet.swing_source, err =
+                animate_swing_source_from_string(swing_source)
+            delete(swing_source, allocator)
+            if err != nil {
+                return
+            }
+        }
+        value = packet
+    case IDSetActorLink:
+        packet := Set_Actor_Link{}
+        packet.entity_link =
+            protocol.read_entity_link(&input) or_return
+        value = packet
+    case IDMapInfoRequest:
+        packet := Map_Info_Request{}
+        packet.map_id = protocol.read_varint64(&input) or_return
+        packet.client_pixels =
+            read_pixel_request_slice_u32(&input) or_return
+        value = packet
+    case IDPlayerArmourDamage:
+        packet := Player_Armour_Damage{}
+        packet.list = read_armour_damage_slice(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

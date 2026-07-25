@@ -7,6 +7,29 @@ RGBA :: struct {
     r, g, b, a: u8,
 }
 
+Entity_Link_Remove    :: u8(0)
+Entity_Link_Rider     :: u8(1)
+Entity_Link_Passenger :: u8(2)
+
+Entity_Link :: struct {
+    ridden_entity_unique_id:   i64,
+    rider_entity_unique_id:    i64,
+    type:                      u8,
+    immediate:                 bool,
+    rider_initiated:           bool,
+    vehicle_angular_velocity:  f32,
+}
+
+Pixel_Request :: struct {
+    colour: RGBA,
+    index:  u16,
+}
+
+Player_Armour_Damage_Entry :: struct {
+    armour_slot: i32,
+    damage:      i16,
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

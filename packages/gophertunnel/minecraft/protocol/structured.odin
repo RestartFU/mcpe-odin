@@ -180,3 +180,56 @@ write_var_rgba :: proc(value: ^Writer, input: RGBA) {
         u32(input.a) << 24,
     )
 }
+
+read_entity_link :: proc(value: ^Reader) -> (
+    result: Entity_Link,
+    err: mcpe_runtime.Error,
+) {
+    result.ridden_entity_unique_id = read_varint64(value) or_return
+    result.rider_entity_unique_id = read_varint64(value) or_return
+    result.type = read_u8(value) or_return
+    result.immediate = read_bool(value) or_return
+    result.rider_initiated = read_bool(value) or_return
+    result.vehicle_angular_velocity = read_f32(value) or_return
+    return
+}
+
+write_entity_link :: proc(value: ^Writer, input: Entity_Link) {
+    write_varint64(value, input.ridden_entity_unique_id)
+    write_varint64(value, input.rider_entity_unique_id)
+    write_u8(value, input.type)
+    write_bool(value, input.immediate)
+    write_bool(value, input.rider_initiated)
+    write_f32(value, input.vehicle_angular_velocity)
+}
+
+read_pixel_request :: proc(value: ^Reader) -> (
+    result: Pixel_Request,
+    err: mcpe_runtime.Error,
+) {
+    result.colour = read_rgba(value) or_return
+    result.index = read_u16(value) or_return
+    return
+}
+
+write_pixel_request :: proc(value: ^Writer, input: Pixel_Request) {
+    write_rgba(value, input.colour)
+    write_u16(value, input.index)
+}
+
+read_player_armour_damage_entry :: proc(value: ^Reader) -> (
+    result: Player_Armour_Damage_Entry,
+    err: mcpe_runtime.Error,
+) {
+    result.armour_slot = read_varint32(value) or_return
+    result.damage = read_i16(value) or_return
+    return
+}
+
+write_player_armour_damage_entry :: proc(
+    value: ^Writer,
+    input: Player_Armour_Damage_Entry,
+) {
+    write_varint32(value, input.armour_slot)
+    write_i16(value, input.damage)
+}

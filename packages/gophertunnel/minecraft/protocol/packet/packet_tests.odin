@@ -837,6 +837,42 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             radius = 128,
             saved_chunks = []protocol.Chunk_Pos{{-2, 3}, {4, -5}},
         },
+        Add_Painting{
+            entity_unique_id = -99,
+            entity_runtime_id = u64(1) << 40 | 21,
+            position = {1.25, 2.5, 3.75},
+            direction = 2,
+            title = "Kebab",
+        },
+        Animate{
+            action_type = Animate_Action_Swing_Arm,
+            entity_runtime_id = u64(1) << 40 | 22,
+            data = 1.25,
+            swing_source = Animate_Swing_Source_Attack,
+        },
+        Set_Actor_Link{
+            entity_link = {
+                ridden_entity_unique_id = -7,
+                rider_entity_unique_id = -99,
+                type = protocol.Entity_Link_Rider,
+                immediate = true,
+                rider_initiated = true,
+                vehicle_angular_velocity = 1.5,
+            },
+        },
+        Map_Info_Request{
+            map_id = -99,
+            client_pixels = []protocol.Pixel_Request{{
+                colour = {r = 1, g = 2, b = 3, a = 4},
+                index = 300,
+            }},
+        },
+        Player_Armour_Damage{
+            list = []protocol.Player_Armour_Damage_Entry{
+                {armour_slot = 0, damage = 7},
+                {armour_slot = 3, damage = -2},
+            },
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -923,6 +959,11 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDMoveActorDelta,
         IDContainerOpen,
         IDNetworkChunkPublisherUpdate,
+        IDAddPainting,
+        IDAnimate,
+        IDSetActorLink,
+        IDMapInfoRequest,
+        IDPlayerArmourDamage,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1100,6 +1141,26 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             position = {-12, 64, 3456},
             radius = 128,
             saved_chunks = []protocol.Chunk_Pos{{-2, 3}, {4, -5}},
+        },
+        Add_Painting{
+            entity_unique_id = -99,
+            entity_runtime_id = u64(1) << 40 | 21,
+            position = {1.25, 2.5, 3.75},
+            direction = 2,
+            title = "Kebab",
+        },
+        Map_Info_Request{
+            map_id = -99,
+            client_pixels = []protocol.Pixel_Request{{
+                colour = {r = 1, g = 2, b = 3, a = 4},
+                index = 300,
+            }},
+        },
+        Player_Armour_Damage{
+            list = []protocol.Player_Armour_Damage_Entry{
+                {armour_slot = 0, damage = 7},
+                {armour_slot = 3, damage = -2},
+            },
         },
     }
     for original in packets {

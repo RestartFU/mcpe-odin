@@ -1428,6 +1428,57 @@ main :: proc() {
             saved_chunks = []protocol.Chunk_Pos{{-2, 3}, {4, -5}},
         },
     )
+    emit_packet(
+        "packet_add_painting",
+        packet.Add_Painting{
+            entity_unique_id = -99,
+            entity_runtime_id = u64(1) << 40 | 21,
+            position = {1.25, 2.5, 3.75},
+            direction = 2,
+            title = "Kebab",
+        },
+    )
+    emit_packet(
+        "packet_animate",
+        packet.Animate{
+            action_type = packet.Animate_Action_Swing_Arm,
+            entity_runtime_id = u64(1) << 40 | 22,
+            data = 1.25,
+            swing_source = packet.Animate_Swing_Source_Attack,
+        },
+    )
+    emit_packet(
+        "packet_set_actor_link",
+        packet.Set_Actor_Link{
+            entity_link = {
+                ridden_entity_unique_id = -7,
+                rider_entity_unique_id = -99,
+                type = protocol.Entity_Link_Rider,
+                immediate = true,
+                rider_initiated = true,
+                vehicle_angular_velocity = 1.5,
+            },
+        },
+    )
+    emit_packet(
+        "packet_map_info_request",
+        packet.Map_Info_Request{
+            map_id = -99,
+            client_pixels = []protocol.Pixel_Request{{
+                colour = {r = 1, g = 2, b = 3, a = 4},
+                index = 300,
+            }},
+        },
+    )
+    emit_packet(
+        "packet_player_armour_damage",
+        packet.Player_Armour_Damage{
+            list = []protocol.Player_Armour_Damage_Entry{
+                {armour_slot = 0, damage = 7},
+                {armour_slot = 3, damage = -2},
+            },
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

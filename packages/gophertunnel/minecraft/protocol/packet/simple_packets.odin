@@ -624,6 +624,87 @@ Network_Chunk_Publisher_Update :: struct {
     saved_chunks: []protocol.Chunk_Pos,
 }
 
+Animate_Action_Swing_Arm          :: u8(1)
+Animate_Action_Stop_Sleep         :: u8(3)
+Animate_Action_Critical_Hit       :: u8(4)
+Animate_Action_Magic_Critical_Hit :: u8(5)
+
+Animate_Swing_Source_None      :: u8(1)
+Animate_Swing_Source_Build     :: u8(2)
+Animate_Swing_Source_Mine      :: u8(3)
+Animate_Swing_Source_Interact  :: u8(4)
+Animate_Swing_Source_Attack    :: u8(5)
+Animate_Swing_Source_Use_Item  :: u8(6)
+Animate_Swing_Source_Throw_Item :: u8(7)
+Animate_Swing_Source_Drop_Item :: u8(8)
+Animate_Swing_Source_Event     :: u8(9)
+
+Add_Painting :: struct {
+    entity_unique_id:  i64,
+    entity_runtime_id: u64,
+    position:          protocol.Vec3,
+    direction:         i32,
+    title:             string,
+}
+
+Animate :: struct {
+    action_type:       u8,
+    entity_runtime_id: u64,
+    data:              f32,
+    swing_source:      u8,
+}
+
+Set_Actor_Link :: struct {
+    entity_link: protocol.Entity_Link,
+}
+
+Map_Info_Request :: struct {
+    map_id:        i64,
+    client_pixels: []protocol.Pixel_Request,
+}
+
+Player_Armour_Damage :: struct {
+    list: []protocol.Player_Armour_Damage_Entry,
+}
+
+animate_swing_source_string :: proc(source: u8) -> string {
+    switch source {
+    case Animate_Swing_Source_None:       return "none"
+    case Animate_Swing_Source_Build:      return "build"
+    case Animate_Swing_Source_Mine:       return "mine"
+    case Animate_Swing_Source_Interact:   return "interact"
+    case Animate_Swing_Source_Attack:     return "attack"
+    case Animate_Swing_Source_Use_Item:   return "useitem"
+    case Animate_Swing_Source_Throw_Item: return "throwitem"
+    case Animate_Swing_Source_Drop_Item:  return "dropitem"
+    case Animate_Swing_Source_Event:      return "event"
+    case:                                 return "unknown"
+    }
+}
+
+animate_swing_source_from_string :: proc(
+    source: string,
+) -> (value: u8, err: mcpe_runtime.Error) {
+    switch source {
+    case "none":      value = Animate_Swing_Source_None
+    case "build":     value = Animate_Swing_Source_Build
+    case "mine":      value = Animate_Swing_Source_Mine
+    case "interact":  value = Animate_Swing_Source_Interact
+    case "attack":    value = Animate_Swing_Source_Attack
+    case "useitem":   value = Animate_Swing_Source_Use_Item
+    case "throwitem": value = Animate_Swing_Source_Throw_Item
+    case "dropitem":  value = Animate_Swing_Source_Drop_Item
+    case "event":     value = Animate_Swing_Source_Event
+    case:
+        err = packet_error(
+            .Malformed,
+            "gophertunnel.packet.animate_swing_source",
+            "unknown swing source",
+        )
+    }
+    return
+}
+
 Party_Destination_Cookie_Response :: struct {
     cookie:   string,
     accepted: bool,
@@ -792,6 +873,95 @@ read_chunk_pos_slice_u32 :: proc(
     values = make([]protocol.Chunk_Pos, int(count), input.allocator)
     for &value in values {
         value, err = protocol.read_chunk_pos(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_pixel_request_slice_u32 :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Pixel_Request,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_pixel_request_slice_u32",
+            "pixel request list exceeds entry limit",
+        )
+    }
+    protocol.write_u32(output, u32(len(values)))
+    for value in values {
+        protocol.write_pixel_request(output, value)
+    }
+    return nil
+}
+
+read_pixel_request_slice_u32 :: proc(
+    input: ^protocol.Reader,
+) -> (values: []protocol.Pixel_Request, err: mcpe_runtime.Error) {
+    count := protocol.read_u32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_pixel_request_slice_u32",
+            "pixel request list exceeds entry limit",
+        )
+    }
+    values = make([]protocol.Pixel_Request, int(count), input.allocator)
+    for &value in values {
+        value, err = protocol.read_pixel_request(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_armour_damage_slice :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Player_Armour_Damage_Entry,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_armour_damage_slice",
+            "armour damage list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_player_armour_damage_entry(output, value)
+    }
+    return nil
+}
+
+read_armour_damage_slice :: proc(
+    input: ^protocol.Reader,
+) -> (
+    values: []protocol.Player_Armour_Damage_Entry,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_armour_damage_slice",
+            "armour damage list exceeds entry limit",
+        )
+    }
+    values = make(
+        []protocol.Player_Armour_Damage_Entry,
+        int(count),
+        input.allocator,
+    )
+    for &value in values {
+        value, err = protocol.read_player_armour_damage_entry(input)
         if err != nil {
             delete(values, input.allocator)
             values = nil

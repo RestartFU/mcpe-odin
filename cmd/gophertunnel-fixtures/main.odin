@@ -1923,6 +1923,22 @@ main :: proc() {
             flying = true,
         },
     )
+    emit_packet(
+        "packet_graphics_override_parameter",
+        packet.Graphics_Override_Parameter{
+            values = []protocol.Parameter_Keyframe_Value{
+                {time = 0, value = {0.1, 0.2, 0.3}},
+                {time = 1, value = {0.4, 0.5, 0.6}},
+            },
+            float_value = protocol.option(f32(0.75)),
+            vec3_value = protocol.option(protocol.Vec3{1, 2, 3}),
+            biome_identifier = "minecraft:plains",
+            player_identifier = protocol.option(string("player")),
+            parameter_type =
+                protocol.Graphics_Override_Parameter_Type_Sun_Color,
+            reset = false,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

@@ -1144,6 +1144,16 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Movement_Prediction_S
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.ParameterKeyframeValue"
+odin = "mcpe:gophertunnel/minecraft/protocol.Parameter_Keyframe_Value"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.GraphicsOverrideParameter"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Graphics_Override_Parameter"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

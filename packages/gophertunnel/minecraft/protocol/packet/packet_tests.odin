@@ -1174,6 +1174,19 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 },
             },
         },
+        Graphics_Override_Parameter{
+            values = []protocol.Parameter_Keyframe_Value{
+                {time = 0, value = {0.1, 0.2, 0.3}},
+                {time = 1, value = {0.4, 0.5, 0.6}},
+            },
+            float_value = protocol.option(f32(0.75)),
+            vec3_value = protocol.option(protocol.Vec3{1, 2, 3}),
+            biome_identifier = "minecraft:plains",
+            player_identifier = protocol.option(string("player")),
+            parameter_type =
+                protocol.Graphics_Override_Parameter_Type_Sun_Color,
+            reset = false,
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1295,6 +1308,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDRequestAbility,
         IDServerBoundDataStore,
         IDClientBoundDataStore,
+        IDGraphicsOverrideParameter,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1704,6 +1718,16 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
                     },
                 },
             },
+        },
+        Graphics_Override_Parameter{
+            values = []protocol.Parameter_Keyframe_Value{{
+                time = 0,
+                value = {0.1, 0.2, 0.3},
+            }},
+            biome_identifier = "minecraft:plains",
+            player_identifier = protocol.option(string("player")),
+            parameter_type =
+                protocol.Graphics_Override_Parameter_Type_Sun_Color,
         },
     }
     for original in packets {

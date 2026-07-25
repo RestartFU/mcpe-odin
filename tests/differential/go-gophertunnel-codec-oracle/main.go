@@ -1753,6 +1753,22 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_graphics_override_parameter",
+		&packet.GraphicsOverrideParameter{
+			Values: []protocol.ParameterKeyframeValue{
+				{Time: 0, Value: mgl32.Vec3{0.1, 0.2, 0.3}},
+				{Time: 1, Value: mgl32.Vec3{0.4, 0.5, 0.6}},
+			},
+			FloatValue: protocol.Option(float32(0.75)),
+			Vec3Value: protocol.Option(mgl32.Vec3{1, 2, 3}),
+			BiomeIdentifier: "minecraft:plains",
+			PlayerIdentifier: protocol.Option("player"),
+			ParameterType: protocol.GraphicsOverrideParameterTypeSunColor,
+			Reset: false,
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

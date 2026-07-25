@@ -250,7 +250,8 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDServerBoundPackSettingChange,
          IDRequestAbility,
          IDServerBoundDataStore,
-         IDClientBoundDataStore:
+         IDClientBoundDataStore,
+         IDGraphicsOverrideParameter:
         return true
     }
     return false
@@ -1212,6 +1213,26 @@ write_payload :: proc(
         ) or_return
     case Client_Bound_Data_Store:
         write_data_store_changes(output, packet.updates) or_return
+    case Graphics_Override_Parameter:
+        write_parameter_keyframe_values(output, packet.values) or_return
+        protocol.write_bool(output, packet.float_value.set)
+        if packet.float_value.set {
+            protocol.write_f32(output, packet.float_value.value)
+        }
+        protocol.write_bool(output, packet.vec3_value.set)
+        if packet.vec3_value.set {
+            protocol.write_vec3(output, packet.vec3_value.value)
+        }
+        protocol.write_string(output, packet.biome_identifier)
+        protocol.write_bool(output, packet.player_identifier.set)
+        if packet.player_identifier.set {
+            protocol.write_string(
+                output,
+                packet.player_identifier.value,
+            )
+        }
+        protocol.write_u8(output, packet.parameter_type)
+        protocol.write_bool(output, packet.reset)
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2812,6 +2833,42 @@ decode_packet :: proc(
     case IDClientBoundDataStore:
         packet := Client_Bound_Data_Store{}
         packet.updates = read_data_store_changes(&input) or_return
+        value = packet
+    case IDGraphicsOverrideParameter:
+        packet := Graphics_Override_Parameter{}
+        packet.values = read_parameter_keyframe_values(&input) or_return
+        packet.float_value.set, err = protocol.read_bool(&input)
+        if err == nil && packet.float_value.set {
+            packet.float_value.value, err = protocol.read_f32(&input)
+        }
+        if err == nil {
+            packet.vec3_value.set, err = protocol.read_bool(&input)
+        }
+        if err == nil && packet.vec3_value.set {
+            packet.vec3_value.value, err = protocol.read_vec3(&input)
+        }
+        if err == nil {
+            packet.biome_identifier, err =
+                protocol.read_string(&input)
+        }
+        if err == nil {
+            packet.player_identifier.set, err =
+                protocol.read_bool(&input)
+        }
+        if err == nil && packet.player_identifier.set {
+            packet.player_identifier.value, err =
+                protocol.read_string(&input)
+        }
+        if err == nil {
+            packet.parameter_type, err = protocol.read_u8(&input)
+        }
+        if err == nil {
+            packet.reset, err = protocol.read_bool(&input)
+        }
+        if err != nil {
+            destroy_graphics_override_parameter(packet, allocator)
+            return
+        }
         value = packet
     case:
         value = Unknown_Packet{

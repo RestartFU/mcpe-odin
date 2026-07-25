@@ -894,6 +894,27 @@ Client_Bound_Data_Store :: struct {
     updates: []protocol.Data_Store_Change_Entry,
 }
 
+Graphics_Override_Parameter :: struct {
+    values:            []protocol.Parameter_Keyframe_Value,
+    float_value:       protocol.Optional(f32),
+    vec3_value:        protocol.Optional(protocol.Vec3),
+    biome_identifier:  string,
+    player_identifier: protocol.Optional(string),
+    parameter_type:    u8,
+    reset:             bool,
+}
+
+destroy_graphics_override_parameter :: proc(
+    packet: Graphics_Override_Parameter,
+    allocator := context.allocator,
+) {
+    delete(packet.values, allocator)
+    delete(packet.biome_identifier, allocator)
+    if packet.player_identifier.set {
+        delete(packet.player_identifier.value, allocator)
+    }
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"
@@ -1751,6 +1772,52 @@ read_data_store_changes :: proc(input: ^protocol.Reader) -> (
                     input.allocator,
                 )
             }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_parameter_keyframe_values :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Parameter_Keyframe_Value,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_parameter_keyframe_values",
+            "parameter keyframes exceed entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_parameter_keyframe_value(output, value)
+    }
+    return nil
+}
+
+read_parameter_keyframe_values :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Parameter_Keyframe_Value,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_parameter_keyframe_values",
+            "parameter keyframes exceed entry limit",
+        )
+    }
+    values = make(
+        []protocol.Parameter_Keyframe_Value,
+        int(count),
+        input.allocator,
+    )
+    for &value in values {
+        value, err = protocol.read_parameter_keyframe_value(input)
+        if err != nil {
             delete(values, input.allocator)
             values = nil
             return

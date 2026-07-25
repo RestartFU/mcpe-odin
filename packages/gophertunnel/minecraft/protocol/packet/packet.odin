@@ -226,6 +226,7 @@ Packet :: union {
     Request_Ability,
     Server_Bound_Data_Store,
     Client_Bound_Data_Store,
+    Graphics_Override_Parameter,
     Unknown_Packet,
 }
 
@@ -437,6 +438,7 @@ packet_id :: proc(value: Packet) -> (
     case Request_Ability:              id = IDRequestAbility
     case Server_Bound_Data_Store:      id = IDServerBoundDataStore
     case Client_Bound_Data_Store:      id = IDClientBoundDataStore
+    case Graphics_Override_Parameter:  id = IDGraphicsOverrideParameter
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -728,6 +730,8 @@ destroy_packet :: proc(
             protocol.destroy_data_store_change_entry(update, allocator)
         }
         delete(packet.updates, allocator)
+    case Graphics_Override_Parameter:
+        destroy_graphics_override_parameter(packet, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

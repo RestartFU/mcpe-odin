@@ -177,6 +177,23 @@ write_bitset :: proc(
     return nil
 }
 
+read_parameter_keyframe_value :: proc(value: ^Reader) -> (
+    result: Parameter_Keyframe_Value,
+    err: mcpe_runtime.Error,
+) {
+    result.time = read_f32(value) or_return
+    result.value = read_vec3(value) or_return
+    return
+}
+
+write_parameter_keyframe_value :: proc(
+    value: ^Writer,
+    input: Parameter_Keyframe_Value,
+) {
+    write_f32(value, input.time)
+    write_vec3(value, input.value)
+}
+
 read_vec2 :: proc(value: ^Reader) -> (result: Vec2, err: mcpe_runtime.Error) {
     for &component in result {
         component = read_f32(value) or_return

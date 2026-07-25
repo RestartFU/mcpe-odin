@@ -548,6 +548,60 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             hot_bar_slot = -1,
         },
         Completed_Using_Item{used_item_id = -1234, use_method = 1},
+        Agent_Animation{
+            animation = 7,
+            entity_runtime_id = u64(1) << 40 | 9,
+        },
+        Camera{
+            camera_entity_unique_id = -7,
+            target_player_unique_id = 9001,
+        },
+        Clientbound_Update_Sound_Data{
+            server_sound_handle = 0x0123_4567_89ab_cdef,
+            sound_event = Sound_Data_Event_Stop,
+        },
+        Game_Test_Results{
+            name = "test:name",
+            succeeded = false,
+            error = "failed",
+        },
+        Hurt_Armour{cause = -2, damage = 7, armour_slots = 0x11},
+        Lesson_Progress{
+            identifier = "lesson.one",
+            action = Lesson_Action_Complete,
+            score = 99,
+        },
+        Motion_Prediction_Hints{
+            entity_runtime_id = u64(1) << 40 | 10,
+            velocity = {1.25, -2.5, 3.75},
+            on_ground = true,
+        },
+        Multi_Player_Settings{action_type = Refresh_Join_Code},
+        Packet_Violation_Warning{
+            type = Violation_Type_Malformed,
+            severity = Violation_Severity_Final_Warning,
+            packet_id = 42,
+            violation_context = "bad payload",
+        },
+        Request_Permissions{
+            entity_unique_id = -9001,
+            permission_level = 2,
+            requested_permissions = 0x1234,
+        },
+        Update_Adventure_Settings{
+            no_pvm = true,
+            no_mvp = false,
+            immutable_world = true,
+            show_name_tags = false,
+            auto_jump = true,
+        },
+        Update_Client_Input_Locks{
+            locks = Client_Input_Lock_Camera | Client_Input_Lock_Jump,
+        },
+        Update_Client_Options{
+            graphics_mode = protocol.option(Graphics_Mode_Advanced),
+            filter_profanity = protocol.option(true),
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -580,6 +634,19 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDContainerSetData,
         IDGUIDataPickItem,
         IDCompletedUsingItem,
+        IDAgentAnimation,
+        IDCamera,
+        IDClientboundUpdateSoundData,
+        IDGameTestResults,
+        IDHurtArmour,
+        IDLessonProgress,
+        IDMotionPredictionHints,
+        IDMultiPlayerSettings,
+        IDPacketViolationWarning,
+        IDRequestPermissions,
+        IDUpdateAdventureSettings,
+        IDUpdateClientInputLocks,
+        IDUpdateClientOptions,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -645,6 +712,11 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             item_name = "Sword",
             item_effects = "+7 Attack",
             hot_bar_slot = -1,
+        },
+        Game_Test_Results{
+            name = "test:name",
+            succeeded = false,
+            error = "failed",
         },
     }
     for original in packets {

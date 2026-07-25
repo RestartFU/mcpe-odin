@@ -191,3 +191,108 @@ destroy_string_slice :: proc(
     }
     delete(values, allocator)
 }
+
+Sound_Data_Event_Stop :: "Stop"
+
+Lesson_Action_Start    :: i32(0)
+Lesson_Action_Complete :: i32(1)
+Lesson_Action_Restart  :: i32(2)
+
+Enable_Multi_Player  :: i32(0)
+Disable_Multi_Player :: i32(1)
+Refresh_Join_Code    :: i32(2)
+
+Violation_Type_Malformed                :: i32(0)
+Violation_Severity_Warning              :: i32(0)
+Violation_Severity_Final_Warning        :: i32(1)
+Violation_Severity_Terminating_Connection :: i32(2)
+
+Graphics_Mode_Simple     :: u8(0)
+Graphics_Mode_Fancy      :: u8(1)
+Graphics_Mode_Advanced   :: u8(2)
+Graphics_Mode_Ray_Traced :: u8(3)
+
+Client_Input_Lock_Camera           :: u32(1 << 1)
+Client_Input_Lock_Movement         :: u32(1 << 2)
+Client_Input_Lock_Lateral_Movement :: u32(1 << 4)
+Client_Input_Lock_Sneak            :: u32(1 << 5)
+Client_Input_Lock_Jump             :: u32(1 << 6)
+Client_Input_Lock_Mount            :: u32(1 << 7)
+Client_Input_Lock_Dismount         :: u32(1 << 8)
+Client_Input_Lock_Move_Forward     :: u32(1 << 9)
+Client_Input_Lock_Move_Backward    :: u32(1 << 10)
+Client_Input_Lock_Move_Left        :: u32(1 << 11)
+Client_Input_Lock_Move_Right       :: u32(1 << 12)
+
+Agent_Animation :: struct {
+    animation:         u8,
+    entity_runtime_id: u64,
+}
+
+Camera :: struct {
+    camera_entity_unique_id: i64,
+    target_player_unique_id: i64,
+}
+
+Clientbound_Update_Sound_Data :: struct {
+    server_sound_handle: u64,
+    sound_event:         string,
+}
+
+Game_Test_Results :: struct {
+    name:      string,
+    succeeded: bool,
+    error:     string,
+}
+
+Hurt_Armour :: struct {
+    cause:        i32,
+    damage:       i32,
+    armour_slots: i64,
+}
+
+Lesson_Progress :: struct {
+    identifier: string,
+    action:     i32,
+    score:      i32,
+}
+
+Motion_Prediction_Hints :: struct {
+    entity_runtime_id: u64,
+    velocity:          protocol.Vec3,
+    on_ground:         bool,
+}
+
+Multi_Player_Settings :: struct {
+    action_type: i32,
+}
+
+Packet_Violation_Warning :: struct {
+    type:              i32,
+    severity:          i32,
+    packet_id:         i32,
+    violation_context: string,
+}
+
+Request_Permissions :: struct {
+    entity_unique_id:      i64,
+    permission_level:      i32,
+    requested_permissions: u16,
+}
+
+Update_Adventure_Settings :: struct {
+    no_pvm:          bool,
+    no_mvp:          bool,
+    immutable_world: bool,
+    show_name_tags:  bool,
+    auto_jump:       bool,
+}
+
+Update_Client_Input_Locks :: struct {
+    locks: u32,
+}
+
+Update_Client_Options :: struct {
+    graphics_mode:    protocol.Optional(u8),
+    filter_profanity: protocol.Optional(bool),
+}

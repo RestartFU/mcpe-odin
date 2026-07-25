@@ -963,6 +963,104 @@ main :: proc() {
             use_method = 1,
         },
     )
+    emit_packet(
+        "packet_agent_animation",
+        packet.Agent_Animation{
+            animation = 7,
+            entity_runtime_id = u64(1) << 40 | 9,
+        },
+    )
+    emit_packet(
+        "packet_camera",
+        packet.Camera{
+            camera_entity_unique_id = -7,
+            target_player_unique_id = 9001,
+        },
+    )
+    emit_packet(
+        "packet_update_sound_data",
+        packet.Clientbound_Update_Sound_Data{
+            server_sound_handle = 0x0123_4567_89ab_cdef,
+            sound_event = packet.Sound_Data_Event_Stop,
+        },
+    )
+    emit_packet(
+        "packet_game_test_results",
+        packet.Game_Test_Results{
+            name = "test:name",
+            succeeded = false,
+            error = "failed",
+        },
+    )
+    emit_packet(
+        "packet_hurt_armour",
+        packet.Hurt_Armour{cause = -2, damage = 7, armour_slots = 0x11},
+    )
+    emit_packet(
+        "packet_lesson_progress",
+        packet.Lesson_Progress{
+            identifier = "lesson.one",
+            action = packet.Lesson_Action_Complete,
+            score = 99,
+        },
+    )
+    emit_packet(
+        "packet_motion_hints",
+        packet.Motion_Prediction_Hints{
+            entity_runtime_id = u64(1) << 40 | 10,
+            velocity = {1.25, -2.5, 3.75},
+            on_ground = true,
+        },
+    )
+    emit_packet(
+        "packet_multiplayer_settings",
+        packet.Multi_Player_Settings{
+            action_type = packet.Refresh_Join_Code,
+        },
+    )
+    emit_packet(
+        "packet_violation_warning",
+        packet.Packet_Violation_Warning{
+            type = packet.Violation_Type_Malformed,
+            severity = packet.Violation_Severity_Final_Warning,
+            packet_id = 42,
+            violation_context = "bad payload",
+        },
+    )
+    emit_packet(
+        "packet_request_permissions",
+        packet.Request_Permissions{
+            entity_unique_id = -9001,
+            permission_level = 2,
+            requested_permissions = 0x1234,
+        },
+    )
+    emit_packet(
+        "packet_update_adventure",
+        packet.Update_Adventure_Settings{
+            no_pvm = true,
+            no_mvp = false,
+            immutable_world = true,
+            show_name_tags = false,
+            auto_jump = true,
+        },
+    )
+    emit_packet(
+        "packet_input_locks",
+        packet.Update_Client_Input_Locks{
+            locks = packet.Client_Input_Lock_Camera |
+                    packet.Client_Input_Lock_Jump,
+        },
+    )
+    emit_packet(
+        "packet_client_options",
+        packet.Update_Client_Options{
+            graphics_mode = protocol.option(
+                packet.Graphics_Mode_Advanced,
+            ),
+            filter_profanity = protocol.option(true),
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

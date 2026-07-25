@@ -137,6 +137,19 @@ Packet :: union {
     Container_Set_Data,
     GUI_Data_Pick_Item,
     Completed_Using_Item,
+    Agent_Animation,
+    Camera,
+    Clientbound_Update_Sound_Data,
+    Game_Test_Results,
+    Hurt_Armour,
+    Lesson_Progress,
+    Motion_Prediction_Hints,
+    Multi_Player_Settings,
+    Packet_Violation_Warning,
+    Request_Permissions,
+    Update_Adventure_Settings,
+    Update_Client_Input_Locks,
+    Update_Client_Options,
     Unknown_Packet,
 }
 
@@ -244,6 +257,20 @@ packet_id :: proc(value: Packet) -> (
     case Container_Set_Data:          id = IDContainerSetData
     case GUI_Data_Pick_Item:          id = IDGUIDataPickItem
     case Completed_Using_Item:        id = IDCompletedUsingItem
+    case Agent_Animation:             id = IDAgentAnimation
+    case Camera:                      id = IDCamera
+    case Clientbound_Update_Sound_Data:
+        id = IDClientboundUpdateSoundData
+    case Game_Test_Results:           id = IDGameTestResults
+    case Hurt_Armour:                 id = IDHurtArmour
+    case Lesson_Progress:             id = IDLessonProgress
+    case Motion_Prediction_Hints:     id = IDMotionPredictionHints
+    case Multi_Player_Settings:       id = IDMultiPlayerSettings
+    case Packet_Violation_Warning:    id = IDPacketViolationWarning
+    case Request_Permissions:         id = IDRequestPermissions
+    case Update_Adventure_Settings:   id = IDUpdateAdventureSettings
+    case Update_Client_Input_Locks:   id = IDUpdateClientInputLocks
+    case Update_Client_Options:       id = IDUpdateClientOptions
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -356,6 +383,15 @@ destroy_packet :: proc(
     case GUI_Data_Pick_Item:
         delete(packet.item_name, allocator)
         delete(packet.item_effects, allocator)
+    case Clientbound_Update_Sound_Data:
+        delete(packet.sound_event, allocator)
+    case Game_Test_Results:
+        delete(packet.name, allocator)
+        delete(packet.error, allocator)
+    case Lesson_Progress:
+        delete(packet.identifier, allocator)
+    case Packet_Violation_Warning:
+        delete(packet.violation_context, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

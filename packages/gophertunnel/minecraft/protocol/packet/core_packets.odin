@@ -161,7 +161,20 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDContainerClose,
          IDContainerSetData,
          IDGUIDataPickItem,
-         IDCompletedUsingItem:
+         IDCompletedUsingItem,
+         IDAgentAnimation,
+         IDCamera,
+         IDClientboundUpdateSoundData,
+         IDGameTestResults,
+         IDHurtArmour,
+         IDLessonProgress,
+         IDMotionPredictionHints,
+         IDMultiPlayerSettings,
+         IDPacketViolationWarning,
+         IDRequestPermissions,
+         IDUpdateAdventureSettings,
+         IDUpdateClientInputLocks,
+         IDUpdateClientOptions:
         return true
     }
     return false
@@ -543,6 +556,59 @@ write_payload :: proc(
     case Completed_Using_Item:
         protocol.write_i16(output, packet.used_item_id)
         protocol.write_i32(output, packet.use_method)
+    case Agent_Animation:
+        protocol.write_u8(output, packet.animation)
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+    case Camera:
+        protocol.write_varint64(output, packet.camera_entity_unique_id)
+        protocol.write_varint64(output, packet.target_player_unique_id)
+    case Clientbound_Update_Sound_Data:
+        protocol.write_u64(output, packet.server_sound_handle)
+        protocol.write_string(output, packet.sound_event)
+    case Game_Test_Results:
+        protocol.write_bool(output, packet.succeeded)
+        protocol.write_string(output, packet.error)
+        protocol.write_string(output, packet.name)
+    case Hurt_Armour:
+        protocol.write_varint32(output, packet.cause)
+        protocol.write_varint32(output, packet.damage)
+        protocol.write_varint64(output, packet.armour_slots)
+    case Lesson_Progress:
+        protocol.write_varint32(output, packet.action)
+        protocol.write_varint32(output, packet.score)
+        protocol.write_string(output, packet.identifier)
+    case Motion_Prediction_Hints:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_vec3(output, packet.velocity)
+        protocol.write_bool(output, packet.on_ground)
+    case Multi_Player_Settings:
+        protocol.write_varint32(output, packet.action_type)
+    case Packet_Violation_Warning:
+        protocol.write_varint32(output, packet.type)
+        protocol.write_varint32(output, packet.severity)
+        protocol.write_varint32(output, packet.packet_id)
+        protocol.write_string(output, packet.violation_context)
+    case Request_Permissions:
+        protocol.write_i64(output, packet.entity_unique_id)
+        protocol.write_varint32(output, packet.permission_level)
+        protocol.write_u16(output, packet.requested_permissions)
+    case Update_Adventure_Settings:
+        protocol.write_bool(output, packet.no_pvm)
+        protocol.write_bool(output, packet.no_mvp)
+        protocol.write_bool(output, packet.immutable_world)
+        protocol.write_bool(output, packet.show_name_tags)
+        protocol.write_bool(output, packet.auto_jump)
+    case Update_Client_Input_Locks:
+        protocol.write_varuint32(output, packet.locks)
+    case Update_Client_Options:
+        protocol.write_bool(output, packet.graphics_mode.set)
+        if packet.graphics_mode.set {
+            protocol.write_u8(output, packet.graphics_mode.value)
+        }
+        protocol.write_bool(output, packet.filter_profanity.set)
+        if packet.filter_profanity.set {
+            protocol.write_bool(output, packet.filter_profanity.value)
+        }
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -1017,6 +1083,99 @@ decode_packet :: proc(
         packet := Completed_Using_Item{}
         packet.used_item_id = protocol.read_i16(&input) or_return
         packet.use_method = protocol.read_i32(&input) or_return
+        value = packet
+    case IDAgentAnimation:
+        packet := Agent_Animation{}
+        packet.animation = protocol.read_u8(&input) or_return
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        value = packet
+    case IDCamera:
+        packet := Camera{}
+        packet.camera_entity_unique_id =
+            protocol.read_varint64(&input) or_return
+        packet.target_player_unique_id =
+            protocol.read_varint64(&input) or_return
+        value = packet
+    case IDClientboundUpdateSoundData:
+        packet := Clientbound_Update_Sound_Data{}
+        packet.server_sound_handle = protocol.read_u64(&input) or_return
+        packet.sound_event = protocol.read_string(&input) or_return
+        value = packet
+    case IDGameTestResults:
+        packet := Game_Test_Results{}
+        packet.succeeded = protocol.read_bool(&input) or_return
+        packet.error = protocol.read_string(&input) or_return
+        packet.name, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.error, allocator)
+            packet.error = ""
+            return
+        }
+        value = packet
+    case IDHurtArmour:
+        packet := Hurt_Armour{}
+        packet.cause = protocol.read_varint32(&input) or_return
+        packet.damage = protocol.read_varint32(&input) or_return
+        packet.armour_slots = protocol.read_varint64(&input) or_return
+        value = packet
+    case IDLessonProgress:
+        packet := Lesson_Progress{}
+        packet.action = protocol.read_varint32(&input) or_return
+        packet.score = protocol.read_varint32(&input) or_return
+        packet.identifier = protocol.read_string(&input) or_return
+        value = packet
+    case IDMotionPredictionHints:
+        packet := Motion_Prediction_Hints{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.velocity = protocol.read_vec3(&input) or_return
+        packet.on_ground = protocol.read_bool(&input) or_return
+        value = packet
+    case IDMultiPlayerSettings:
+        packet := Multi_Player_Settings{}
+        packet.action_type = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDPacketViolationWarning:
+        packet := Packet_Violation_Warning{}
+        packet.type = protocol.read_varint32(&input) or_return
+        packet.severity = protocol.read_varint32(&input) or_return
+        packet.packet_id = protocol.read_varint32(&input) or_return
+        packet.violation_context =
+            protocol.read_string(&input) or_return
+        value = packet
+    case IDRequestPermissions:
+        packet := Request_Permissions{}
+        packet.entity_unique_id = protocol.read_i64(&input) or_return
+        packet.permission_level =
+            protocol.read_varint32(&input) or_return
+        packet.requested_permissions = protocol.read_u16(&input) or_return
+        value = packet
+    case IDUpdateAdventureSettings:
+        packet := Update_Adventure_Settings{}
+        packet.no_pvm = protocol.read_bool(&input) or_return
+        packet.no_mvp = protocol.read_bool(&input) or_return
+        packet.immutable_world = protocol.read_bool(&input) or_return
+        packet.show_name_tags = protocol.read_bool(&input) or_return
+        packet.auto_jump = protocol.read_bool(&input) or_return
+        value = packet
+    case IDUpdateClientInputLocks:
+        packet := Update_Client_Input_Locks{}
+        packet.locks = protocol.read_varuint32(&input) or_return
+        value = packet
+    case IDUpdateClientOptions:
+        packet := Update_Client_Options{}
+        packet.graphics_mode.set = protocol.read_bool(&input) or_return
+        if packet.graphics_mode.set {
+            packet.graphics_mode.value =
+                protocol.read_u8(&input) or_return
+        }
+        packet.filter_profanity.set =
+            protocol.read_bool(&input) or_return
+        if packet.filter_profanity.set {
+            packet.filter_profanity.value =
+                protocol.read_bool(&input) or_return
+        }
         value = packet
     case:
         value = Unknown_Packet{

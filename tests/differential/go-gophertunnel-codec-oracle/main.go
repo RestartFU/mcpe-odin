@@ -904,6 +904,108 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_agent_animation",
+		&packet.AgentAnimation{Animation: 7, EntityRuntimeID: 1<<40 + 9},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_camera",
+		&packet.Camera{CameraEntityUniqueID: -7, TargetPlayerUniqueID: 9001},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_update_sound_data",
+		&packet.ClientboundUpdateSoundData{
+			ServerSoundHandle: 0x0123456789abcdef,
+			SoundEvent:        packet.SoundDataEventStop,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_game_test_results",
+		&packet.GameTestResults{Name: "test:name", Succeeded: false, Error: "failed"},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_hurt_armour",
+		&packet.HurtArmour{Cause: -2, Damage: 7, ArmourSlots: 0x11},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_lesson_progress",
+		&packet.LessonProgress{Identifier: "lesson.one", Action: packet.LessonActionComplete, Score: 99},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_motion_hints",
+		&packet.MotionPredictionHints{
+			EntityRuntimeID: 1<<40 + 10,
+			Velocity:        mgl32.Vec3{1.25, -2.5, 3.75},
+			OnGround:        true,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_multiplayer_settings",
+		&packet.MultiPlayerSettings{ActionType: packet.RefreshJoinCode},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_violation_warning",
+		&packet.PacketViolationWarning{
+			Type:             packet.ViolationTypeMalformed,
+			Severity:         packet.ViolationSeverityFinalWarning,
+			PacketID:         42,
+			ViolationContext: "bad payload",
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_request_permissions",
+		&packet.RequestPermissions{
+			EntityUniqueID:      -9001,
+			PermissionLevel:      2,
+			RequestedPermissions: 0x1234,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_update_adventure",
+		&packet.UpdateAdventureSettings{
+			NoPvM: true, NoMvP: false, ImmutableWorld: true,
+			ShowNameTags: false, AutoJump: true,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_input_locks",
+		&packet.UpdateClientInputLocks{
+			Locks: packet.ClientInputLockCamera | packet.ClientInputLockJump,
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_client_options",
+		&packet.UpdateClientOptions{
+			GraphicsMode:    protocol.Option(byte(packet.GraphicsModeAdvanced)),
+			FilterProfanity: protocol.Option(true),
+		},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

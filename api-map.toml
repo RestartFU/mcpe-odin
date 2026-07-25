@@ -549,6 +549,71 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Completed_Using_Item"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AgentAnimation"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Agent_Animation"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Camera"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Camera"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientboundUpdateSoundData"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Clientbound_Update_Sound_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.GameTestResults"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Game_Test_Results"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.HurtArmour"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Hurt_Armour"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.LessonProgress"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Lesson_Progress"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.MotionPredictionHints"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Motion_Prediction_Hints"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.MultiPlayerSettings"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Multi_Player_Settings"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PacketViolationWarning"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Packet_Violation_Warning"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.RequestPermissions"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Request_Permissions"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.UpdateAdventureSettings"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Adventure_Settings"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.UpdateClientInputLocks"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Client_Input_Locks"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.UpdateClientOptions"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Client_Options"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

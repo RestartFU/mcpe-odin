@@ -1,6 +1,7 @@
 package gt_packet
 
 import protocol "mcpe:gophertunnel/minecraft/protocol"
+import mcpe_runtime "mcpe:runtime"
 
 Client_Bound_Data_Driven_UI_Reload :: struct {}
 Refresh_Entitlements :: struct {}
@@ -87,4 +88,106 @@ Create_Photo :: struct {
 Code_Builder :: struct {
     url:                      string,
     should_open_code_builder: bool,
+}
+
+Education_Resource_URI :: struct {
+    resource: protocol.Education_Shared_Resource_URI,
+}
+
+Player_Fog :: struct {
+    stack: []string,
+}
+
+Death_Info :: struct {
+    cause:    string,
+    messages: []string,
+}
+
+Client_Cache_Status :: struct {
+    enabled: bool,
+}
+
+Level_Event_Generic :: struct {
+    event_id:              i32,
+    serialised_event_data: []u8,
+}
+
+Container_Close :: struct {
+    window_id:      u8,
+    container_type: u8,
+    server_side:    bool,
+}
+
+Container_Set_Data :: struct {
+    window_id: u8,
+    key:       i32,
+    value:     i32,
+}
+
+GUI_Data_Pick_Item :: struct {
+    item_name:    string,
+    item_effects: string,
+    hot_bar_slot: i32,
+}
+
+Completed_Using_Item :: struct {
+    used_item_id: i16,
+    use_method:   i32,
+}
+
+write_string_slice :: proc(
+    output: ^protocol.Writer,
+    values: []string,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_string_slice",
+            "string list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_string(output, value)
+    }
+    return nil
+}
+
+read_string_slice :: proc(
+    input: ^protocol.Reader,
+) -> (
+    values: []string,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_string_slice",
+            "string list exceeds entry limit",
+        )
+    }
+    values = make([]string, int(count), input.allocator)
+    for &value, index in values {
+        value, err = protocol.read_string(input)
+        if err != nil {
+            for previous in values[:index] {
+                delete(previous, input.allocator)
+            }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+destroy_string_slice :: proc(
+    values: []string,
+    allocator := context.allocator,
+) {
+    for value in values {
+        delete(value, allocator)
+    }
+    delete(values, allocator)
 }

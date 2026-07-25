@@ -899,6 +899,70 @@ main :: proc() {
             should_open_code_builder = true,
         },
     )
+    emit_packet(
+        "packet_education_resource",
+        packet.Education_Resource_URI{
+            resource = {
+                button_name = "Learn",
+                link_uri = "https://example.org/lesson",
+            },
+        },
+    )
+    emit_packet(
+        "packet_player_fog",
+        packet.Player_Fog{
+            stack = []string{"minecraft:fog_ocean", "custom:fog"},
+        },
+    )
+    emit_packet(
+        "packet_death_info",
+        packet.Death_Info{
+            cause = "suffocation",
+            messages = []string{"one", "two"},
+        },
+    )
+    emit_packet(
+        "packet_client_cache_status",
+        packet.Client_Cache_Status{enabled = true},
+    )
+    emit_packet(
+        "packet_level_event_generic",
+        packet.Level_Event_Generic{
+            event_id = 2026,
+            serialised_event_data = []u8{1, 2, 3},
+        },
+    )
+    emit_packet(
+        "packet_container_close",
+        packet.Container_Close{
+            window_id = 4,
+            container_type = 12,
+            server_side = true,
+        },
+    )
+    emit_packet(
+        "packet_container_set_data",
+        packet.Container_Set_Data{
+            window_id = 5,
+            key = -2,
+            value = 300,
+        },
+    )
+    emit_packet(
+        "packet_gui_pick_item",
+        packet.GUI_Data_Pick_Item{
+            item_name = "Sword",
+            item_effects = "+7 Attack",
+            hot_bar_slot = -1,
+        },
+    )
+    emit_packet(
+        "packet_completed_item",
+        packet.Completed_Using_Item{
+            used_item_id = -1234,
+            use_method = 1,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

@@ -494,6 +494,61 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Code_Builder"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.EducationSharedResourceURI"
+odin = "mcpe:gophertunnel/minecraft/protocol.Education_Shared_Resource_URI"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.EducationExternalLinkSettings"
+odin = "mcpe:gophertunnel/minecraft/protocol.Education_External_Link_Settings"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.EducationResourceURI"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Education_Resource_URI"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlayerFog"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Player_Fog"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.DeathInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Death_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientCacheStatus"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Cache_Status"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.LevelEventGeneric"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Level_Event_Generic"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ContainerClose"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Container_Close"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ContainerSetData"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Container_Set_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.GUIDataPickItem"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.GUI_Data_Pick_Item"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CompletedUsingItem"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Completed_Using_Item"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

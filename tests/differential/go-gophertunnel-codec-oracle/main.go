@@ -850,6 +850,60 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_education_resource",
+		&packet.EducationResourceURI{
+			Resource: protocol.EducationSharedResourceURI{
+				ButtonName: "Learn",
+				LinkURI:    "https://example.org/lesson",
+			},
+		},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_player_fog",
+		&packet.PlayerFog{Stack: []string{"minecraft:fog_ocean", "custom:fog"}},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_death_info",
+		&packet.DeathInfo{Cause: "suffocation", Messages: []string{"one", "two"}},
+		0,
+		0,
+	)
+	emitPacket("packet_client_cache_status", &packet.ClientCacheStatus{Enabled: true}, 0, 0)
+	emitPacket(
+		"packet_level_event_generic",
+		&packet.LevelEventGeneric{EventID: 2026, SerialisedEventData: []byte{1, 2, 3}},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_container_close",
+		&packet.ContainerClose{WindowID: 4, ContainerType: 12, ServerSide: true},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_container_set_data",
+		&packet.ContainerSetData{WindowID: 5, Key: -2, Value: 300},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_gui_pick_item",
+		&packet.GUIDataPickItem{ItemName: "Sword", ItemEffects: "+7 Attack", HotBarSlot: -1},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_completed_item",
+		&packet.CompletedUsingItem{UsedItemID: -1234, UseMethod: packet.UseItemEat},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

@@ -518,6 +518,36 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             url = "ws://localhost:8080",
             should_open_code_builder = true,
         },
+        Education_Resource_URI{
+            resource = {
+                button_name = "Learn",
+                link_uri = "https://example.org/lesson",
+            },
+        },
+        Player_Fog{
+            stack = []string{"minecraft:fog_ocean", "custom:fog"},
+        },
+        Death_Info{
+            cause = "suffocation",
+            messages = []string{"one", "two"},
+        },
+        Client_Cache_Status{enabled = true},
+        Level_Event_Generic{
+            event_id = 2026,
+            serialised_event_data = []u8{1, 2, 3},
+        },
+        Container_Close{
+            window_id = 4,
+            container_type = 12,
+            server_side = true,
+        },
+        Container_Set_Data{window_id = 5, key = -2, value = 300},
+        GUI_Data_Pick_Item{
+            item_name = "Sword",
+            item_effects = "+7 Attack",
+            hot_bar_slot = -1,
+        },
+        Completed_Using_Item{used_item_id = -1234, use_method = 1},
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -541,6 +571,15 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDDebugInfo,
         IDCreatePhoto,
         IDCodeBuilder,
+        IDEducationResourceURI,
+        IDPlayerFog,
+        IDDeathInfo,
+        IDClientCacheStatus,
+        IDLevelEventGeneric,
+        IDContainerClose,
+        IDContainerSetData,
+        IDGUIDataPickItem,
+        IDCompletedUsingItem,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -594,6 +633,19 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             url = "ws://localhost:8080",
             should_open_code_builder = true,
         },
+        Education_Resource_URI{
+            resource = {
+                button_name = "Learn",
+                link_uri = "https://example.org/lesson",
+            },
+        },
+        Player_Fog{stack = []string{"one", "two"}},
+        Death_Info{cause = "suffocation", messages = []string{"one"}},
+        GUI_Data_Pick_Item{
+            item_name = "Sword",
+            item_effects = "+7 Attack",
+            hot_bar_slot = -1,
+        },
     }
     for original in packets {
         encoded, encode_err := encode_packet(original)
@@ -610,6 +662,25 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             mcpe_runtime.destroy_error(decode_err)
         }
         delete(encoded)
+    }
+}
+
+@(test)
+simple_packet_string_lists_are_bounded :: proc(t: ^testing.T) {
+    entries := make(
+        []string,
+        protocol.MAX_COLLECTION_ELEMENTS + 1,
+    )
+    defer delete(entries)
+    _, err := encode_packet(Player_Fog{stack = entries})
+    testing.expect(t, err != nil)
+    if err != nil {
+        testing.expect_value(
+            t,
+            err.kind,
+            mcpe_runtime.Error_Kind.Limit_Exceeded,
+        )
+        mcpe_runtime.destroy_error(err)
     }
 }
 

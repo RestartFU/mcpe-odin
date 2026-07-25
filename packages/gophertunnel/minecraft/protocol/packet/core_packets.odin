@@ -152,7 +152,16 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDAnvilDamage,
          IDDebugInfo,
          IDCreatePhoto,
-         IDCodeBuilder:
+         IDCodeBuilder,
+         IDEducationResourceURI,
+         IDPlayerFog,
+         IDDeathInfo,
+         IDClientCacheStatus,
+         IDLevelEventGeneric,
+         IDContainerClose,
+         IDContainerSetData,
+         IDGUIDataPickItem,
+         IDCompletedUsingItem:
         return true
     }
     return false
@@ -504,6 +513,36 @@ write_payload :: proc(
     case Code_Builder:
         protocol.write_string(output, packet.url)
         protocol.write_bool(output, packet.should_open_code_builder)
+    case Education_Resource_URI:
+        protocol.write_education_shared_resource_uri(
+            output,
+            packet.resource,
+        )
+    case Player_Fog:
+        write_string_slice(output, packet.stack) or_return
+    case Death_Info:
+        protocol.write_string(output, packet.cause)
+        write_string_slice(output, packet.messages) or_return
+    case Client_Cache_Status:
+        protocol.write_bool(output, packet.enabled)
+    case Level_Event_Generic:
+        protocol.write_varint32(output, packet.event_id)
+        protocol.write_bytes(output, packet.serialised_event_data)
+    case Container_Close:
+        protocol.write_u8(output, packet.window_id)
+        protocol.write_u8(output, packet.container_type)
+        protocol.write_bool(output, packet.server_side)
+    case Container_Set_Data:
+        protocol.write_u8(output, packet.window_id)
+        protocol.write_varint32(output, packet.key)
+        protocol.write_varint32(output, packet.value)
+    case GUI_Data_Pick_Item:
+        protocol.write_string(output, packet.item_name)
+        protocol.write_string(output, packet.item_effects)
+        protocol.write_i32(output, packet.hot_bar_slot)
+    case Completed_Using_Item:
+        protocol.write_i16(output, packet.used_item_id)
+        protocol.write_i32(output, packet.use_method)
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -915,6 +954,69 @@ decode_packet :: proc(
             packet.url = ""
             return
         }
+        value = packet
+    case IDEducationResourceURI:
+        packet := Education_Resource_URI{}
+        packet.resource =
+            protocol.read_education_shared_resource_uri(&input) or_return
+        value = packet
+    case IDPlayerFog:
+        packet := Player_Fog{}
+        packet.stack = read_string_slice(&input) or_return
+        value = packet
+    case IDDeathInfo:
+        packet := Death_Info{}
+        packet.cause = protocol.read_string(&input) or_return
+        packet.messages, err = read_string_slice(&input)
+        if err != nil {
+            delete(packet.cause, allocator)
+            packet.cause = ""
+            return
+        }
+        value = packet
+    case IDClientCacheStatus:
+        packet := Client_Cache_Status{}
+        packet.enabled = protocol.read_bool(&input) or_return
+        value = packet
+    case IDLevelEventGeneric:
+        packet := Level_Event_Generic{}
+        packet.event_id = protocol.read_varint32(&input) or_return
+        packet.serialised_event_data = clone_payload(&input) or_return
+        value = packet
+    case IDContainerClose:
+        packet := Container_Close{}
+        packet.window_id = protocol.read_u8(&input) or_return
+        packet.container_type = protocol.read_u8(&input) or_return
+        packet.server_side = protocol.read_bool(&input) or_return
+        value = packet
+    case IDContainerSetData:
+        packet := Container_Set_Data{}
+        packet.window_id = protocol.read_u8(&input) or_return
+        packet.key = protocol.read_varint32(&input) or_return
+        packet.value = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDGUIDataPickItem:
+        packet := GUI_Data_Pick_Item{}
+        packet.item_name = protocol.read_string(&input) or_return
+        packet.item_effects, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.item_name, allocator)
+            packet.item_name = ""
+            return
+        }
+        packet.hot_bar_slot, err = protocol.read_i32(&input)
+        if err != nil {
+            delete(packet.item_name, allocator)
+            delete(packet.item_effects, allocator)
+            packet.item_name = ""
+            packet.item_effects = ""
+            return
+        }
+        value = packet
+    case IDCompletedUsingItem:
+        packet := Completed_Using_Item{}
+        packet.used_item_id = protocol.read_i16(&input) or_return
+        packet.use_method = protocol.read_i32(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

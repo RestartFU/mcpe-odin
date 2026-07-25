@@ -128,6 +128,15 @@ Packet :: union {
     Debug_Info,
     Create_Photo,
     Code_Builder,
+    Education_Resource_URI,
+    Player_Fog,
+    Death_Info,
+    Client_Cache_Status,
+    Level_Event_Generic,
+    Container_Close,
+    Container_Set_Data,
+    GUI_Data_Pick_Item,
+    Completed_Using_Item,
     Unknown_Packet,
 }
 
@@ -226,6 +235,15 @@ packet_id :: proc(value: Packet) -> (
     case Debug_Info:                  id = IDDebugInfo
     case Create_Photo:                id = IDCreatePhoto
     case Code_Builder:                id = IDCodeBuilder
+    case Education_Resource_URI:      id = IDEducationResourceURI
+    case Player_Fog:                  id = IDPlayerFog
+    case Death_Info:                  id = IDDeathInfo
+    case Client_Cache_Status:         id = IDClientCacheStatus
+    case Level_Event_Generic:         id = IDLevelEventGeneric
+    case Container_Close:             id = IDContainerClose
+    case Container_Set_Data:          id = IDContainerSetData
+    case GUI_Data_Pick_Item:          id = IDGUIDataPickItem
+    case Completed_Using_Item:        id = IDCompletedUsingItem
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -325,6 +343,19 @@ destroy_packet :: proc(
         delete(packet.item_name, allocator)
     case Code_Builder:
         delete(packet.url, allocator)
+    case Education_Resource_URI:
+        delete(packet.resource.button_name, allocator)
+        delete(packet.resource.link_uri, allocator)
+    case Player_Fog:
+        destroy_string_slice(packet.stack, allocator)
+    case Death_Info:
+        delete(packet.cause, allocator)
+        destroy_string_slice(packet.messages, allocator)
+    case Level_Event_Generic:
+        delete(packet.serialised_event_data, allocator)
+    case GUI_Data_Pick_Item:
+        delete(packet.item_name, allocator)
+        delete(packet.item_effects, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

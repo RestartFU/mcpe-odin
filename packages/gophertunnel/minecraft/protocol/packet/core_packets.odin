@@ -233,7 +233,11 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDAdventureSettings,
          IDBookEdit,
          IDBossEvent,
-         IDUpdateSoftEnum:
+         IDUpdateSoftEnum,
+         IDUnlockedRecipes,
+         IDTrimData,
+         IDFeatureRegistry,
+         IDDimensionData:
         return true
     }
     return false
@@ -1091,6 +1095,19 @@ write_payload :: proc(
         protocol.write_string(output, packet.enum_type)
         write_string_slice(output, packet.options) or_return
         protocol.write_u8(output, packet.action_type)
+    case Unlocked_Recipes:
+        protocol.write_u32(output, packet.unlock_type)
+        write_string_slice(output, packet.recipes) or_return
+    case Trim_Data:
+        write_trim_patterns(output, packet.patterns) or_return
+        write_trim_materials(output, packet.materials) or_return
+    case Feature_Registry:
+        write_generation_features(output, packet.features) or_return
+    case Dimension_Data:
+        write_dimension_definitions(
+            output,
+            packet.definitions,
+        ) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2534,6 +2551,33 @@ decode_packet :: proc(
             destroy_string_slice(packet.options, allocator)
             return
         }
+        value = packet
+    case IDUnlockedRecipes:
+        packet := Unlocked_Recipes{}
+        packet.unlock_type = protocol.read_u32(&input) or_return
+        packet.recipes = read_string_slice(&input) or_return
+        value = packet
+    case IDTrimData:
+        packet := Trim_Data{}
+        packet.patterns = read_trim_patterns(&input) or_return
+        packet.materials, err = read_trim_materials(&input)
+        if err != nil {
+            for pattern in packet.patterns {
+                delete(pattern.item_name, allocator)
+                delete(pattern.pattern_id, allocator)
+            }
+            delete(packet.patterns, allocator)
+            return
+        }
+        value = packet
+    case IDFeatureRegistry:
+        packet := Feature_Registry{}
+        packet.features = read_generation_features(&input) or_return
+        value = packet
+    case IDDimensionData:
+        packet := Dimension_Data{}
+        packet.definitions =
+            read_dimension_definitions(&input) or_return
         value = packet
     case:
         value = Unknown_Packet{

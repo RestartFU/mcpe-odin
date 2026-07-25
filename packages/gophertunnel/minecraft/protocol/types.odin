@@ -48,6 +48,36 @@ Scoreboard_Identity_Entry :: struct {
     entity_unique_id: i64,
 }
 
+Trim_Pattern :: struct {
+    item_name:  string,
+    pattern_id: string,
+}
+
+Trim_Material :: struct {
+    material_id: string,
+    colour:      string,
+    item_name:   string,
+}
+
+Generator_Legacy    :: i32(0)
+Generator_Overworld :: i32(1)
+Generator_Flat      :: i32(2)
+Generator_Nether    :: i32(3)
+Generator_End       :: i32(4)
+Generator_Void      :: i32(5)
+
+Dimension_Definition :: struct {
+    name:           string,
+    range:          [2]i32,
+    generator:      i32,
+    dimension_type: i32,
+}
+
+Generation_Feature :: struct {
+    name: string,
+    json: []u8,
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

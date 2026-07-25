@@ -939,6 +939,46 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Update_Soft_Enum"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.TrimPattern"
+odin = "mcpe:gophertunnel/minecraft/protocol.Trim_Pattern"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.TrimMaterial"
+odin = "mcpe:gophertunnel/minecraft/protocol.Trim_Material"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.GenerationFeature"
+odin = "mcpe:gophertunnel/minecraft/protocol.Generation_Feature"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.DimensionDefinition"
+odin = "mcpe:gophertunnel/minecraft/protocol.Dimension_Definition"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.UnlockedRecipes"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Unlocked_Recipes"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.TrimData"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Trim_Data"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.FeatureRegistry"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Feature_Registry"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.DimensionData"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Dimension_Data"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

@@ -209,6 +209,10 @@ Packet :: union {
     Book_Edit,
     Boss_Event,
     Update_Soft_Enum,
+    Unlocked_Recipes,
+    Trim_Data,
+    Feature_Registry,
+    Dimension_Data,
     Unknown_Packet,
 }
 
@@ -399,6 +403,10 @@ packet_id :: proc(value: Packet) -> (
     case Book_Edit:                   id = IDBookEdit
     case Boss_Event:                  id = IDBossEvent
     case Update_Soft_Enum:            id = IDUpdateSoftEnum
+    case Unlocked_Recipes:             id = IDUnlockedRecipes
+    case Trim_Data:                    id = IDTrimData
+    case Feature_Registry:             id = IDFeatureRegistry
+    case Dimension_Data:               id = IDDimensionData
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -619,6 +627,31 @@ destroy_packet :: proc(
     case Update_Soft_Enum:
         delete(packet.enum_type, allocator)
         destroy_string_slice(packet.options, allocator)
+    case Unlocked_Recipes:
+        destroy_string_slice(packet.recipes, allocator)
+    case Trim_Data:
+        for pattern in packet.patterns {
+            delete(pattern.item_name, allocator)
+            delete(pattern.pattern_id, allocator)
+        }
+        delete(packet.patterns, allocator)
+        for material in packet.materials {
+            delete(material.material_id, allocator)
+            delete(material.colour, allocator)
+            delete(material.item_name, allocator)
+        }
+        delete(packet.materials, allocator)
+    case Feature_Registry:
+        for feature in packet.features {
+            delete(feature.name, allocator)
+            delete(feature.json, allocator)
+        }
+        delete(packet.features, allocator)
+    case Dimension_Data:
+        for definition in packet.definitions {
+            delete(definition.name, allocator)
+        }
+        delete(packet.definitions, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

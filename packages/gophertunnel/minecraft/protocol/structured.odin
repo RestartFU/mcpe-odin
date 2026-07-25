@@ -325,3 +325,101 @@ write_scoreboard_identity_entry :: proc(
     write_varint64(value, input.entry_id)
     write_varint64(value, input.entity_unique_id)
 }
+
+read_trim_pattern :: proc(value: ^Reader) -> (
+    result: Trim_Pattern,
+    err: mcpe_runtime.Error,
+) {
+    result.item_name = read_string(value) or_return
+    result.pattern_id, err = read_string(value)
+    if err != nil {
+        delete(result.item_name, value.allocator)
+        result.item_name = ""
+    }
+    return
+}
+
+write_trim_pattern :: proc(value: ^Writer, input: Trim_Pattern) {
+    write_string(value, input.item_name)
+    write_string(value, input.pattern_id)
+}
+
+read_trim_material :: proc(value: ^Reader) -> (
+    result: Trim_Material,
+    err: mcpe_runtime.Error,
+) {
+    result.material_id = read_string(value) or_return
+    result.colour, err = read_string(value)
+    if err != nil {
+        delete(result.material_id, value.allocator)
+        result = {}
+        return
+    }
+    result.item_name, err = read_string(value)
+    if err != nil {
+        delete(result.material_id, value.allocator)
+        delete(result.colour, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_trim_material :: proc(value: ^Writer, input: Trim_Material) {
+    write_string(value, input.material_id)
+    write_string(value, input.colour)
+    write_string(value, input.item_name)
+}
+
+read_dimension_definition :: proc(value: ^Reader) -> (
+    result: Dimension_Definition,
+    err: mcpe_runtime.Error,
+) {
+    result.name = read_string(value) or_return
+    result.range[0], err = read_varint32(value)
+    if err == nil {
+        result.range[1], err = read_varint32(value)
+    }
+    if err == nil {
+        result.generator, err = read_varint32(value)
+    }
+    if err == nil {
+        result.dimension_type, err = read_varint32(value)
+    }
+    if err != nil {
+        delete(result.name, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_dimension_definition :: proc(
+    value: ^Writer,
+    input: Dimension_Definition,
+) {
+    write_string(value, input.name)
+    write_varint32(value, input.range[0])
+    write_varint32(value, input.range[1])
+    write_varint32(value, input.generator)
+    write_varint32(value, input.dimension_type)
+}
+
+read_generation_feature :: proc(value: ^Reader) -> (
+    result: Generation_Feature,
+    err: mcpe_runtime.Error,
+) {
+    result.name = read_string(value) or_return
+    result.json, err = read_byte_slice(value)
+    if err != nil {
+        delete(result.name, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_generation_feature :: proc(
+    value: ^Writer,
+    input: Generation_Feature,
+) {
+    write_string(value, input.name)
+    write_byte_slice(value, input.json)
+}

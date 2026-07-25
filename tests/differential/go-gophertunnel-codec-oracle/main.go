@@ -1509,6 +1509,47 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_unlocked_recipes",
+		&packet.UnlockedRecipes{
+			UnlockType: packet.UnlockedRecipesTypeNewlyUnlocked,
+			Recipes:    []string{"minecraft:bread", "minecraft:cake"},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_trim_data",
+		&packet.TrimData{
+			Patterns: []protocol.TrimPattern{{
+				ItemName:  "minecraft:spire_armor_trim_smithing_template",
+				PatternID: "spire",
+			}},
+			Materials: []protocol.TrimMaterial{{
+				MaterialID: "gold", Colour: "§6",
+				ItemName: "minecraft:gold_ingot",
+			}},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_feature_registry",
+		&packet.FeatureRegistry{
+			Features: []protocol.GenerationFeature{{
+				Name: "minecraft:test", JSON: []byte(`{"format_version":"1.0"}`),
+			}},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_dimension_data",
+		&packet.DimensionData{
+			Definitions: []protocol.DimensionDefinition{{
+				Name: "custom:test", Range: [2]int32{320, -64},
+				Generator: protocol.GeneratorOverworld, DimensionType: 1000,
+			}},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

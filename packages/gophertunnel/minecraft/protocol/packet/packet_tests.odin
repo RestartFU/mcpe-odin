@@ -977,6 +977,36 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             options = []string{"one", "two"},
             action_type = Soft_Enum_Action_Set,
         },
+        Unlocked_Recipes{
+            unlock_type = Unlocked_Recipes_Type_Newly_Unlocked,
+            recipes = []string{"minecraft:bread", "minecraft:cake"},
+        },
+        Trim_Data{
+            patterns = []protocol.Trim_Pattern{{
+                item_name =
+                    "minecraft:spire_armor_trim_smithing_template",
+                pattern_id = "spire",
+            }},
+            materials = []protocol.Trim_Material{{
+                material_id = "gold",
+                colour = "§6",
+                item_name = "minecraft:gold_ingot",
+            }},
+        },
+        Feature_Registry{
+            features = []protocol.Generation_Feature{{
+                name = "minecraft:test",
+                json = transmute([]u8)string(`{"format_version":"1.0"}`),
+            }},
+        },
+        Dimension_Data{
+            definitions = []protocol.Dimension_Definition{{
+                name = "custom:test",
+                range = {320, -64},
+                generator = protocol.Generator_Overworld,
+                dimension_type = 1000,
+            }},
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1081,6 +1111,10 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDBookEdit,
         IDBossEvent,
         IDUpdateSoftEnum,
+        IDUnlockedRecipes,
+        IDTrimData,
+        IDFeatureRegistry,
+        IDDimensionData,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1355,6 +1389,36 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             enum_type = "targets",
             options = []string{"one", "two"},
             action_type = Soft_Enum_Action_Set,
+        },
+        Unlocked_Recipes{
+            unlock_type = Unlocked_Recipes_Type_Newly_Unlocked,
+            recipes = []string{"minecraft:bread", "minecraft:cake"},
+        },
+        Trim_Data{
+            patterns = []protocol.Trim_Pattern{{
+                item_name =
+                    "minecraft:spire_armor_trim_smithing_template",
+                pattern_id = "spire",
+            }},
+            materials = []protocol.Trim_Material{{
+                material_id = "gold",
+                colour = "§6",
+                item_name = "minecraft:gold_ingot",
+            }},
+        },
+        Feature_Registry{
+            features = []protocol.Generation_Feature{{
+                name = "minecraft:test",
+                json = transmute([]u8)string(`{"format_version":"1.0"}`),
+            }},
+        },
+        Dimension_Data{
+            definitions = []protocol.Dimension_Definition{{
+                name = "custom:test",
+                range = {320, -64},
+                generator = protocol.Generator_Overworld,
+                dimension_type = 1000,
+            }},
         },
     }
     for original in packets {

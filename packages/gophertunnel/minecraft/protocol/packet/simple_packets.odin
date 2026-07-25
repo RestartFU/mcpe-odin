@@ -811,6 +811,30 @@ Update_Soft_Enum :: struct {
     action_type: u8,
 }
 
+Unlocked_Recipes_Type_Empty              :: u32(0)
+Unlocked_Recipes_Type_Initially_Unlocked :: u32(1)
+Unlocked_Recipes_Type_Newly_Unlocked     :: u32(2)
+Unlocked_Recipes_Type_Remove_Unlocked    :: u32(3)
+Unlocked_Recipes_Type_Remove_All_Unlocked :: u32(4)
+
+Unlocked_Recipes :: struct {
+    unlock_type: u32,
+    recipes:     []string,
+}
+
+Trim_Data :: struct {
+    patterns:  []protocol.Trim_Pattern,
+    materials: []protocol.Trim_Material,
+}
+
+Feature_Registry :: struct {
+    features: []protocol.Generation_Feature,
+}
+
+Dimension_Data :: struct {
+    definitions: []protocol.Dimension_Definition,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"
@@ -1278,6 +1302,158 @@ read_scoreboard_identity_entries :: proc(
                 protocol.read_varint64(input)
         }
         if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_trim_patterns :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Trim_Pattern,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(.Limit_Exceeded, "gophertunnel.packet.write_trim_patterns", "trim pattern list exceeds entry limit")
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_trim_pattern(output, value)
+    }
+    return nil
+}
+
+read_trim_patterns :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Trim_Pattern,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(.Limit_Exceeded, "gophertunnel.packet.read_trim_patterns", "trim pattern list exceeds entry limit")
+    }
+    values = make([]protocol.Trim_Pattern, int(count), input.allocator)
+    for &value, index in values {
+        value, err = protocol.read_trim_pattern(input)
+        if err != nil {
+            for previous in values[:index] {
+                delete(previous.item_name, input.allocator)
+                delete(previous.pattern_id, input.allocator)
+            }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_trim_materials :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Trim_Material,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(.Limit_Exceeded, "gophertunnel.packet.write_trim_materials", "trim material list exceeds entry limit")
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_trim_material(output, value)
+    }
+    return nil
+}
+
+read_trim_materials :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Trim_Material,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(.Limit_Exceeded, "gophertunnel.packet.read_trim_materials", "trim material list exceeds entry limit")
+    }
+    values = make([]protocol.Trim_Material, int(count), input.allocator)
+    for &value, index in values {
+        value, err = protocol.read_trim_material(input)
+        if err != nil {
+            for previous in values[:index] {
+                delete(previous.material_id, input.allocator)
+                delete(previous.colour, input.allocator)
+                delete(previous.item_name, input.allocator)
+            }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_generation_features :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Generation_Feature,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(.Limit_Exceeded, "gophertunnel.packet.write_generation_features", "generation feature list exceeds entry limit")
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_generation_feature(output, value)
+    }
+    return nil
+}
+
+read_generation_features :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Generation_Feature,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(.Limit_Exceeded, "gophertunnel.packet.read_generation_features", "generation feature list exceeds entry limit")
+    }
+    values = make([]protocol.Generation_Feature, int(count), input.allocator)
+    for &value, index in values {
+        value, err = protocol.read_generation_feature(input)
+        if err != nil {
+            for previous in values[:index] {
+                delete(previous.name, input.allocator)
+                delete(previous.json, input.allocator)
+            }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_dimension_definitions :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Dimension_Definition,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(.Limit_Exceeded, "gophertunnel.packet.write_dimension_definitions", "dimension definition list exceeds entry limit")
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_dimension_definition(output, value)
+    }
+    return nil
+}
+
+read_dimension_definitions :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Dimension_Definition,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(.Limit_Exceeded, "gophertunnel.packet.read_dimension_definitions", "dimension definition list exceeds entry limit")
+    }
+    values = make([]protocol.Dimension_Definition, int(count), input.allocator)
+    for &value, index in values {
+        value, err = protocol.read_dimension_definition(input)
+        if err != nil {
+            for previous in values[:index] {
+                delete(previous.name, input.allocator)
+            }
             delete(values, input.allocator)
             values = nil
             return

@@ -737,6 +737,12 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             miss_hashes = []u64{1, 0x0123_4567_89ab_cdef},
             hit_hashes = []u64{2, 3},
         },
+        Client_Cache_Miss_Response{
+            blobs = []protocol.Cache_Blob{
+                {hash = 0x0123_4567_89ab_cdef, payload = []u8{1, 2, 3}},
+                {hash = 7, payload = []u8{4, 5}},
+            },
+        },
         Client_Bound_Data_Driven_UI_Show_Screen{
             screen_id = "screen:test",
             form_id = 42,
@@ -1354,6 +1360,7 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDPlayerAction,
         IDSpawnParticleEffect,
         IDClientCacheBlobStatus,
+        IDClientCacheMissResponse,
         IDClientBoundDataDrivenUIShowScreen,
         IDSubClientLogin,
         IDScriptCustomEvent,
@@ -1524,6 +1531,12 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
         Client_Cache_Blob_Status{
             miss_hashes = []u64{1, 2},
             hit_hashes = []u64{3, 4},
+        },
+        Client_Cache_Miss_Response{
+            blobs = []protocol.Cache_Blob{{
+                hash = 7,
+                payload = []u8{1, 2, 3},
+            }},
         },
         Client_Bound_Data_Driven_UI_Show_Screen{
             screen_id = "screen:test",

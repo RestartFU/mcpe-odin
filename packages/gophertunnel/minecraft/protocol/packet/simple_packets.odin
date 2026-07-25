@@ -394,6 +394,10 @@ Client_Cache_Blob_Status :: struct {
     hit_hashes:  []u64,
 }
 
+Client_Cache_Miss_Response :: struct {
+    blobs: []protocol.Cache_Blob,
+}
+
 Client_Bound_Data_Driven_UI_Show_Screen :: struct {
     screen_id:        string,
     form_id:          u32,
@@ -1991,6 +1995,73 @@ read_world_clocks :: proc(input: ^protocol.Reader) -> (
             values = nil
             return
         }
+    }
+    return
+}
+
+write_cache_blobs :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Cache_Blob,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_cache_blobs",
+            "cache blobs exceed entry limit",
+        )
+    }
+    total_bytes := 0
+    for value in values {
+        if len(value.payload) > protocol.MAX_FIELD_BYTES - total_bytes {
+            return packet_error(
+                .Limit_Exceeded,
+                "gophertunnel.packet.write_cache_blobs",
+                "cache blobs exceed aggregate byte limit",
+            )
+        }
+        total_bytes += len(value.payload)
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_cache_blob(output, value)
+    }
+    return nil
+}
+
+read_cache_blobs :: proc(input: ^protocol.Reader) -> (
+    values: []protocol.Cache_Blob,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_cache_blobs",
+            "cache blobs exceed entry limit",
+        )
+    }
+    values = make([]protocol.Cache_Blob, int(count), input.allocator)
+    total_bytes := 0
+    for &value, index in values {
+        value, err = protocol.read_cache_blob(input)
+        if err == nil &&
+           len(value.payload) > protocol.MAX_FIELD_BYTES - total_bytes {
+            err = packet_error(
+                .Limit_Exceeded,
+                "gophertunnel.packet.read_cache_blobs",
+                "cache blobs exceed aggregate byte limit",
+            )
+        }
+        if err != nil {
+            protocol.destroy_cache_blob(value, input.allocator)
+            for previous in values[:index] {
+                protocol.destroy_cache_blob(previous, input.allocator)
+            }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+        total_bytes += len(value.payload)
     }
     return
 }

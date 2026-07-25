@@ -137,6 +137,11 @@ World_Clock_Data :: struct {
     time_markers: []Time_Marker_Data,
 }
 
+Cache_Blob :: struct {
+    hash:    u64,
+    payload: []u8,
+}
+
 Entity_Link_Remove    :: u8(0)
 Entity_Link_Rider     :: u8(1)
 Entity_Link_Passenger :: u8(2)

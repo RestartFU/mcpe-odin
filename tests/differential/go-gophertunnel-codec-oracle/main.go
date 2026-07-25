@@ -1102,6 +1102,16 @@ func main() {
 		0, 0,
 	)
 	emitPacket(
+		"packet_cache_miss_response",
+		&packet.ClientCacheMissResponse{
+			Blobs: []protocol.CacheBlob{
+				{Hash: 0x0123456789abcdef, Payload: []byte{1, 2, 3}},
+				{Hash: 7, Payload: []byte{4, 5}},
+			},
+		},
+		0, 0,
+	)
+	emitPacket(
 		"packet_data_ui_show",
 		&packet.ClientBoundDataDrivenUIShowScreen{
 			ScreenID: "screen:test", FormID: 42,

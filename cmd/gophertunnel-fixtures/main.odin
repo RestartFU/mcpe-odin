@@ -1182,6 +1182,15 @@ main :: proc() {
         },
     )
     emit_packet(
+        "packet_cache_miss_response",
+        packet.Client_Cache_Miss_Response{
+            blobs = []protocol.Cache_Blob{
+                {hash = 0x0123_4567_89ab_cdef, payload = []u8{1, 2, 3}},
+                {hash = 7, payload = []u8{4, 5}},
+            },
+        },
+    )
+    emit_packet(
         "packet_data_ui_show",
         packet.Client_Bound_Data_Driven_UI_Show_Screen{
             screen_id = "screen:test",

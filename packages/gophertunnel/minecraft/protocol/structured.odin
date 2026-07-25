@@ -488,6 +488,27 @@ write_world_clock_data :: proc(
     return nil
 }
 
+destroy_cache_blob :: proc(
+    blob: Cache_Blob,
+    allocator := context.allocator,
+) {
+    delete(blob.payload, allocator)
+}
+
+read_cache_blob :: proc(value: ^Reader) -> (
+    result: Cache_Blob,
+    err: mcpe_runtime.Error,
+) {
+    result.hash = read_u64(value) or_return
+    result.payload = read_byte_slice(value) or_return
+    return
+}
+
+write_cache_blob :: proc(value: ^Writer, input: Cache_Blob) {
+    write_u64(value, input.hash)
+    write_byte_slice(value, input.payload)
+}
+
 read_vec2 :: proc(value: ^Reader) -> (result: Vec2, err: mcpe_runtime.Error) {
     for &component in result {
         component = read_f32(value) or_return

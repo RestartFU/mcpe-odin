@@ -165,6 +165,7 @@ Packet :: union {
     Player_Action,
     Spawn_Particle_Effect,
     Client_Cache_Blob_Status,
+    Client_Cache_Miss_Response,
     Client_Bound_Data_Driven_UI_Show_Screen,
     Sub_Client_Login,
     Script_Custom_Event,
@@ -366,6 +367,7 @@ packet_id :: proc(value: Packet) -> (
     case Player_Action:               id = IDPlayerAction
     case Spawn_Particle_Effect:       id = IDSpawnParticleEffect
     case Client_Cache_Blob_Status:    id = IDClientCacheBlobStatus
+    case Client_Cache_Miss_Response:  id = IDClientCacheMissResponse
     case Client_Bound_Data_Driven_UI_Show_Screen:
         id = IDClientBoundDataDrivenUIShowScreen
     case Sub_Client_Login:            id = IDSubClientLogin
@@ -587,6 +589,11 @@ destroy_packet :: proc(
     case Client_Cache_Blob_Status:
         delete(packet.miss_hashes, allocator)
         delete(packet.hit_hashes, allocator)
+    case Client_Cache_Miss_Response:
+        for blob in packet.blobs {
+            protocol.destroy_cache_blob(blob, allocator)
+        }
+        delete(packet.blobs, allocator)
     case Client_Bound_Data_Driven_UI_Show_Screen:
         delete(packet.screen_id, allocator)
     case Sub_Client_Login:

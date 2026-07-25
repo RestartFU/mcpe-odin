@@ -190,6 +190,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDPlayerAction,
          IDSpawnParticleEffect,
          IDClientCacheBlobStatus,
+         IDClientCacheMissResponse,
          IDClientBoundDataDrivenUIShowScreen,
          IDSubClientLogin,
          IDScriptCustomEvent,
@@ -785,6 +786,8 @@ write_payload :: proc(
     case Client_Cache_Blob_Status:
         write_u64_slice(output, packet.miss_hashes) or_return
         write_u64_slice(output, packet.hit_hashes) or_return
+    case Client_Cache_Miss_Response:
+        write_cache_blobs(output, packet.blobs) or_return
     case Client_Bound_Data_Driven_UI_Show_Screen:
         protocol.write_string(output, packet.screen_id)
         protocol.write_u32(output, packet.form_id)
@@ -2034,6 +2037,10 @@ decode_packet :: proc(
             delete(packet.miss_hashes, allocator)
             return
         }
+        value = packet
+    case IDClientCacheMissResponse:
+        packet := Client_Cache_Miss_Response{}
+        packet.blobs = read_cache_blobs(&input) or_return
         value = packet
     case IDClientBoundDataDrivenUIShowScreen:
         packet := Client_Bound_Data_Driven_UI_Show_Screen{}

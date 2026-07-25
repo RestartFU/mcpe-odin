@@ -1199,6 +1199,16 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Sync_World_Clocks"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.CacheBlob"
+odin = "mcpe:gophertunnel/minecraft/protocol.Cache_Blob"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientCacheMissResponse"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Cache_Miss_Response"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

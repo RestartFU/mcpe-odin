@@ -50,3 +50,41 @@ Open_Sign :: struct {
     position:   protocol.Block_Pos,
     front_side: bool,
 }
+
+Client_Bound_Data_Driven_UI_Close_Screen :: struct {
+    form_id: protocol.Optional(u32),
+}
+
+Available_Actor_Identifiers :: struct {
+    serialised_entity_identifiers: []u8,
+}
+
+Current_Structure_Feature :: struct {
+    current_feature: string,
+}
+
+Server_Stats :: struct {
+    server_time:  f32,
+    network_time: f32,
+}
+
+Anvil_Damage :: struct {
+    damage:         u8,
+    anvil_position: protocol.Block_Pos,
+}
+
+Debug_Info :: struct {
+    player_unique_id: i64,
+    data:             []u8,
+}
+
+Create_Photo :: struct {
+    entity_unique_id: i64,
+    photo_name:       string,
+    item_name:        string,
+}
+
+Code_Builder :: struct {
+    url:                      string,
+    should_open_code_builder: bool,
+}

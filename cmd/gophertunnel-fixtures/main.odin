@@ -845,6 +845,60 @@ main :: proc() {
             front_side = true,
         },
     )
+    emit_packet(
+        "packet_ui_close_screen",
+        packet.Client_Bound_Data_Driven_UI_Close_Screen{
+            form_id = protocol.option(u32(42)),
+        },
+    )
+    emit_packet(
+        "packet_actor_identifiers",
+        packet.Available_Actor_Identifiers{
+            serialised_entity_identifiers = []u8{10, 0, 0},
+        },
+    )
+    emit_packet(
+        "packet_current_structure",
+        packet.Current_Structure_Feature{
+            current_feature = "minecraft:village",
+        },
+    )
+    emit_packet(
+        "packet_server_stats",
+        packet.Server_Stats{
+            server_time = 12.5,
+            network_time = 3.25,
+        },
+    )
+    emit_packet(
+        "packet_anvil_damage",
+        packet.Anvil_Damage{
+            damage = 2,
+            anvil_position = {-12, 64, 3456},
+        },
+    )
+    emit_packet(
+        "packet_debug_info",
+        packet.Debug_Info{
+            player_unique_id = -99,
+            data = []u8{4, 5, 6},
+        },
+    )
+    emit_packet(
+        "packet_create_photo",
+        packet.Create_Photo{
+            entity_unique_id = -7,
+            photo_name = "photo",
+            item_name = "portfolio",
+        },
+    )
+    emit_packet(
+        "packet_code_builder",
+        packet.Code_Builder{
+            url = "ws://localhost:8080",
+            should_open_code_builder = true,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

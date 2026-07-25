@@ -144,7 +144,15 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDPhotoInfoRequest,
          IDMapCreateLockedCopy,
          IDScriptMessage,
-         IDOpenSign:
+         IDOpenSign,
+         IDClientBoundDataDrivenUICloseScreen,
+         IDAvailableActorIdentifiers,
+         IDCurrentStructureFeature,
+         IDServerStats,
+         IDAnvilDamage,
+         IDDebugInfo,
+         IDCreatePhoto,
+         IDCodeBuilder:
         return true
     }
     return false
@@ -471,6 +479,31 @@ write_payload :: proc(
     case Open_Sign:
         protocol.write_block_pos(output, packet.position)
         protocol.write_bool(output, packet.front_side)
+    case Client_Bound_Data_Driven_UI_Close_Screen:
+        write_optional_u32(output, packet.form_id)
+    case Available_Actor_Identifiers:
+        protocol.write_bytes(
+            output,
+            packet.serialised_entity_identifiers,
+        )
+    case Current_Structure_Feature:
+        protocol.write_string(output, packet.current_feature)
+    case Server_Stats:
+        protocol.write_f32(output, packet.server_time)
+        protocol.write_f32(output, packet.network_time)
+    case Anvil_Damage:
+        protocol.write_u8(output, packet.damage)
+        protocol.write_block_pos(output, packet.anvil_position)
+    case Debug_Info:
+        protocol.write_varint64(output, packet.player_unique_id)
+        protocol.write_byte_slice(output, packet.data)
+    case Create_Photo:
+        protocol.write_i64(output, packet.entity_unique_id)
+        protocol.write_string(output, packet.photo_name)
+        protocol.write_string(output, packet.item_name)
+    case Code_Builder:
+        protocol.write_string(output, packet.url)
+        protocol.write_bool(output, packet.should_open_code_builder)
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -831,6 +864,57 @@ decode_packet :: proc(
         packet := Open_Sign{}
         packet.position = protocol.read_block_pos(&input) or_return
         packet.front_side = protocol.read_bool(&input) or_return
+        value = packet
+    case IDClientBoundDataDrivenUICloseScreen:
+        packet := Client_Bound_Data_Driven_UI_Close_Screen{}
+        packet.form_id = read_optional_u32(&input) or_return
+        value = packet
+    case IDAvailableActorIdentifiers:
+        packet := Available_Actor_Identifiers{}
+        packet.serialised_entity_identifiers =
+            clone_payload(&input) or_return
+        value = packet
+    case IDCurrentStructureFeature:
+        packet := Current_Structure_Feature{}
+        packet.current_feature = protocol.read_string(&input) or_return
+        value = packet
+    case IDServerStats:
+        packet := Server_Stats{}
+        packet.server_time = protocol.read_f32(&input) or_return
+        packet.network_time = protocol.read_f32(&input) or_return
+        value = packet
+    case IDAnvilDamage:
+        packet := Anvil_Damage{}
+        packet.damage = protocol.read_u8(&input) or_return
+        packet.anvil_position = protocol.read_block_pos(&input) or_return
+        value = packet
+    case IDDebugInfo:
+        packet := Debug_Info{}
+        packet.player_unique_id =
+            protocol.read_varint64(&input) or_return
+        packet.data = protocol.read_byte_slice(&input) or_return
+        value = packet
+    case IDCreatePhoto:
+        packet := Create_Photo{}
+        packet.entity_unique_id = protocol.read_i64(&input) or_return
+        packet.photo_name = protocol.read_string(&input) or_return
+        packet.item_name, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.photo_name, allocator)
+            packet.photo_name = ""
+            return
+        }
+        value = packet
+    case IDCodeBuilder:
+        packet := Code_Builder{}
+        packet.url = protocol.read_string(&input) or_return
+        packet.should_open_code_builder, err =
+            protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.url, allocator)
+            packet.url = ""
+            return
+        }
         value = packet
     case:
         value = Unknown_Packet{

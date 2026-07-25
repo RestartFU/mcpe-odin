@@ -494,6 +494,30 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             data = []u8{0, 1, 2, 255},
         },
         Open_Sign{position = {-12, 64, 3456}, front_side = true},
+        Client_Bound_Data_Driven_UI_Close_Screen{
+            form_id = protocol.option(u32(42)),
+        },
+        Available_Actor_Identifiers{
+            serialised_entity_identifiers = []u8{10, 0, 0},
+        },
+        Current_Structure_Feature{
+            current_feature = "minecraft:village",
+        },
+        Server_Stats{server_time = 12.5, network_time = 3.25},
+        Anvil_Damage{
+            damage = 2,
+            anvil_position = {-12, 64, 3456},
+        },
+        Debug_Info{player_unique_id = -99, data = []u8{4, 5, 6}},
+        Create_Photo{
+            entity_unique_id = -7,
+            photo_name = "photo",
+            item_name = "portfolio",
+        },
+        Code_Builder{
+            url = "ws://localhost:8080",
+            should_open_code_builder = true,
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -509,6 +533,14 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDMapCreateLockedCopy,
         IDScriptMessage,
         IDOpenSign,
+        IDClientBoundDataDrivenUICloseScreen,
+        IDAvailableActorIdentifiers,
+        IDCurrentStructureFeature,
+        IDServerStats,
+        IDAnvilDamage,
+        IDDebugInfo,
+        IDCreatePhoto,
+        IDCodeBuilder,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -547,6 +579,37 @@ item_cooldown_decode_cleans_partial_string :: proc(t: ^testing.T) {
     testing.expect(t, err != nil)
     if err != nil {
         mcpe_runtime.destroy_error(err)
+    }
+}
+
+@(test)
+simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
+    packets := [?]Packet{
+        Create_Photo{
+            entity_unique_id = -7,
+            photo_name = "photo",
+            item_name = "portfolio",
+        },
+        Code_Builder{
+            url = "ws://localhost:8080",
+            should_open_code_builder = true,
+        },
+    }
+    for original in packets {
+        encoded, encode_err := encode_packet(original)
+        testing.expect(t, encode_err == nil)
+        if encode_err != nil {
+            mcpe_runtime.destroy_error(encode_err)
+            continue
+        }
+        decoded, _, decode_err :=
+            decode_packet(encoded[:len(encoded) - 1])
+        testing.expect(t, decoded == nil)
+        testing.expect(t, decode_err != nil)
+        if decode_err != nil {
+            mcpe_runtime.destroy_error(decode_err)
+        }
+        delete(encoded)
     }
 }
 

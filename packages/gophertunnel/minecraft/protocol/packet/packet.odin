@@ -120,6 +120,14 @@ Packet :: union {
     Map_Create_Locked_Copy,
     Script_Message,
     Open_Sign,
+    Client_Bound_Data_Driven_UI_Close_Screen,
+    Available_Actor_Identifiers,
+    Current_Structure_Feature,
+    Server_Stats,
+    Anvil_Damage,
+    Debug_Info,
+    Create_Photo,
+    Code_Builder,
     Unknown_Packet,
 }
 
@@ -209,6 +217,15 @@ packet_id :: proc(value: Packet) -> (
     case Map_Create_Locked_Copy:      id = IDMapCreateLockedCopy
     case Script_Message:              id = IDScriptMessage
     case Open_Sign:                   id = IDOpenSign
+    case Client_Bound_Data_Driven_UI_Close_Screen:
+        id = IDClientBoundDataDrivenUICloseScreen
+    case Available_Actor_Identifiers: id = IDAvailableActorIdentifiers
+    case Current_Structure_Feature:   id = IDCurrentStructureFeature
+    case Server_Stats:                id = IDServerStats
+    case Anvil_Damage:                id = IDAnvilDamage
+    case Debug_Info:                  id = IDDebugInfo
+    case Create_Photo:                id = IDCreatePhoto
+    case Code_Builder:                id = IDCodeBuilder
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -297,6 +314,17 @@ destroy_packet :: proc(
     case Script_Message:
         delete(packet.identifier, allocator)
         delete(packet.data, allocator)
+    case Available_Actor_Identifiers:
+        delete(packet.serialised_entity_identifiers, allocator)
+    case Current_Structure_Feature:
+        delete(packet.current_feature, allocator)
+    case Debug_Info:
+        delete(packet.data, allocator)
+    case Create_Photo:
+        delete(packet.photo_name, allocator)
+        delete(packet.item_name, allocator)
+    case Code_Builder:
+        delete(packet.url, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

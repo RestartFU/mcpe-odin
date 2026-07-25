@@ -802,6 +802,54 @@ func main() {
 		0,
 		0,
 	)
+	emitPacket(
+		"packet_ui_close_screen",
+		&packet.ClientBoundDataDrivenUICloseScreen{FormID: protocol.Option(uint32(42))},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_actor_identifiers",
+		&packet.AvailableActorIdentifiers{SerialisedEntityIdentifiers: []byte{10, 0, 0}},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_current_structure",
+		&packet.CurrentStructureFeature{CurrentFeature: "minecraft:village"},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_server_stats",
+		&packet.ServerStats{ServerTime: 12.5, NetworkTime: 3.25},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_anvil_damage",
+		&packet.AnvilDamage{Damage: 2, AnvilPosition: protocol.BlockPos{-12, 64, 3456}},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_debug_info",
+		&packet.DebugInfo{PlayerUniqueID: -99, Data: []byte{4, 5, 6}},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_create_photo",
+		&packet.CreatePhoto{EntityUniqueID: -7, PhotoName: "photo", ItemName: "portfolio"},
+		0,
+		0,
+	)
+	emitPacket(
+		"packet_code_builder",
+		&packet.CodeBuilder{URL: "ws://localhost:8080", ShouldOpenCodeBuilder: true},
+		0,
+		0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

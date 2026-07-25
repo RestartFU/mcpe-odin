@@ -454,6 +454,46 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Open_Sign"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientBoundDataDrivenUICloseScreen"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Data_Driven_UI_Close_Screen"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AvailableActorIdentifiers"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Available_Actor_Identifiers"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CurrentStructureFeature"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Current_Structure_Feature"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ServerStats"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Server_Stats"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AnvilDamage"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Anvil_Damage"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.DebugInfo"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Debug_Info"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CreatePhoto"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Create_Photo"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CodeBuilder"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Code_Builder"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

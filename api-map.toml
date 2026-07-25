@@ -889,6 +889,26 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Animate_Entity"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.ScoreboardEntry"
+odin = "mcpe:gophertunnel/minecraft/protocol.Scoreboard_Entry"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol.ScoreboardIdentityEntry"
+odin = "mcpe:gophertunnel/minecraft/protocol.Scoreboard_Identity_Entry"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetScore"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Score"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetScoreboardIdentity"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Scoreboard_Identity"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

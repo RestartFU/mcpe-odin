@@ -916,6 +916,23 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 u64(1) << 40 | 24,
             },
         },
+        Set_Score{
+            action_type = Scoreboard_Action_Modify,
+            entries = []protocol.Scoreboard_Entry{{
+                entry_id = 7,
+                objective_name = "kills",
+                score = 42,
+                identity_type = protocol.Scoreboard_Identity_Fake_Player,
+                display_name = "Player",
+            }},
+        },
+        Set_Scoreboard_Identity{
+            action_type = Scoreboard_Identity_Action_Register,
+            entries = []protocol.Scoreboard_Identity_Entry{{
+                entry_id = 7,
+                entity_unique_id = -99,
+            }},
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -1012,6 +1029,8 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDSetDisplayObjective,
         IDLevelSoundEvent,
         IDAnimateEntity,
+        IDSetScore,
+        IDSetScoreboardIdentity,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1247,6 +1266,23 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
                 u64(1) << 40 | 23,
                 u64(1) << 40 | 24,
             },
+        },
+        Set_Score{
+            action_type = Scoreboard_Action_Modify,
+            entries = []protocol.Scoreboard_Entry{{
+                entry_id = 7,
+                objective_name = "kills",
+                score = 42,
+                identity_type = protocol.Scoreboard_Identity_Fake_Player,
+                display_name = "Player",
+            }},
+        },
+        Set_Scoreboard_Identity{
+            action_type = Scoreboard_Identity_Action_Register,
+            entries = []protocol.Scoreboard_Identity_Entry{{
+                entry_id = 7,
+                entity_unique_id = -99,
+            }},
         },
     }
     for original in packets {

@@ -30,6 +30,24 @@ Player_Armour_Damage_Entry :: struct {
     damage:      i16,
 }
 
+Scoreboard_Identity_Player      :: u8(1)
+Scoreboard_Identity_Entity      :: u8(2)
+Scoreboard_Identity_Fake_Player :: u8(3)
+
+Scoreboard_Entry :: struct {
+    entry_id:         i64,
+    objective_name:   string,
+    score:            i32,
+    identity_type:    u8,
+    entity_unique_id: i64,
+    display_name:     string,
+}
+
+Scoreboard_Identity_Entry :: struct {
+    entry_id:         i64,
+    entity_unique_id: i64,
+}
+
 Optional :: struct($T: typeid) {
     set:   bool,
     value: T,

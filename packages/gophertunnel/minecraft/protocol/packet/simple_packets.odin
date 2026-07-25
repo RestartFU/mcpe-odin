@@ -723,6 +723,22 @@ Animate_Entity :: struct {
     entity_runtime_ids:     []u64,
 }
 
+Scoreboard_Action_Modify :: u8(0)
+Scoreboard_Action_Remove :: u8(1)
+
+Scoreboard_Identity_Action_Register :: u8(0)
+Scoreboard_Identity_Action_Clear    :: u8(1)
+
+Set_Score :: struct {
+    action_type: u8,
+    entries:     []protocol.Scoreboard_Entry,
+}
+
+Set_Scoreboard_Identity :: struct {
+    action_type: u8,
+    entries:     []protocol.Scoreboard_Identity_Entry,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"
@@ -1059,6 +1075,136 @@ read_varuint64_slice :: proc(
     values = make([]u64, int(count), input.allocator)
     for &value in values {
         value, err = protocol.read_varuint64(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+destroy_scoreboard_entries :: proc(
+    values: []protocol.Scoreboard_Entry,
+    allocator := context.allocator,
+) {
+    for value in values {
+        delete(value.objective_name, allocator)
+        delete(value.display_name, allocator)
+    }
+    delete(values, allocator)
+}
+
+write_scoreboard_entries :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Scoreboard_Entry,
+    modify: bool,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_scoreboard_entries",
+            "scoreboard entry list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        if modify {
+            protocol.write_scoreboard_entry(output, value) or_return
+        } else {
+            protocol.write_score_remove_entry(output, value)
+        }
+    }
+    return nil
+}
+
+read_scoreboard_entries :: proc(
+    input: ^protocol.Reader,
+    modify: bool,
+) -> (
+    values: []protocol.Scoreboard_Entry,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_scoreboard_entries",
+            "scoreboard entry list exceeds entry limit",
+        )
+    }
+    values = make(
+        []protocol.Scoreboard_Entry,
+        int(count),
+        input.allocator,
+    )
+    for &value, index in values {
+        if modify {
+            value, err = protocol.read_scoreboard_entry(input)
+        } else {
+            value, err = protocol.read_score_remove_entry(input)
+        }
+        if err != nil {
+            for previous in values[:index] {
+                delete(previous.objective_name, input.allocator)
+                delete(previous.display_name, input.allocator)
+            }
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_scoreboard_identity_entries :: proc(
+    output: ^protocol.Writer,
+    values: []protocol.Scoreboard_Identity_Entry,
+    register: bool,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_scoreboard_identity_entries",
+            "scoreboard identity list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_varint64(output, value.entry_id)
+        if register {
+            protocol.write_varint64(output, value.entity_unique_id)
+        }
+    }
+    return nil
+}
+
+read_scoreboard_identity_entries :: proc(
+    input: ^protocol.Reader,
+    register: bool,
+) -> (
+    values: []protocol.Scoreboard_Identity_Entry,
+    err: mcpe_runtime.Error,
+) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_scoreboard_identity_entries",
+            "scoreboard identity list exceeds entry limit",
+        )
+    }
+    values = make(
+        []protocol.Scoreboard_Identity_Entry,
+        int(count),
+        input.allocator,
+    )
+    for &value in values {
+        value.entry_id, err = protocol.read_varint64(input)
+        if err == nil && register {
+            value.entity_unique_id, err =
+                protocol.read_varint64(input)
+        }
         if err != nil {
             delete(values, input.allocator)
             values = nil

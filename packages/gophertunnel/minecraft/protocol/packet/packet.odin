@@ -201,6 +201,8 @@ Packet :: union {
     Set_Display_Objective,
     Level_Sound_Event,
     Animate_Entity,
+    Set_Score,
+    Set_Scoreboard_Identity,
     Unknown_Packet,
 }
 
@@ -383,6 +385,8 @@ packet_id :: proc(value: Packet) -> (
     case Set_Display_Objective:       id = IDSetDisplayObjective
     case Level_Sound_Event:           id = IDLevelSoundEvent
     case Animate_Entity:              id = IDAnimateEntity
+    case Set_Score:                   id = IDSetScore
+    case Set_Scoreboard_Identity:     id = IDSetScoreboardIdentity
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -587,6 +591,10 @@ destroy_packet :: proc(
         delete(packet.stop_condition, allocator)
         delete(packet.controller, allocator)
         delete(packet.entity_runtime_ids, allocator)
+    case Set_Score:
+        destroy_scoreboard_entries(packet.entries, allocator)
+    case Set_Scoreboard_Identity:
+        delete(packet.entries, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

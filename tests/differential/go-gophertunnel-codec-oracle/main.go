@@ -1413,6 +1413,46 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_set_score_modify",
+		&packet.SetScore{
+			ActionType: packet.ScoreboardActionModify,
+			Entries: []protocol.ScoreboardEntry{{
+				EntryID: 7, ObjectiveName: "kills", Score: 42,
+				IdentityType: protocol.ScoreboardIdentityFakePlayer,
+				DisplayName:  "Player",
+			}},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_set_score_remove",
+		&packet.SetScore{
+			ActionType: packet.ScoreboardActionRemove,
+			Entries: []protocol.ScoreboardEntry{{
+				EntryID: 7, ObjectiveName: "kills", Score: 42,
+			}},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_scoreboard_identity_register",
+		&packet.SetScoreboardIdentity{
+			ActionType: packet.ScoreboardIdentityActionRegister,
+			Entries: []protocol.ScoreboardIdentityEntry{{
+				EntryID: 7, EntityUniqueID: -99,
+			}},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_scoreboard_identity_clear",
+		&packet.SetScoreboardIdentity{
+			ActionType: packet.ScoreboardIdentityActionClear,
+			Entries:    []protocol.ScoreboardIdentityEntry{{EntryID: 7}},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

@@ -225,7 +225,9 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDPhotoTransfer,
          IDSetDisplayObjective,
          IDLevelSoundEvent,
-         IDAnimateEntity:
+         IDAnimateEntity,
+         IDSetScore,
+         IDSetScoreboardIdentity:
         return true
     }
     return false
@@ -979,6 +981,45 @@ write_payload :: proc(
             output,
             packet.entity_runtime_ids,
         ) or_return
+    case Set_Score:
+        protocol.write_u8(output, packet.action_type)
+        switch packet.action_type {
+        case Scoreboard_Action_Modify:
+            write_scoreboard_entries(
+                output,
+                packet.entries,
+                true,
+            ) or_return
+        case Scoreboard_Action_Remove:
+            write_scoreboard_entries(
+                output,
+                packet.entries,
+                false,
+            ) or_return
+        case:
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write",
+                "unknown set score action type",
+            )
+        }
+    case Set_Scoreboard_Identity:
+        protocol.write_u8(output, packet.action_type)
+        switch packet.action_type {
+        case Scoreboard_Identity_Action_Register:
+            write_scoreboard_identity_entries(
+                output,
+                packet.entries,
+                true,
+            ) or_return
+        case Scoreboard_Identity_Action_Clear:
+            write_scoreboard_identity_entries(
+                output,
+                packet.entries,
+                false,
+            ) or_return
+        case:
+        }
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2257,6 +2298,44 @@ decode_packet :: proc(
             delete(packet.stop_condition, allocator)
             delete(packet.controller, allocator)
             return
+        }
+        value = packet
+    case IDSetScore:
+        packet := Set_Score{}
+        packet.action_type = protocol.read_u8(&input) or_return
+        switch packet.action_type {
+        case Scoreboard_Action_Modify:
+            packet.entries =
+                read_scoreboard_entries(&input, true) or_return
+        case Scoreboard_Action_Remove:
+            packet.entries =
+                read_scoreboard_entries(&input, false) or_return
+        case:
+            err = packet_error(
+                .Malformed,
+                "gophertunnel.packet.decode",
+                "unknown set score action type",
+            )
+            return
+        }
+        value = packet
+    case IDSetScoreboardIdentity:
+        packet := Set_Scoreboard_Identity{}
+        packet.action_type = protocol.read_u8(&input) or_return
+        switch packet.action_type {
+        case Scoreboard_Identity_Action_Register:
+            packet.entries =
+                read_scoreboard_identity_entries(
+                    &input,
+                    true,
+                ) or_return
+        case Scoreboard_Identity_Action_Clear:
+            packet.entries =
+                read_scoreboard_identity_entries(
+                    &input,
+                    false,
+                ) or_return
+        case:
         }
         value = packet
     case:

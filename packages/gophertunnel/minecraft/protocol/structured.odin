@@ -233,3 +233,95 @@ write_player_armour_damage_entry :: proc(
     write_varint32(value, input.armour_slot)
     write_i16(value, input.damage)
 }
+
+read_score_remove_entry :: proc(value: ^Reader) -> (
+    result: Scoreboard_Entry,
+    err: mcpe_runtime.Error,
+) {
+    result.entry_id = read_varint64(value) or_return
+    result.objective_name = read_string(value) or_return
+    result.score, err = read_i32(value)
+    if err != nil {
+        delete(result.objective_name, value.allocator)
+        result.objective_name = ""
+    }
+    return
+}
+
+write_score_remove_entry :: proc(
+    value: ^Writer,
+    input: Scoreboard_Entry,
+) {
+    write_varint64(value, input.entry_id)
+    write_string(value, input.objective_name)
+    write_i32(value, input.score)
+}
+
+read_scoreboard_entry :: proc(value: ^Reader) -> (
+    result: Scoreboard_Entry,
+    err: mcpe_runtime.Error,
+) {
+    result = read_score_remove_entry(value) or_return
+    result.identity_type, err = read_u8(value)
+    if err != nil {
+        delete(result.objective_name, value.allocator)
+        result = {}
+        return
+    }
+    switch result.identity_type {
+    case Scoreboard_Identity_Entity, Scoreboard_Identity_Player:
+        result.entity_unique_id, err = read_varint64(value)
+    case Scoreboard_Identity_Fake_Player:
+        result.display_name, err = read_string(value)
+    case:
+        err = codec_error(
+            .Malformed,
+            "gophertunnel.protocol.read_scoreboard_entry",
+            "unknown scoreboard identity type",
+        )
+    }
+    if err != nil {
+        delete(result.objective_name, value.allocator)
+        delete(result.display_name, value.allocator)
+        result = {}
+    }
+    return
+}
+
+write_scoreboard_entry :: proc(
+    value: ^Writer,
+    input: Scoreboard_Entry,
+) -> mcpe_runtime.Error {
+    write_score_remove_entry(value, input)
+    write_u8(value, input.identity_type)
+    switch input.identity_type {
+    case Scoreboard_Identity_Entity, Scoreboard_Identity_Player:
+        write_varint64(value, input.entity_unique_id)
+    case Scoreboard_Identity_Fake_Player:
+        write_string(value, input.display_name)
+    case:
+        return codec_error(
+            .Invalid_Argument,
+            "gophertunnel.protocol.write_scoreboard_entry",
+            "unknown scoreboard identity type",
+        )
+    }
+    return nil
+}
+
+read_scoreboard_identity_entry :: proc(value: ^Reader) -> (
+    result: Scoreboard_Identity_Entry,
+    err: mcpe_runtime.Error,
+) {
+    result.entry_id = read_varint64(value) or_return
+    result.entity_unique_id = read_varint64(value) or_return
+    return
+}
+
+write_scoreboard_identity_entry :: proc(
+    value: ^Writer,
+    input: Scoreboard_Identity_Entry,
+) {
+    write_varint64(value, input.entry_id)
+    write_varint64(value, input.entity_unique_id)
+}

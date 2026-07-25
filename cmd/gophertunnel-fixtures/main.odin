@@ -1537,6 +1537,47 @@ main :: proc() {
             },
         },
     )
+    emit_packet(
+        "packet_set_score_modify",
+        packet.Set_Score{
+            action_type = packet.Scoreboard_Action_Modify,
+            entries = []protocol.Scoreboard_Entry{{
+                entry_id = 7,
+                objective_name = "kills",
+                score = 42,
+                identity_type = protocol.Scoreboard_Identity_Fake_Player,
+                display_name = "Player",
+            }},
+        },
+    )
+    emit_packet(
+        "packet_set_score_remove",
+        packet.Set_Score{
+            action_type = packet.Scoreboard_Action_Remove,
+            entries = []protocol.Scoreboard_Entry{{
+                entry_id = 7,
+                objective_name = "kills",
+                score = 42,
+            }},
+        },
+    )
+    emit_packet(
+        "packet_scoreboard_identity_register",
+        packet.Set_Scoreboard_Identity{
+            action_type = packet.Scoreboard_Identity_Action_Register,
+            entries = []protocol.Scoreboard_Identity_Entry{{
+                entry_id = 7,
+                entity_unique_id = -99,
+            }},
+        },
+    )
+    emit_packet(
+        "packet_scoreboard_identity_clear",
+        packet.Set_Scoreboard_Identity{
+            action_type = packet.Scoreboard_Identity_Action_Clear,
+            entries = []protocol.Scoreboard_Identity_Entry{{entry_id = 7}},
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

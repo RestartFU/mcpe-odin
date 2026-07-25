@@ -1258,6 +1258,57 @@ main :: proc() {
             }),
         },
     )
+    emit_packet(
+        "packet_party_cookie_response",
+        packet.Party_Destination_Cookie_Response{
+            cookie = "opaque",
+            accepted = true,
+        },
+    )
+    emit_packet(
+        "packet_control_scheme_set",
+        packet.Client_Bound_Control_Scheme_Set{
+            control_scheme = packet.Control_Scheme_Camera_Relative_Strafe,
+        },
+    )
+    emit_packet(
+        "packet_movement_effect",
+        packet.Movement_Effect{
+            entity_runtime_id = u64(1) << 40 | 16,
+            type = packet.Movement_Effect_Type_Dolphin_Boost,
+            duration = 40,
+            tick = 123456,
+        },
+    )
+    emit_packet(
+        "packet_player_video_capture",
+        packet.Player_Video_Capture{
+            action = packet.Player_Video_Capture_Action_Start,
+            frame_rate = 60,
+            file_prefix = "capture-",
+        },
+    )
+    emit_packet(
+        "packet_player_location",
+        packet.Player_Location{
+            type = packet.Player_Location_Type_Coordinates,
+            entity_unique_id = -99,
+            position = {1.25, 2.5, 3.75},
+        },
+    )
+    emit_packet(
+        "packet_texture_shift",
+        packet.Client_Bound_Texture_Shift{
+            action_id = packet.Texture_Shift_Action_Sync,
+            collection_name = "collection",
+            from_step = "one",
+            to_step = "two",
+            all_steps = []string{"one", "two"},
+            current_length_ticks = 10,
+            total_length_ticks = 20,
+            enabled = true,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

@@ -197,7 +197,13 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDClientCameraAimAssist,
          IDServerBoundDataDrivenScreenClosed,
          IDPositionTrackingDBClientRequest,
-         IDPartyChanged:
+         IDPartyChanged,
+         IDPartyDestinationCookieResponse,
+         IDClientBoundControlSchemeSet,
+         IDMovementEffect,
+         IDPlayerVideoCapture,
+         IDPlayerLocation,
+         IDClientBoundTextureShift:
         return true
     }
     return false
@@ -748,6 +754,37 @@ write_payload :: proc(
                 packet.party_info.value.party_leader,
             )
         }
+    case Party_Destination_Cookie_Response:
+        protocol.write_string(output, packet.cookie)
+        protocol.write_bool(output, packet.accepted)
+    case Client_Bound_Control_Scheme_Set:
+        protocol.write_u8(output, packet.control_scheme)
+    case Movement_Effect:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_varint32(output, packet.type)
+        protocol.write_varint32(output, packet.duration)
+        protocol.write_varuint64(output, packet.tick)
+    case Player_Video_Capture:
+        protocol.write_u8(output, packet.action)
+        if packet.action == Player_Video_Capture_Action_Start {
+            protocol.write_i32(output, packet.frame_rate)
+            protocol.write_string(output, packet.file_prefix)
+        }
+    case Player_Location:
+        protocol.write_i32(output, packet.type)
+        protocol.write_varint64(output, packet.entity_unique_id)
+        if packet.type == Player_Location_Type_Coordinates {
+            protocol.write_vec3(output, packet.position)
+        }
+    case Client_Bound_Texture_Shift:
+        protocol.write_u8(output, packet.action_id)
+        protocol.write_string(output, packet.collection_name)
+        protocol.write_string(output, packet.from_step)
+        protocol.write_string(output, packet.to_step)
+        write_string_slice(output, packet.all_steps) or_return
+        protocol.write_varuint64(output, packet.current_length_ticks)
+        protocol.write_varuint64(output, packet.total_length_ticks)
+        protocol.write_bool(output, packet.enabled)
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -1565,6 +1602,46 @@ decode_packet :: proc(
             }
         }
         value = packet
+    case IDPartyDestinationCookieResponse:
+        packet := Party_Destination_Cookie_Response{}
+        packet.cookie = protocol.read_string(&input) or_return
+        packet.accepted, err = protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.cookie, allocator)
+            return
+        }
+        value = packet
+    case IDClientBoundControlSchemeSet:
+        packet := Client_Bound_Control_Scheme_Set{}
+        packet.control_scheme = protocol.read_u8(&input) or_return
+        value = packet
+    case IDMovementEffect:
+        packet := Movement_Effect{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.type = protocol.read_varint32(&input) or_return
+        packet.duration = protocol.read_varint32(&input) or_return
+        packet.tick = protocol.read_varuint64(&input) or_return
+        value = packet
+    case IDPlayerVideoCapture:
+        packet := Player_Video_Capture{}
+        packet.action = protocol.read_u8(&input) or_return
+        if packet.action == Player_Video_Capture_Action_Start {
+            packet.frame_rate = protocol.read_i32(&input) or_return
+            packet.file_prefix = protocol.read_string(&input) or_return
+        }
+        value = packet
+    case IDPlayerLocation:
+        packet := Player_Location{}
+        packet.type = protocol.read_i32(&input) or_return
+        packet.entity_unique_id =
+            protocol.read_varint64(&input) or_return
+        if packet.type == Player_Location_Type_Coordinates {
+            packet.position = protocol.read_vec3(&input) or_return
+        }
+        value = packet
+    case IDClientBoundTextureShift:
+        value = read_client_bound_texture_shift(&input) or_return
     case:
         value = Unknown_Packet{
             packet_id = header.packet_id,

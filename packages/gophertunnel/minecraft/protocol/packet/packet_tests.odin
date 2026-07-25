@@ -724,6 +724,39 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 party_leader = true,
             }),
         },
+        Party_Destination_Cookie_Response{
+            cookie = "opaque",
+            accepted = true,
+        },
+        Client_Bound_Control_Scheme_Set{
+            control_scheme = Control_Scheme_Camera_Relative_Strafe,
+        },
+        Movement_Effect{
+            entity_runtime_id = u64(1) << 40 | 16,
+            type = Movement_Effect_Type_Dolphin_Boost,
+            duration = 40,
+            tick = 123456,
+        },
+        Player_Video_Capture{
+            action = Player_Video_Capture_Action_Start,
+            frame_rate = 60,
+            file_prefix = "capture-",
+        },
+        Player_Location{
+            type = Player_Location_Type_Coordinates,
+            entity_unique_id = -99,
+            position = {1.25, 2.5, 3.75},
+        },
+        Client_Bound_Texture_Shift{
+            action_id = Texture_Shift_Action_Sync,
+            collection_name = "collection",
+            from_step = "one",
+            to_step = "two",
+            all_steps = []string{"one", "two"},
+            current_length_ticks = 10,
+            total_length_ticks = 20,
+            enabled = true,
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -792,6 +825,12 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDServerBoundDataDrivenScreenClosed,
         IDPositionTrackingDBClientRequest,
         IDPartyChanged,
+        IDPartyDestinationCookieResponse,
+        IDClientBoundControlSchemeSet,
+        IDMovementEffect,
+        IDPlayerVideoCapture,
+        IDPlayerLocation,
+        IDClientBoundTextureShift,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -918,6 +957,25 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
                 party_id = "party",
                 party_leader = true,
             }),
+        },
+        Party_Destination_Cookie_Response{
+            cookie = "opaque",
+            accepted = true,
+        },
+        Player_Video_Capture{
+            action = Player_Video_Capture_Action_Start,
+            frame_rate = 60,
+            file_prefix = "capture-",
+        },
+        Client_Bound_Texture_Shift{
+            action_id = Texture_Shift_Action_Sync,
+            collection_name = "collection",
+            from_step = "one",
+            to_step = "two",
+            all_steps = []string{"one", "two"},
+            current_length_ticks = 10,
+            total_length_ticks = 20,
+            enabled = true,
         },
     }
     for original in packets {

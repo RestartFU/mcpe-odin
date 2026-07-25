@@ -734,6 +734,36 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Party_Changed"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PartyDestinationCookieResponse"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Party_Destination_Cookie_Response"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientBoundControlSchemeSet"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Control_Scheme_Set"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.MovementEffect"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Movement_Effect"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlayerVideoCapture"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Player_Video_Capture"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlayerLocation"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Player_Location"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ClientBoundTextureShift"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Texture_Shift"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

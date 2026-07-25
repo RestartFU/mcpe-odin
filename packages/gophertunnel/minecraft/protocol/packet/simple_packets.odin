@@ -448,6 +448,123 @@ Party_Changed :: struct {
     party_info: protocol.Optional(Party_Info),
 }
 
+Player_Video_Capture_Action_Stop  :: u8(0)
+Player_Video_Capture_Action_Start :: u8(1)
+
+Player_Location_Type_Coordinates :: i32(0)
+Player_Location_Type_Hide        :: i32(1)
+
+Control_Scheme_Locked_Player_Relative_Strafe :: u8(0)
+Control_Scheme_Camera_Relative                :: u8(1)
+Control_Scheme_Camera_Relative_Strafe         :: u8(2)
+Control_Scheme_Player_Relative                :: u8(3)
+Control_Scheme_Player_Relative_Strafe         :: u8(4)
+
+Movement_Effect_Type_Glide_Boost   :: i32(0)
+Movement_Effect_Type_Dolphin_Boost :: i32(1)
+Movement_Effect_Type_Geyser_Boost  :: i32(2)
+
+Texture_Shift_Action_Invalid     :: u8(0)
+Texture_Shift_Action_Initialize  :: u8(1)
+Texture_Shift_Action_Start       :: u8(2)
+Texture_Shift_Action_Set_Enabled :: u8(3)
+Texture_Shift_Action_Sync        :: u8(4)
+
+Party_Destination_Cookie_Response :: struct {
+    cookie:   string,
+    accepted: bool,
+}
+
+Client_Bound_Control_Scheme_Set :: struct {
+    control_scheme: u8,
+}
+
+Movement_Effect :: struct {
+    entity_runtime_id: u64,
+    type:              i32,
+    duration:          i32,
+    tick:              u64,
+}
+
+Player_Video_Capture :: struct {
+    action:      u8,
+    frame_rate:  i32,
+    file_prefix: string,
+}
+
+Player_Location :: struct {
+    type:             i32,
+    entity_unique_id: i64,
+    position:         protocol.Vec3,
+}
+
+Client_Bound_Texture_Shift :: struct {
+    action_id:            u8,
+    collection_name:      string,
+    from_step:            string,
+    to_step:              string,
+    all_steps:            []string,
+    current_length_ticks: u64,
+    total_length_ticks:   u64,
+    enabled:              bool,
+}
+
+destroy_client_bound_texture_shift :: proc(
+    packet: Client_Bound_Texture_Shift,
+    allocator := context.allocator,
+) {
+    delete(packet.collection_name, allocator)
+    delete(packet.from_step, allocator)
+    delete(packet.to_step, allocator)
+    destroy_string_slice(packet.all_steps, allocator)
+}
+
+read_client_bound_texture_shift :: proc(
+    input: ^protocol.Reader,
+) -> (
+    packet: Client_Bound_Texture_Shift,
+    err: mcpe_runtime.Error,
+) {
+    packet.action_id = protocol.read_u8(input) or_return
+    packet.collection_name = protocol.read_string(input) or_return
+    packet.from_step, err = protocol.read_string(input)
+    if err != nil {
+        destroy_client_bound_texture_shift(packet, input.allocator)
+        packet = {}
+        return
+    }
+    packet.to_step, err = protocol.read_string(input)
+    if err != nil {
+        destroy_client_bound_texture_shift(packet, input.allocator)
+        packet = {}
+        return
+    }
+    packet.all_steps, err = read_string_slice(input)
+    if err != nil {
+        destroy_client_bound_texture_shift(packet, input.allocator)
+        packet = {}
+        return
+    }
+    packet.current_length_ticks, err = protocol.read_varuint64(input)
+    if err != nil {
+        destroy_client_bound_texture_shift(packet, input.allocator)
+        packet = {}
+        return
+    }
+    packet.total_length_ticks, err = protocol.read_varuint64(input)
+    if err != nil {
+        destroy_client_bound_texture_shift(packet, input.allocator)
+        packet = {}
+        return
+    }
+    packet.enabled, err = protocol.read_bool(input)
+    if err != nil {
+        destroy_client_bound_texture_shift(packet, input.allocator)
+        packet = {}
+    }
+    return
+}
+
 write_u64_slice :: proc(
     output: ^protocol.Writer,
     values: []u64,

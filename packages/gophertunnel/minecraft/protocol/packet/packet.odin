@@ -173,6 +173,12 @@ Packet :: union {
     Server_Bound_Data_Driven_Screen_Closed,
     Position_Tracking_DB_Client_Request,
     Party_Changed,
+    Party_Destination_Cookie_Response,
+    Client_Bound_Control_Scheme_Set,
+    Movement_Effect,
+    Player_Video_Capture,
+    Player_Location,
+    Client_Bound_Texture_Shift,
     Unknown_Packet,
 }
 
@@ -322,6 +328,14 @@ packet_id :: proc(value: Packet) -> (
     case Position_Tracking_DB_Client_Request:
         id = IDPositionTrackingDBClientRequest
     case Party_Changed:               id = IDPartyChanged
+    case Party_Destination_Cookie_Response:
+        id = IDPartyDestinationCookieResponse
+    case Client_Bound_Control_Scheme_Set:
+        id = IDClientBoundControlSchemeSet
+    case Movement_Effect:             id = IDMovementEffect
+    case Player_Video_Capture:        id = IDPlayerVideoCapture
+    case Player_Location:             id = IDPlayerLocation
+    case Client_Bound_Texture_Shift:  id = IDClientBoundTextureShift
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -484,6 +498,12 @@ destroy_packet :: proc(
         if packet.party_info.set {
             delete(packet.party_info.value.party_id, allocator)
         }
+    case Party_Destination_Cookie_Response:
+        delete(packet.cookie, allocator)
+    case Player_Video_Capture:
+        delete(packet.file_prefix, allocator)
+    case Client_Bound_Texture_Shift:
+        destroy_client_bound_texture_shift(packet, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

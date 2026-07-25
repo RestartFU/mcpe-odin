@@ -587,10 +587,10 @@ func main() {
 	emitPacket(
 		"packet_resource_pack_chunk_data",
 		&packet.ResourcePackChunkData{
-			UUID:        "d2d3a4b5-c6d7-48e9-a001-020304050607",
-			ChunkIndex:  7,
-			DataOffset:  7 * 1_048_576,
-			Data:        []byte{9, 8, 7, 6},
+			UUID:       "d2d3a4b5-c6d7-48e9-a001-020304050607",
+			ChunkIndex: 7,
+			DataOffset: 7 * 1_048_576,
+			Data:       []byte{9, 8, 7, 6},
 		},
 		0,
 		0,
@@ -608,12 +608,12 @@ func main() {
 	emitPacket(
 		"packet_resource_packs_info",
 		&packet.ResourcePacksInfo{
-			TexturePackRequired:         true,
-			HasAddons:                    true,
-			HasScripts:                   true,
-			ForceDisableVibrantVisuals:   true,
-			WorldTemplateUUID:            packUUID,
-			WorldTemplateVersion:         "1.0.0",
+			TexturePackRequired:        true,
+			HasAddons:                  true,
+			HasScripts:                 true,
+			ForceDisableVibrantVisuals: true,
+			WorldTemplateUUID:          packUUID,
+			WorldTemplateVersion:       "1.0.0",
 			TexturePacks: []protocol.TexturePackInfo{
 				{
 					UUID:            packUUID,
@@ -973,7 +973,7 @@ func main() {
 	emitPacket(
 		"packet_request_permissions",
 		&packet.RequestPermissions{
-			EntityUniqueID:      -9001,
+			EntityUniqueID:       -9001,
 			PermissionLevel:      2,
 			RequestedPermissions: 0x1234,
 		},
@@ -1022,7 +1022,7 @@ func main() {
 	emitPacket(
 		"packet_block_event",
 		&packet.BlockEvent{
-			Position: protocol.BlockPos{-12, 64, 3456},
+			Position:  protocol.BlockPos{-12, 64, 3456},
 			EventType: packet.BlockEventChangeChestState, EventData: 1,
 		},
 		0, 0,
@@ -1079,7 +1079,7 @@ func main() {
 		"packet_player_action",
 		&packet.PlayerAction{
 			EntityRuntimeID: 1<<40 + 14, ActionType: -2,
-			BlockPosition: protocol.BlockPos{-12, 64, 3456},
+			BlockPosition:  protocol.BlockPos{-12, 64, 3456},
 			ResultPosition: protocol.BlockPos{-11, 65, 3457}, BlockFace: 3,
 		},
 		0, 0,
@@ -1088,7 +1088,7 @@ func main() {
 		"packet_spawn_particle",
 		&packet.SpawnParticleEffect{
 			Dimension: 2, EntityUniqueID: -1, Position: mgl32.Vec3{1.25, 2.5, 3.75},
-			ParticleName: "minecraft:test",
+			ParticleName:    "minecraft:test",
 			MoLangVariables: protocol.Option([]byte(`{"x":1}`)),
 		},
 		0, 0,
@@ -1160,6 +1160,53 @@ func main() {
 		"packet_party_changed",
 		&packet.PartyChanged{
 			PartyInfo: protocol.Option(packet.PartyInfo{PartyID: "party", PartyLeader: true}),
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_party_cookie_response",
+		&packet.PartyDestinationCookieResponse{Cookie: "opaque", Accepted: true},
+		0, 0,
+	)
+	emitPacket(
+		"packet_control_scheme_set",
+		&packet.ClientBoundControlSchemeSet{
+			ControlScheme: packet.ControlSchemeCameraRelativeStrafe,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_movement_effect",
+		&packet.MovementEffect{
+			EntityRuntimeID: 1<<40 + 16,
+			Type:            packet.MovementEffectTypeDolphinBoost,
+			Duration:        40,
+			Tick:            123456,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_player_video_capture",
+		&packet.PlayerVideoCapture{
+			Action: packet.PlayerVideoCaptureActionStart, FrameRate: 60,
+			FilePrefix: "capture-",
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_player_location",
+		&packet.PlayerLocation{
+			Type: packet.PlayerLocationTypeCoordinates, EntityUniqueID: -99,
+			Position: mgl32.Vec3{1.25, 2.5, 3.75},
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_texture_shift",
+		&packet.ClientBoundTextureShift{
+			ActionID: packet.TextureShiftActionSync, CollectionName: "collection",
+			FromStep: "one", ToStep: "two", AllSteps: []string{"one", "two"},
+			CurrentLengthTicks: 10, TotalLengthTicks: 20, Enabled: true,
 		},
 		0, 0,
 	)

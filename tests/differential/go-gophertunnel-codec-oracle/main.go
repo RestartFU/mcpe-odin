@@ -1365,6 +1365,54 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_level_event",
+		&packet.LevelEvent{
+			EventType: packet.LevelEventParticlesDestroyBlock,
+			Position:  mgl32.Vec3{1.25, 2.5, 3.75}, EventData: -7,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_photo_transfer",
+		&packet.PhotoTransfer{
+			PhotoName: "photo.png", PhotoData: []byte{1, 2, 3, 4},
+			BookID: "book", PhotoType: packet.PhotoTypePhotoItem,
+			SourceType: packet.PhotoTypePortfolio, OwnerEntityUniqueID: -99,
+			NewPhotoName: "renamed.png",
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_display_objective",
+		&packet.SetDisplayObjective{
+			DisplaySlot:   packet.ScoreboardSlotSidebar,
+			ObjectiveName: "kills", DisplayName: "Kills",
+			CriteriaName: "dummy", SortOrder: packet.ScoreboardSortOrderDescending,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_level_sound_event",
+		&packet.LevelSoundEvent{
+			SoundType: packet.SoundEventStep,
+			Position:  mgl32.Vec3{1.25, 2.5, 3.75}, ExtraData: -7,
+			EntityType: "minecraft:zombie", BabyMob: true,
+			DisableRelativeVolume: false, EntityUniqueID: -99,
+			FireAtPosition: protocol.Option(mgl32.Vec3{4, 5, 6}),
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_animate_entity",
+		&packet.AnimateEntity{
+			Animation: "animation.test", NextState: "default",
+			StopCondition: "query.is_on_ground", StopConditionVersion: 1,
+			Controller: "controller.animation.test", BlendOutTime: 0.25,
+			EntityRuntimeIDs: []uint64{1<<40 + 23, 1<<40 + 24},
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

@@ -220,7 +220,12 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDAnimate,
          IDSetActorLink,
          IDMapInfoRequest,
-         IDPlayerArmourDamage:
+         IDPlayerArmourDamage,
+         IDLevelEvent,
+         IDPhotoTransfer,
+         IDSetDisplayObjective,
+         IDLevelSoundEvent,
+         IDAnimateEntity:
         return true
     }
     return false
@@ -930,6 +935,50 @@ write_payload :: proc(
         ) or_return
     case Player_Armour_Damage:
         write_armour_damage_slice(output, packet.list) or_return
+    case Level_Event:
+        protocol.write_varint32(output, packet.event_type)
+        protocol.write_vec3(output, packet.position)
+        protocol.write_varint32(output, packet.event_data)
+    case Photo_Transfer:
+        protocol.write_string(output, packet.photo_name)
+        protocol.write_byte_slice(output, packet.photo_data)
+        protocol.write_string(output, packet.book_id)
+        protocol.write_u8(output, packet.photo_type)
+        protocol.write_u8(output, packet.source_type)
+        protocol.write_i64(output, packet.owner_entity_unique_id)
+        protocol.write_string(output, packet.new_photo_name)
+    case Set_Display_Objective:
+        protocol.write_string(output, packet.display_slot)
+        protocol.write_string(output, packet.objective_name)
+        protocol.write_string(output, packet.display_name)
+        protocol.write_string(output, packet.criteria_name)
+        protocol.write_varint32(output, packet.sort_order)
+    case Level_Sound_Event:
+        protocol.write_string(output, packet.sound_type)
+        protocol.write_vec3(output, packet.position)
+        protocol.write_varint32(output, packet.extra_data)
+        protocol.write_string(output, packet.entity_type)
+        protocol.write_bool(output, packet.baby_mob)
+        protocol.write_bool(output, packet.disable_relative_volume)
+        protocol.write_i64(output, packet.entity_unique_id)
+        protocol.write_bool(output, packet.fire_at_position.set)
+        if packet.fire_at_position.set {
+            protocol.write_vec3(
+                output,
+                packet.fire_at_position.value,
+            )
+        }
+    case Animate_Entity:
+        protocol.write_string(output, packet.animation)
+        protocol.write_string(output, packet.next_state)
+        protocol.write_string(output, packet.stop_condition)
+        protocol.write_i32(output, packet.stop_condition_version)
+        protocol.write_string(output, packet.controller)
+        protocol.write_f32(output, packet.blend_out_time)
+        write_varuint64_slice(
+            output,
+            packet.entity_runtime_ids,
+        ) or_return
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -2029,6 +2078,186 @@ decode_packet :: proc(
     case IDPlayerArmourDamage:
         packet := Player_Armour_Damage{}
         packet.list = read_armour_damage_slice(&input) or_return
+        value = packet
+    case IDLevelEvent:
+        packet := Level_Event{}
+        packet.event_type = protocol.read_varint32(&input) or_return
+        packet.position = protocol.read_vec3(&input) or_return
+        packet.event_data = protocol.read_varint32(&input) or_return
+        value = packet
+    case IDPhotoTransfer:
+        packet := Photo_Transfer{}
+        packet.photo_name = protocol.read_string(&input) or_return
+        packet.photo_data, err = protocol.read_byte_slice(&input)
+        if err != nil {
+            delete(packet.photo_name, allocator)
+            return
+        }
+        packet.book_id, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.photo_name, allocator)
+            delete(packet.photo_data, allocator)
+            return
+        }
+        packet.photo_type, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.photo_name, allocator)
+            delete(packet.photo_data, allocator)
+            delete(packet.book_id, allocator)
+            return
+        }
+        packet.source_type, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.photo_name, allocator)
+            delete(packet.photo_data, allocator)
+            delete(packet.book_id, allocator)
+            return
+        }
+        packet.owner_entity_unique_id, err = protocol.read_i64(&input)
+        if err != nil {
+            delete(packet.photo_name, allocator)
+            delete(packet.photo_data, allocator)
+            delete(packet.book_id, allocator)
+            return
+        }
+        packet.new_photo_name, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.photo_name, allocator)
+            delete(packet.photo_data, allocator)
+            delete(packet.book_id, allocator)
+            return
+        }
+        value = packet
+    case IDSetDisplayObjective:
+        packet := Set_Display_Objective{}
+        packet.display_slot = protocol.read_string(&input) or_return
+        packet.objective_name, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.display_slot, allocator)
+            return
+        }
+        packet.display_name, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.display_slot, allocator)
+            delete(packet.objective_name, allocator)
+            return
+        }
+        packet.criteria_name, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.display_slot, allocator)
+            delete(packet.objective_name, allocator)
+            delete(packet.display_name, allocator)
+            return
+        }
+        packet.sort_order, err = protocol.read_varint32(&input)
+        if err != nil {
+            delete(packet.display_slot, allocator)
+            delete(packet.objective_name, allocator)
+            delete(packet.display_name, allocator)
+            delete(packet.criteria_name, allocator)
+            return
+        }
+        value = packet
+    case IDLevelSoundEvent:
+        packet := Level_Sound_Event{}
+        packet.sound_type = protocol.read_string(&input) or_return
+        packet.position, err = protocol.read_vec3(&input)
+        if err != nil {
+            delete(packet.sound_type, allocator)
+            return
+        }
+        packet.extra_data, err = protocol.read_varint32(&input)
+        if err != nil {
+            delete(packet.sound_type, allocator)
+            return
+        }
+        packet.entity_type, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.sound_type, allocator)
+            return
+        }
+        packet.baby_mob, err = protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.sound_type, allocator)
+            delete(packet.entity_type, allocator)
+            return
+        }
+        packet.disable_relative_volume, err =
+            protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.sound_type, allocator)
+            delete(packet.entity_type, allocator)
+            return
+        }
+        packet.entity_unique_id, err = protocol.read_i64(&input)
+        if err != nil {
+            delete(packet.sound_type, allocator)
+            delete(packet.entity_type, allocator)
+            return
+        }
+        packet.fire_at_position.set, err =
+            protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.sound_type, allocator)
+            delete(packet.entity_type, allocator)
+            return
+        }
+        if packet.fire_at_position.set {
+            packet.fire_at_position.value, err =
+                protocol.read_vec3(&input)
+            if err != nil {
+                delete(packet.sound_type, allocator)
+                delete(packet.entity_type, allocator)
+                return
+            }
+        }
+        value = packet
+    case IDAnimateEntity:
+        packet := Animate_Entity{}
+        packet.animation = protocol.read_string(&input) or_return
+        packet.next_state, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.animation, allocator)
+            return
+        }
+        packet.stop_condition, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.animation, allocator)
+            delete(packet.next_state, allocator)
+            return
+        }
+        packet.stop_condition_version, err =
+            protocol.read_i32(&input)
+        if err != nil {
+            delete(packet.animation, allocator)
+            delete(packet.next_state, allocator)
+            delete(packet.stop_condition, allocator)
+            return
+        }
+        packet.controller, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.animation, allocator)
+            delete(packet.next_state, allocator)
+            delete(packet.stop_condition, allocator)
+            return
+        }
+        packet.blend_out_time, err = protocol.read_f32(&input)
+        if err != nil {
+            delete(packet.animation, allocator)
+            delete(packet.next_state, allocator)
+            delete(packet.stop_condition, allocator)
+            delete(packet.controller, allocator)
+            return
+        }
+        packet.entity_runtime_ids, err =
+            read_varuint64_slice(&input)
+        if err != nil {
+            delete(packet.animation, allocator)
+            delete(packet.next_state, allocator)
+            delete(packet.stop_condition, allocator)
+            delete(packet.controller, allocator)
+            return
+        }
         value = packet
     case:
         value = Unknown_Packet{

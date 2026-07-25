@@ -667,6 +667,62 @@ Player_Armour_Damage :: struct {
     list: []protocol.Player_Armour_Damage_Entry,
 }
 
+Photo_Type_Portfolio  :: u8(0)
+Photo_Type_Photo_Item :: u8(1)
+Photo_Type_Book       :: u8(2)
+
+Scoreboard_Sort_Order_Ascending  :: i32(0)
+Scoreboard_Sort_Order_Descending :: i32(1)
+
+Scoreboard_Slot_List       :: "list"
+Scoreboard_Slot_Sidebar    :: "sidebar"
+Scoreboard_Slot_Below_Name :: "belowname"
+
+Level_Event :: struct {
+    event_type: i32,
+    position:   protocol.Vec3,
+    event_data: i32,
+}
+
+Photo_Transfer :: struct {
+    photo_name:             string,
+    photo_data:             []u8,
+    book_id:                string,
+    photo_type:             u8,
+    source_type:            u8,
+    owner_entity_unique_id: i64,
+    new_photo_name:         string,
+}
+
+Set_Display_Objective :: struct {
+    display_slot:   string,
+    objective_name: string,
+    display_name:   string,
+    criteria_name:  string,
+    sort_order:     i32,
+}
+
+Level_Sound_Event :: struct {
+    sound_type:              string,
+    position:                protocol.Vec3,
+    extra_data:              i32,
+    entity_type:             string,
+    baby_mob:                bool,
+    disable_relative_volume: bool,
+    entity_unique_id:        i64,
+    fire_at_position:        protocol.Optional(protocol.Vec3),
+}
+
+Animate_Entity :: struct {
+    animation:              string,
+    next_state:             string,
+    stop_condition:         string,
+    stop_condition_version: i32,
+    controller:             string,
+    blend_out_time:         f32,
+    entity_runtime_ids:     []u64,
+}
+
 animate_swing_source_string :: proc(source: u8) -> string {
     switch source {
     case Animate_Swing_Source_None:       return "none"
@@ -962,6 +1018,47 @@ read_armour_damage_slice :: proc(
     )
     for &value in values {
         value, err = protocol.read_player_armour_damage_entry(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
+    }
+    return
+}
+
+write_varuint64_slice :: proc(
+    output: ^protocol.Writer,
+    values: []u64,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_varuint64_slice",
+            "varuint64 list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_varuint64(output, value)
+    }
+    return nil
+}
+
+read_varuint64_slice :: proc(
+    input: ^protocol.Reader,
+) -> (values: []u64, err: mcpe_runtime.Error) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_varuint64_slice",
+            "varuint64 list exceeds entry limit",
+        )
+    }
+    values = make([]u64, int(count), input.allocator)
+    for &value in values {
+        value, err = protocol.read_varuint64(input)
         if err != nil {
             delete(values, input.allocator)
             values = nil

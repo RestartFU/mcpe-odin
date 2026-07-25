@@ -864,6 +864,31 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Player_Armour_Damage"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.LevelEvent"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Level_Event"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PhotoTransfer"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Photo_Transfer"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetDisplayObjective"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Display_Objective"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.LevelSoundEvent"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Level_Sound_Event"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.AnimateEntity"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Animate_Entity"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

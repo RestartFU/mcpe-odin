@@ -196,6 +196,11 @@ Packet :: union {
     Set_Actor_Link,
     Map_Info_Request,
     Player_Armour_Damage,
+    Level_Event,
+    Photo_Transfer,
+    Set_Display_Objective,
+    Level_Sound_Event,
+    Animate_Entity,
     Unknown_Packet,
 }
 
@@ -373,6 +378,11 @@ packet_id :: proc(value: Packet) -> (
     case Set_Actor_Link:              id = IDSetActorLink
     case Map_Info_Request:            id = IDMapInfoRequest
     case Player_Armour_Damage:        id = IDPlayerArmourDamage
+    case Level_Event:                 id = IDLevelEvent
+    case Photo_Transfer:              id = IDPhotoTransfer
+    case Set_Display_Objective:       id = IDSetDisplayObjective
+    case Level_Sound_Event:           id = IDLevelSoundEvent
+    case Animate_Entity:              id = IDAnimateEntity
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -558,6 +568,25 @@ destroy_packet :: proc(
         delete(packet.client_pixels, allocator)
     case Player_Armour_Damage:
         delete(packet.list, allocator)
+    case Photo_Transfer:
+        delete(packet.photo_name, allocator)
+        delete(packet.photo_data, allocator)
+        delete(packet.book_id, allocator)
+        delete(packet.new_photo_name, allocator)
+    case Set_Display_Objective:
+        delete(packet.display_slot, allocator)
+        delete(packet.objective_name, allocator)
+        delete(packet.display_name, allocator)
+        delete(packet.criteria_name, allocator)
+    case Level_Sound_Event:
+        delete(packet.sound_type, allocator)
+        delete(packet.entity_type, allocator)
+    case Animate_Entity:
+        delete(packet.animation, allocator)
+        delete(packet.next_state, allocator)
+        delete(packet.stop_condition, allocator)
+        delete(packet.controller, allocator)
+        delete(packet.entity_runtime_ids, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

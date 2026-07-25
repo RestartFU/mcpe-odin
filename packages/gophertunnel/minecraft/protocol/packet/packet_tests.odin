@@ -873,6 +873,49 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
                 {armour_slot = 3, damage = -2},
             },
         },
+        Level_Event{
+            event_type = 2001,
+            position = {1.25, 2.5, 3.75},
+            event_data = -7,
+        },
+        Photo_Transfer{
+            photo_name = "photo.png",
+            photo_data = []u8{1, 2, 3, 4},
+            book_id = "book",
+            photo_type = Photo_Type_Photo_Item,
+            source_type = Photo_Type_Portfolio,
+            owner_entity_unique_id = -99,
+            new_photo_name = "renamed.png",
+        },
+        Set_Display_Objective{
+            display_slot = Scoreboard_Slot_Sidebar,
+            objective_name = "kills",
+            display_name = "Kills",
+            criteria_name = "dummy",
+            sort_order = Scoreboard_Sort_Order_Descending,
+        },
+        Level_Sound_Event{
+            sound_type = "step",
+            position = {1.25, 2.5, 3.75},
+            extra_data = -7,
+            entity_type = "minecraft:zombie",
+            baby_mob = true,
+            disable_relative_volume = false,
+            entity_unique_id = -99,
+            fire_at_position = protocol.option(protocol.Vec3{4, 5, 6}),
+        },
+        Animate_Entity{
+            animation = "animation.test",
+            next_state = "default",
+            stop_condition = "query.is_on_ground",
+            stop_condition_version = 1,
+            controller = "controller.animation.test",
+            blend_out_time = 0.25,
+            entity_runtime_ids = []u64{
+                u64(1) << 40 | 23,
+                u64(1) << 40 | 24,
+            },
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -964,6 +1007,11 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDSetActorLink,
         IDMapInfoRequest,
         IDPlayerArmourDamage,
+        IDLevelEvent,
+        IDPhotoTransfer,
+        IDSetDisplayObjective,
+        IDLevelSoundEvent,
+        IDAnimateEntity,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -1160,6 +1208,44 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             list = []protocol.Player_Armour_Damage_Entry{
                 {armour_slot = 0, damage = 7},
                 {armour_slot = 3, damage = -2},
+            },
+        },
+        Photo_Transfer{
+            photo_name = "photo.png",
+            photo_data = []u8{1, 2, 3, 4},
+            book_id = "book",
+            photo_type = Photo_Type_Photo_Item,
+            source_type = Photo_Type_Portfolio,
+            owner_entity_unique_id = -99,
+            new_photo_name = "renamed.png",
+        },
+        Set_Display_Objective{
+            display_slot = Scoreboard_Slot_Sidebar,
+            objective_name = "kills",
+            display_name = "Kills",
+            criteria_name = "dummy",
+            sort_order = Scoreboard_Sort_Order_Descending,
+        },
+        Level_Sound_Event{
+            sound_type = "step",
+            position = {1.25, 2.5, 3.75},
+            extra_data = -7,
+            entity_type = "minecraft:zombie",
+            baby_mob = true,
+            disable_relative_volume = false,
+            entity_unique_id = -99,
+            fire_at_position = protocol.option(protocol.Vec3{4, 5, 6}),
+        },
+        Animate_Entity{
+            animation = "animation.test",
+            next_state = "default",
+            stop_condition = "query.is_on_ground",
+            stop_condition_version = 1,
+            controller = "controller.animation.test",
+            blend_out_time = 0.25,
+            entity_runtime_ids = []u64{
+                u64(1) << 40 | 23,
+                u64(1) << 40 | 24,
             },
         },
     }

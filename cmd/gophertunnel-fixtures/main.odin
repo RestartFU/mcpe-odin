@@ -2033,6 +2033,23 @@ main :: proc() {
             payload = tracking_payload,
         },
     )
+    actor_property_data := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("health", nbt.value_float(20)),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(actor_property_data)
+        free(actor_property_data)
+    }
+    emit_packet(
+        "packet_sync_actor_property",
+        packet.Sync_Actor_Property{
+            property_data = actor_property_data,
+        },
+    )
     emit_packet(
         "packet_sync_world_clocks_state",
         packet.Sync_World_Clocks{

@@ -412,6 +412,10 @@ Client_Bound_Debug_Renderer :: struct {
     duration: u64,
 }
 
+Sync_Actor_Property :: struct {
+    property_data: ^nbt.Value,
+}
+
 Client_Bound_Data_Driven_UI_Show_Screen :: struct {
     screen_id:        string,
     form_id:          u32,

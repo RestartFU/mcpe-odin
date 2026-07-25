@@ -1842,6 +1842,13 @@ func main() {
 		0, 0,
 	)
 	emitPacket(
+		"packet_sync_actor_property",
+		&packet.SyncActorProperty{
+			PropertyData: map[string]any{"health": float32(20)},
+		},
+		0, 0,
+	)
+	emitPacket(
 		"packet_sync_world_clocks_state",
 		&packet.SyncWorldClocks{
 			PayloadType: protocol.ClockPayloadTypeSyncState,

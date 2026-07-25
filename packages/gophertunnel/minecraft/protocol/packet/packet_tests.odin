@@ -322,6 +322,47 @@ position_tracking_broadcast_round_trip :: proc(t: ^testing.T) {
 }
 
 @(test)
+sync_actor_property_round_trip :: proc(t: ^testing.T) {
+    property_data := nbt.new_value(
+        nbt.value_compound(
+            []nbt.Named_Value{
+                nbt.named_value("health", nbt.value_float(20)),
+                nbt.named_value("active", nbt.value_byte(1)),
+            },
+        ),
+    )
+    defer {
+        nbt.destroy_value(property_data)
+        free(property_data)
+    }
+    encoded, encode_err := encode_packet(
+        Sync_Actor_Property{property_data = property_data},
+    )
+    testing.expect(t, encode_err == nil)
+    if encode_err != nil {
+        mcpe_runtime.destroy_error(encode_err)
+        return
+    }
+    defer delete(encoded)
+    decoded, header, decode_err := decode_packet(encoded)
+    testing.expect(t, decode_err == nil)
+    if decode_err != nil {
+        mcpe_runtime.destroy_error(decode_err)
+        return
+    }
+    defer destroy_packet(&decoded)
+    testing.expect_value(t, header.packet_id, IDSyncActorProperty)
+    reencoded, reencode_err := encode_packet(decoded)
+    testing.expect(t, reencode_err == nil)
+    if reencode_err == nil {
+        testing.expect(t, slice.equal(encoded, reencoded))
+        delete(reencoded)
+    } else {
+        mcpe_runtime.destroy_error(reencode_err)
+    }
+}
+
+@(test)
 dimension_packets_round_trip_optional_loading_screen_id :: proc(
     t: ^testing.T,
 ) {

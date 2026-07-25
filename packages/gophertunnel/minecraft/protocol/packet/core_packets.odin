@@ -192,6 +192,7 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDClientCacheBlobStatus,
          IDClientCacheMissResponse,
          IDClientBoundDebugRenderer,
+         IDSyncActorProperty,
          IDClientBoundDataDrivenUIShowScreen,
          IDSubClientLogin,
          IDScriptCustomEvent,
@@ -810,6 +811,26 @@ write_payload :: proc(
                 "unknown debug renderer type",
             )
         }
+    case Sync_Actor_Property:
+        if packet.property_data == nil ||
+           packet.property_data.tag != .Compound {
+            return packet_error(
+                .Invalid_Argument,
+                "gophertunnel.packet.write_sync_actor_property",
+                "actor property data must be a compound",
+            )
+        }
+        encoded, encode_err := nbt.marshal(
+            packet.property_data,
+            .Network_Little_Endian,
+            "",
+            output.allocator,
+        )
+        if encode_err != nil {
+            return encode_err
+        }
+        protocol.write_bytes(output, encoded)
+        delete(encoded, output.allocator)
     case Client_Bound_Data_Driven_UI_Show_Screen:
         protocol.write_string(output, packet.screen_id)
         protocol.write_u32(output, packet.form_id)
@@ -2124,6 +2145,31 @@ decode_packet :: proc(
                 delete(packet.text, allocator)
                 return
             }
+        }
+        value = packet
+    case IDSyncActorProperty:
+        packet := Sync_Actor_Property{}
+        root_name: string
+        payload := protocol.read_remaining_bytes(&input)
+        packet.property_data, root_name, err = nbt.unmarshal(
+            payload,
+            .Network_Little_Endian,
+            false,
+            allocator,
+        )
+        delete(root_name, allocator)
+        if err != nil {
+            return
+        }
+        if packet.property_data.tag != .Compound {
+            nbt.destroy_value(packet.property_data, allocator)
+            free(packet.property_data, allocator)
+            err = packet_error(
+                .Malformed,
+                "gophertunnel.packet.read_sync_actor_property",
+                "actor property data must be a compound",
+            )
+            return
         }
         value = packet
     case IDClientBoundDataDrivenUIShowScreen:

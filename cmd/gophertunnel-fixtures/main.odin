@@ -1309,6 +1309,70 @@ main :: proc() {
             enabled = true,
         },
     )
+    emit_packet(
+        "packet_set_hud",
+        packet.Set_Hud{
+            elements = []i32{
+                packet.Hud_Element_Crosshair,
+                packet.Hud_Element_Hot_Bar,
+            },
+            visibility = packet.Hud_Visibility_Hide,
+        },
+    )
+    emit_packet(
+        "packet_inventory_options",
+        packet.Set_Player_Inventory_Options{
+            left_inventory_tab = packet.Inventory_Left_Tab_Search,
+            right_inventory_tab = packet.Inventory_Right_Tab_Crafting,
+            filtering = true,
+            inventory_layout = packet.Inventory_Layout_Default,
+            crafting_layout = packet.Inventory_Layout_Recipe_Book_Only,
+        },
+    )
+    emit_packet(
+        "packet_entity_overrides",
+        packet.Player_Update_Entity_Overrides{
+            entity_unique_id = -99,
+            property_index = 7,
+            type = packet.Player_Update_Entity_Overrides_Type_Float,
+            float_value = 2.5,
+        },
+    )
+    emit_packet(
+        "packet_camera_aim_assist",
+        packet.Camera_Aim_Assist{
+            preset = "preset",
+            angle = {12.5, 8.25},
+            distance = 32,
+            target_mode = 1,
+            action = packet.Camera_Aim_Assist_Action_Set,
+            show_debug_render = true,
+        },
+    )
+    emit_packet(
+        "packet_change_mob_property",
+        packet.Change_Mob_Property{
+            entity_unique_id = -99,
+            property = "minecraft:test",
+            bool_value = true,
+            string_value = "value",
+            int_value = -7,
+            float_value = 2.5,
+        },
+    )
+    emit_packet(
+        "packet_mob_effect",
+        packet.Mob_Effect{
+            entity_runtime_id = u64(1) << 40 | 17,
+            operation = 1,
+            effect_type = 1,
+            amplifier = 2,
+            particles = true,
+            duration = 600,
+            tick = 123456,
+            ambient = false,
+        },
+    )
 
     batch_time, batch_time_err := packet.encode_packet(
         packet.Set_Time{time = 42},

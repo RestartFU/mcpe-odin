@@ -470,6 +470,99 @@ Texture_Shift_Action_Start       :: u8(2)
 Texture_Shift_Action_Set_Enabled :: u8(3)
 Texture_Shift_Action_Sync        :: u8(4)
 
+Hud_Element_Paper_Doll     :: i32(0)
+Hud_Element_Armour         :: i32(1)
+Hud_Element_Tool_Tips      :: i32(2)
+Hud_Element_Touch_Controls :: i32(3)
+Hud_Element_Crosshair      :: i32(4)
+Hud_Element_Hot_Bar        :: i32(5)
+Hud_Element_Health         :: i32(6)
+Hud_Element_Progress_Bar   :: i32(7)
+Hud_Element_Hunger         :: i32(8)
+Hud_Element_Air_Bubbles    :: i32(9)
+Hud_Element_Horse_Health   :: i32(10)
+Hud_Element_Status_Effects :: i32(11)
+Hud_Element_Item_Text      :: i32(12)
+
+Hud_Visibility_Hide  :: i32(0)
+Hud_Visibility_Reset :: i32(1)
+
+Inventory_Layout_None             :: i32(0)
+Inventory_Layout_Inventory_Only   :: i32(1)
+Inventory_Layout_Default          :: i32(2)
+Inventory_Layout_Recipe_Book_Only :: i32(3)
+
+Inventory_Left_Tab_None         :: i32(0)
+Inventory_Left_Tab_Construction :: i32(1)
+Inventory_Left_Tab_Equipment    :: i32(2)
+Inventory_Left_Tab_Items        :: i32(3)
+Inventory_Left_Tab_Nature       :: i32(4)
+Inventory_Left_Tab_Search       :: i32(5)
+Inventory_Left_Tab_Survival     :: i32(6)
+
+Inventory_Right_Tab_None        :: i32(0)
+Inventory_Right_Tab_Full_Screen :: i32(1)
+Inventory_Right_Tab_Crafting    :: i32(2)
+Inventory_Right_Tab_Armour      :: i32(3)
+
+Player_Update_Entity_Overrides_Type_Clear_All :: u8(0)
+Player_Update_Entity_Overrides_Type_Remove    :: u8(1)
+Player_Update_Entity_Overrides_Type_Int       :: u8(2)
+Player_Update_Entity_Overrides_Type_Float     :: u8(3)
+
+Set_Hud :: struct {
+    elements:   []i32,
+    visibility: i32,
+}
+
+Set_Player_Inventory_Options :: struct {
+    left_inventory_tab:  i32,
+    right_inventory_tab: i32,
+    filtering:           bool,
+    inventory_layout:    i32,
+    crafting_layout:     i32,
+}
+
+Player_Update_Entity_Overrides :: struct {
+    entity_unique_id: i64,
+    property_index:   u32,
+    type:             u8,
+    int_value:        i32,
+    float_value:      f32,
+}
+
+Camera_Aim_Assist_Action_Set   :: u8(0)
+Camera_Aim_Assist_Action_Clear :: u8(1)
+
+Camera_Aim_Assist :: struct {
+    preset:            string,
+    angle:             protocol.Vec2,
+    distance:          f32,
+    target_mode:       u8,
+    action:            u8,
+    show_debug_render: bool,
+}
+
+Change_Mob_Property :: struct {
+    entity_unique_id: i64,
+    property:         string,
+    bool_value:       bool,
+    string_value:     string,
+    int_value:        i32,
+    float_value:      f32,
+}
+
+Mob_Effect :: struct {
+    entity_runtime_id: u64,
+    operation:         u8,
+    effect_type:       i32,
+    amplifier:         i32,
+    particles:         bool,
+    duration:          i32,
+    tick:              u64,
+    ambient:           bool,
+}
+
 Party_Destination_Cookie_Response :: struct {
     cookie:   string,
     accepted: bool,
@@ -561,6 +654,47 @@ read_client_bound_texture_shift :: proc(
     if err != nil {
         destroy_client_bound_texture_shift(packet, input.allocator)
         packet = {}
+    }
+    return
+}
+
+write_varint32_slice :: proc(
+    output: ^protocol.Writer,
+    values: []i32,
+) -> mcpe_runtime.Error {
+    if len(values) > protocol.MAX_COLLECTION_ELEMENTS {
+        return packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.write_varint32_slice",
+            "int32 list exceeds entry limit",
+        )
+    }
+    protocol.write_varuint32(output, u32(len(values)))
+    for value in values {
+        protocol.write_varint32(output, value)
+    }
+    return nil
+}
+
+read_varint32_slice :: proc(
+    input: ^protocol.Reader,
+) -> (values: []i32, err: mcpe_runtime.Error) {
+    count := protocol.read_varuint32(input) or_return
+    if count > protocol.MAX_COLLECTION_ELEMENTS {
+        return nil, packet_error(
+            .Limit_Exceeded,
+            "gophertunnel.packet.read_varint32_slice",
+            "int32 list exceeds entry limit",
+        )
+    }
+    values = make([]i32, int(count), input.allocator)
+    for &value in values {
+        value, err = protocol.read_varint32(input)
+        if err != nil {
+            delete(values, input.allocator)
+            values = nil
+            return
+        }
     }
     return
 }

@@ -1210,6 +1210,58 @@ func main() {
 		},
 		0, 0,
 	)
+	emitPacket(
+		"packet_set_hud",
+		&packet.SetHud{
+			Elements:   []int32{packet.HudElementCrosshair, packet.HudElementHotBar},
+			Visibility: packet.HudVisibilityHide,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_inventory_options",
+		&packet.SetPlayerInventoryOptions{
+			LeftInventoryTab:  packet.InventoryLeftTabSearch,
+			RightInventoryTab: packet.InventoryRightTabCrafting,
+			Filtering:         true, InventoryLayout: packet.InventoryLayoutDefault,
+			CraftingLayout: packet.InventoryLayoutRecipeBookOnly,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_entity_overrides",
+		&packet.PlayerUpdateEntityOverrides{
+			EntityUniqueID: -99, PropertyIndex: 7,
+			Type: packet.PlayerUpdateEntityOverridesTypeFloat, FloatValue: 2.5,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_camera_aim_assist",
+		&packet.CameraAimAssist{
+			Preset: "preset", Angle: mgl32.Vec2{12.5, 8.25}, Distance: 32,
+			TargetMode: 1, Action: packet.CameraAimAssistActionSet,
+			ShowDebugRender: true,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_change_mob_property",
+		&packet.ChangeMobProperty{
+			EntityUniqueID: -99, Property: "minecraft:test",
+			BoolValue: true, StringValue: "value", IntValue: -7, FloatValue: 2.5,
+		},
+		0, 0,
+	)
+	emitPacket(
+		"packet_mob_effect",
+		&packet.MobEffect{
+			EntityRuntimeID: 1<<40 + 17, Operation: packet.MobEffectAdd,
+			EffectType: packet.EffectSpeed, Amplifier: 2, Particles: true,
+			Duration: 600, Tick: 123456, Ambient: false,
+		},
+		0, 0,
+	)
 
 	var batch bytes.Buffer
 	batchEncoder := packet.NewEncoder(&batch)

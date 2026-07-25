@@ -757,6 +757,49 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
             total_length_ticks = 20,
             enabled = true,
         },
+        Set_Hud{
+            elements = []i32{Hud_Element_Crosshair, Hud_Element_Hot_Bar},
+            visibility = Hud_Visibility_Hide,
+        },
+        Set_Player_Inventory_Options{
+            left_inventory_tab = Inventory_Left_Tab_Search,
+            right_inventory_tab = Inventory_Right_Tab_Crafting,
+            filtering = true,
+            inventory_layout = Inventory_Layout_Default,
+            crafting_layout = Inventory_Layout_Recipe_Book_Only,
+        },
+        Player_Update_Entity_Overrides{
+            entity_unique_id = -99,
+            property_index = 7,
+            type = Player_Update_Entity_Overrides_Type_Float,
+            float_value = 2.5,
+        },
+        Camera_Aim_Assist{
+            preset = "preset",
+            angle = {12.5, 8.25},
+            distance = 32,
+            target_mode = 1,
+            action = Camera_Aim_Assist_Action_Set,
+            show_debug_render = true,
+        },
+        Change_Mob_Property{
+            entity_unique_id = -99,
+            property = "minecraft:test",
+            bool_value = true,
+            string_value = "value",
+            int_value = -7,
+            float_value = 2.5,
+        },
+        Mob_Effect{
+            entity_runtime_id = u64(1) << 40 | 17,
+            operation = 1,
+            effect_type = 1,
+            amplifier = 2,
+            particles = true,
+            duration = 600,
+            tick = 123456,
+            ambient = false,
+        },
     }
     ids := [?]u32{
         IDClientBoundDataDrivenUIReload,
@@ -831,6 +874,12 @@ simple_packets_round_trip :: proc(t: ^testing.T) {
         IDPlayerVideoCapture,
         IDPlayerLocation,
         IDClientBoundTextureShift,
+        IDSetHud,
+        IDSetPlayerInventoryOptions,
+        IDPlayerUpdateEntityOverrides,
+        IDCameraAimAssist,
+        IDChangeMobProperty,
+        IDMobEffect,
     }
     for original, index in packets {
         data, encode_err := encode_packet(original)
@@ -976,6 +1025,26 @@ simple_packet_decode_cleans_partial_values :: proc(t: ^testing.T) {
             current_length_ticks = 10,
             total_length_ticks = 20,
             enabled = true,
+        },
+        Set_Hud{
+            elements = []i32{Hud_Element_Crosshair, Hud_Element_Hot_Bar},
+            visibility = Hud_Visibility_Hide,
+        },
+        Camera_Aim_Assist{
+            preset = "preset",
+            angle = {12.5, 8.25},
+            distance = 32,
+            target_mode = 1,
+            action = Camera_Aim_Assist_Action_Set,
+            show_debug_render = true,
+        },
+        Change_Mob_Property{
+            entity_unique_id = -99,
+            property = "minecraft:test",
+            bool_value = true,
+            string_value = "value",
+            int_value = -7,
+            float_value = 2.5,
         },
     }
     for original in packets {

@@ -179,6 +179,12 @@ Packet :: union {
     Player_Video_Capture,
     Player_Location,
     Client_Bound_Texture_Shift,
+    Set_Hud,
+    Set_Player_Inventory_Options,
+    Player_Update_Entity_Overrides,
+    Camera_Aim_Assist,
+    Change_Mob_Property,
+    Mob_Effect,
     Unknown_Packet,
 }
 
@@ -336,6 +342,14 @@ packet_id :: proc(value: Packet) -> (
     case Player_Video_Capture:        id = IDPlayerVideoCapture
     case Player_Location:             id = IDPlayerLocation
     case Client_Bound_Texture_Shift:  id = IDClientBoundTextureShift
+    case Set_Hud:                     id = IDSetHud
+    case Set_Player_Inventory_Options:
+        id = IDSetPlayerInventoryOptions
+    case Player_Update_Entity_Overrides:
+        id = IDPlayerUpdateEntityOverrides
+    case Camera_Aim_Assist:           id = IDCameraAimAssist
+    case Change_Mob_Property:         id = IDChangeMobProperty
+    case Mob_Effect:                  id = IDMobEffect
     case Unknown_Packet:              id = packet.packet_id
     case:
         err = packet_error(
@@ -504,6 +518,13 @@ destroy_packet :: proc(
         delete(packet.file_prefix, allocator)
     case Client_Bound_Texture_Shift:
         destroy_client_bound_texture_shift(packet, allocator)
+    case Set_Hud:
+        delete(packet.elements, allocator)
+    case Camera_Aim_Assist:
+        delete(packet.preset, allocator)
+    case Change_Mob_Property:
+        delete(packet.property, allocator)
+        delete(packet.string_value, allocator)
     case Unknown_Packet:
         delete(packet.payload, allocator)
     case:

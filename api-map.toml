@@ -764,6 +764,36 @@ odin = "mcpe:gophertunnel/minecraft/protocol/packet.Client_Bound_Texture_Shift"
 status = "partial"
 
 [[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetHud"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Hud"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.SetPlayerInventoryOptions"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Set_Player_Inventory_Options"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.PlayerUpdateEntityOverrides"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Player_Update_Entity_Overrides"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.CameraAimAssist"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Camera_Aim_Assist"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.ChangeMobProperty"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Change_Mob_Property"
+status = "partial"
+
+[[symbol]]
+upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.MobEffect"
+odin = "mcpe:gophertunnel/minecraft/protocol/packet.Mob_Effect"
+status = "partial"
+
+[[symbol]]
 upstream = "github.com/sandertv/gophertunnel/minecraft/protocol/packet.Compression"
 odin = "mcpe:gophertunnel/minecraft/protocol/packet.Compression"
 status = "partial"

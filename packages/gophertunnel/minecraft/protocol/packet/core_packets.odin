@@ -203,7 +203,13 @@ modeled_packet_id :: proc(id: u32) -> bool {
          IDMovementEffect,
          IDPlayerVideoCapture,
          IDPlayerLocation,
-         IDClientBoundTextureShift:
+         IDClientBoundTextureShift,
+         IDSetHud,
+         IDSetPlayerInventoryOptions,
+         IDPlayerUpdateEntityOverrides,
+         IDCameraAimAssist,
+         IDChangeMobProperty,
+         IDMobEffect:
         return true
     }
     return false
@@ -785,6 +791,48 @@ write_payload :: proc(
         protocol.write_varuint64(output, packet.current_length_ticks)
         protocol.write_varuint64(output, packet.total_length_ticks)
         protocol.write_bool(output, packet.enabled)
+    case Set_Hud:
+        write_varint32_slice(output, packet.elements) or_return
+        protocol.write_varint32(output, packet.visibility)
+    case Set_Player_Inventory_Options:
+        protocol.write_varint32(output, packet.left_inventory_tab)
+        protocol.write_varint32(output, packet.right_inventory_tab)
+        protocol.write_bool(output, packet.filtering)
+        protocol.write_varint32(output, packet.inventory_layout)
+        protocol.write_varint32(output, packet.crafting_layout)
+    case Player_Update_Entity_Overrides:
+        protocol.write_varint64(output, packet.entity_unique_id)
+        protocol.write_varuint32(output, packet.property_index)
+        protocol.write_u8(output, packet.type)
+        if packet.type == Player_Update_Entity_Overrides_Type_Int {
+            protocol.write_i32(output, packet.int_value)
+        } else if packet.type ==
+                  Player_Update_Entity_Overrides_Type_Float {
+            protocol.write_f32(output, packet.float_value)
+        }
+    case Camera_Aim_Assist:
+        protocol.write_string(output, packet.preset)
+        protocol.write_vec2(output, packet.angle)
+        protocol.write_f32(output, packet.distance)
+        protocol.write_u8(output, packet.target_mode)
+        protocol.write_u8(output, packet.action)
+        protocol.write_bool(output, packet.show_debug_render)
+    case Change_Mob_Property:
+        protocol.write_varint64(output, packet.entity_unique_id)
+        protocol.write_string(output, packet.property)
+        protocol.write_bool(output, packet.bool_value)
+        protocol.write_string(output, packet.string_value)
+        protocol.write_varint32(output, packet.int_value)
+        protocol.write_f32(output, packet.float_value)
+    case Mob_Effect:
+        protocol.write_varuint64(output, packet.entity_runtime_id)
+        protocol.write_u8(output, packet.operation)
+        protocol.write_varint32(output, packet.effect_type)
+        protocol.write_varint32(output, packet.amplifier)
+        protocol.write_bool(output, packet.particles)
+        protocol.write_varint32(output, packet.duration)
+        protocol.write_varuint64(output, packet.tick)
+        protocol.write_bool(output, packet.ambient)
     case Unknown_Packet:
         protocol.write_bytes(output, packet.payload)
     case:
@@ -1642,6 +1690,110 @@ decode_packet :: proc(
         value = packet
     case IDClientBoundTextureShift:
         value = read_client_bound_texture_shift(&input) or_return
+    case IDSetHud:
+        packet := Set_Hud{}
+        packet.elements = read_varint32_slice(&input) or_return
+        packet.visibility, err = protocol.read_varint32(&input)
+        if err != nil {
+            delete(packet.elements, allocator)
+            return
+        }
+        value = packet
+    case IDSetPlayerInventoryOptions:
+        packet := Set_Player_Inventory_Options{}
+        packet.left_inventory_tab =
+            protocol.read_varint32(&input) or_return
+        packet.right_inventory_tab =
+            protocol.read_varint32(&input) or_return
+        packet.filtering = protocol.read_bool(&input) or_return
+        packet.inventory_layout =
+            protocol.read_varint32(&input) or_return
+        packet.crafting_layout =
+            protocol.read_varint32(&input) or_return
+        value = packet
+    case IDPlayerUpdateEntityOverrides:
+        packet := Player_Update_Entity_Overrides{}
+        packet.entity_unique_id =
+            protocol.read_varint64(&input) or_return
+        packet.property_index =
+            protocol.read_varuint32(&input) or_return
+        packet.type = protocol.read_u8(&input) or_return
+        if packet.type == Player_Update_Entity_Overrides_Type_Int {
+            packet.int_value = protocol.read_i32(&input) or_return
+        } else if packet.type ==
+                  Player_Update_Entity_Overrides_Type_Float {
+            packet.float_value = protocol.read_f32(&input) or_return
+        }
+        value = packet
+    case IDCameraAimAssist:
+        packet := Camera_Aim_Assist{}
+        packet.preset = protocol.read_string(&input) or_return
+        packet.angle, err = protocol.read_vec2(&input)
+        if err != nil {
+            delete(packet.preset, allocator)
+            return
+        }
+        packet.distance, err = protocol.read_f32(&input)
+        if err != nil {
+            delete(packet.preset, allocator)
+            return
+        }
+        packet.target_mode, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.preset, allocator)
+            return
+        }
+        packet.action, err = protocol.read_u8(&input)
+        if err != nil {
+            delete(packet.preset, allocator)
+            return
+        }
+        packet.show_debug_render, err = protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.preset, allocator)
+            return
+        }
+        value = packet
+    case IDChangeMobProperty:
+        packet := Change_Mob_Property{}
+        packet.entity_unique_id =
+            protocol.read_varint64(&input) or_return
+        packet.property = protocol.read_string(&input) or_return
+        packet.bool_value, err = protocol.read_bool(&input)
+        if err != nil {
+            delete(packet.property, allocator)
+            return
+        }
+        packet.string_value, err = protocol.read_string(&input)
+        if err != nil {
+            delete(packet.property, allocator)
+            return
+        }
+        packet.int_value, err = protocol.read_varint32(&input)
+        if err != nil {
+            delete(packet.property, allocator)
+            delete(packet.string_value, allocator)
+            return
+        }
+        packet.float_value, err = protocol.read_f32(&input)
+        if err != nil {
+            delete(packet.property, allocator)
+            delete(packet.string_value, allocator)
+            return
+        }
+        value = packet
+    case IDMobEffect:
+        packet := Mob_Effect{}
+        packet.entity_runtime_id =
+            protocol.read_varuint64(&input) or_return
+        packet.operation = protocol.read_u8(&input) or_return
+        packet.effect_type = protocol.read_varint32(&input) or_return
+        packet.amplifier = protocol.read_varint32(&input) or_return
+        packet.particles = protocol.read_bool(&input) or_return
+        packet.duration = protocol.read_varint32(&input) or_return
+        packet.tick = protocol.read_varuint64(&input) or_return
+        packet.ambient = protocol.read_bool(&input) or_return
+        value = packet
     case:
         value = Unknown_Packet{
             packet_id = header.packet_id,
